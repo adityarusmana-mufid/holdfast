@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.agents/
+
+# Build output
+dist/
+build/
+.vite/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Coverage
+coverage/
+*.cover
+
+# Agentic workflow — transient data only (structural files committed)
+.opencode/explore/
+.opencode/node_modules/
+.opencode/package.json
+.opencode/package-lock.json
+
+# Claude
+.claude/settings.local.json

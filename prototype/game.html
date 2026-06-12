@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tanknights — Game Prototype</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: monospace; background: #1a1a2e; color: #eee; padding: 20px;
+    display: flex; flex-direction: column; align-items: center; }
+  h1 { font-size: 18px; margin-bottom: 4px; color: #e94560; letter-spacing: 2px; }
+  .subtitle { font-size: 12px; color: #666; margin-bottom: 14px; }
+
+  #game-area { position: relative; }
+  canvas { border: 1px solid #333; border-radius: 4px; image-rendering: pixelated; }
+
+  #hud { display: flex; gap: 20px; margin: 10px 0; font-size: 13px; align-items: center; flex-wrap: wrap; }
+  #hud .stat { display: flex; gap: 6px; align-items: center; }
+  #hud .stat .label { color: #888; }
+  #hud .stat .value { color: #eee; font-weight: bold; }
+
+  #controls { display: flex; gap: 8px; margin: 6px 0; flex-wrap: wrap; justify-content: center; }
+  #controls button { padding: 6px 16px; font-family: monospace; font-size: 12px; cursor: pointer;
+    border: 1px solid #444; background: #16213e; color: #ccc; border-radius: 4px; transition: 0.15s; }
+  #controls button:hover { background: #0f3460; }
+  #controls button.primary { background: #e94560; color: #fff; border-color: #e94560; }
+  #controls button.primary:hover { background: #c73a4e; }
+  #controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  #info { font-size: 11px; color: #777; max-width: 600px; text-align: center; line-height: 1.6; margin-top: 8px; }
+  #info strong { color: #aaa; }
+
+  .unit-palette { display: flex; gap: 8px; margin: 6px 0; }
+  .unit-palette button { padding: 6px 12px; font-family: monospace; font-size: 11px; cursor: pointer;
+    border: 1px solid #444; background: #16213e; color: #ccc; border-radius: 4px; }
+  .unit-palette button.active { background: #e94560; color: #fff; border-color: #e94560; }
+</style>
+</head>
+<body>
+<h1>⚔ TANKNIGHTS — Game Prototype</h1>
+<div class="subtitle">Click a unit → click a valid tile to deploy</div>
+
+<div id="hud">
+  <div class="stat"><span class="label">HP:</span> <span class="value" id="hp">10</span></div>
+  <div class="stat"><span class="label">Wave:</span> <span class="value" id="wave">1</span></div>
+  <div class="stat"><span class="label">Enemies:</span> <span class="value" id="enemy-count">0</span></div>
+  <div class="stat"><span class="label">Status:</span> <span class="value" id="status">Ready</span></div>
+</div>
+
+<div>Select unit type to deploy:</div>
+<div class="unit-palette" id="unit-palette">
+  <button class="active" data-unit="ground">🛡 Ground (route)</button>
+  <button data-unit="ranged">🏹 Ranged (off-route)</button>
+</div>
+
+<div id="controls">
+  <button id="btn-start" class="primary">▶ Start Wave</button>
+  <button id="btn-pause" disabled>⏸ Pause</button>
+  <button id="btn-reset">⟲ Reset</button>
+  <button id="btn-editor">📝 Open Editor</button>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<div id="info">
+  <strong>How to play:</strong> Deploy <strong>Ground</strong> units on the route (gray) tiles.
+  Deploy <strong>Ranged</strong> units on the blue/green off-route tiles.
+  Click Start to send enemies. Units auto-attack enemies in range.
+</div>
+
+<script>
+const TILE_SIZE = 42;
+const SPACING = 1;
+
+// Level definition (same format as editor export)
+const LEVEL = {
+  id: 'level-01',
+  name: 'Tutorial',
+  width: 12,
+  height: 4,
+  grid: [
+    ['ranged','ranged','ranged','ranged','ranged','ranged','ranged','ranged','ranged','ranged','ranged','ranged'],
+    ['spawn',  'route',  'route',  'route',  'route',  'route',  'route',  'route',  'route',  'route',  'route',  'objective'],
+    ['ranged','ranged','ranged','ranged','ranged','ranged','ranged','ranged','ranged','ranged','ranged','ranged'],
+    ['empty',  'empty',  'empty',  'blocked','blocked','blocked','blocked','blocked','empty',  'empty',  'empty',  'empty'  ],
+  ],
+  enemySpawn: { x: 0, y: 1 },
+  defenseObjective: { x: 11, y: 1 },
+  routeWaypoints: [
+    { x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 },
+    { x: 4, y: 1 }, { x: 5, y: 1 }, { x: 6, y: 1 }, { x: 7, y: 1 },
+    { x: 8, y: 1 }, { x: 9, y: 1 }, { x: 10, y: 1 }, { x: 11, y: 1 },
+  ]
+};
+
+const TILE_COLORS = {
+  empty:     '#1a1a2e',
+  route:     '#555',
+  ground:    '#2d6a4f',
+  ranged:    '#1d3557',
+  blocked:   '#222',
+  spawn:     '#e94560',
+  objective: '#f9c74f',
+};
+
+// Game state
+let grid = [];
+let units = []; // deployed units
+let enemies = [];
+let projectiles = [];
+let gameRunning = false;
+let gamePaused = false;
+let hp = 10;
+let wave = 1;
+let enemySpawnTimer = 0;
+let enemySpawnInterval = 1500; // ms
+let enemiesThisWave = 5;
+let enemiesSpawned = 0;
+let selectedUnitType = 'ground';
+let animFrame = null;
+let lastTime = 0;
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+function loadLevel() {
+  const lv = LEVEL;
+  canvas.width = lv.width * (TILE_SIZE + SPACING) + SPACING;
+  canvas.height = lv.height * (TILE_SIZE + SPACING) + SPACING;
+
+  grid = lv.grid.map((row, y) =>
+    row.map((type, x) => ({ x, y, type }))
+  );
+  units = [];
+  enemies = [];
+  projectiles = [];
+  hp = 10;
+  wave = 1;
+  enemiesSpawned = 0;
+  enemySpawnTimer = 0;
+  gameRunning = false;
+  gamePaused = false;
+  updateHUD();
+  document.getElementById('btn-start').disabled = false;
+  document.getElementById('status').textContent = 'Ready';
+  render();
+}
+
+function spawnEnemy() {
+  const spawn = LEVEL.enemySpawn;
+  enemies.push({
+    x: spawn.x * (TILE_SIZE + SPACING) + SPACING,
+    y: spawn.y * (TILE_SIZE + SPACING) + SPACING,
+    waypointIndex: 0,
+    hp: 3,
+    maxHp: 3,
+    speed: 40, // pixels per second
+    alive: true,
+    size: TILE_SIZE - 8,
+  });
+  enemiesSpawned++;
+}
+
+function moveEnemies(dt) {
+  for (const enemy of enemies) {
+    if (!enemy.alive) continue;
+    const wp = LEVEL.routeWaypoints;
+    const targetIdx = Math.min(enemy.waypointIndex + 1, wp.length - 1);
+    const target = wp[targetIdx];
+    if (!target) continue;
+
+    const tx = target.x * (TILE_SIZE + SPACING) + SPACING + TILE_SIZE/2 - enemy.size/2;
+    const ty = target.y * (TILE_SIZE + SPACING) + SPACING + TILE_SIZE/2 - enemy.size/2;
+
+    const dx = tx - enemy.x;
+    const dy = ty - enemy.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    if (dist < 2) {
+      enemy.x = tx;
+      enemy.y = ty;
+      enemy.waypointIndex++;
+      // Reached objective?
+      if (enemy.waypointIndex >= wp.length - 1) {
+        enemy.alive = false;
+        hp--;
+        updateHUD();
+        if (hp <= 0) {
+          document.getElementById('status').textContent = '💀 Game Over';
+          gameRunning = false;
+        }
+      }
+    } else {
+      const speed = enemy.speed * dt;
+      enemy.x += (dx / dist) * speed;
+      enemy.y += (dy / dist) * speed;
+    }
+  }
+  enemies = enemies.filter(e => e.alive || e.hp > 0);
+}
+
+// Unit combat
+function updateCombat(dt) {
+  for (const unit of units) {
+    unit.cooldown = (unit.cooldown || 0) - dt;
+    if (unit.cooldown > 0) continue;
+
+    if (unit.type === 'ground') {
+      // Ground: attack enemies on the same tile or adjacent route tiles
+      const unitTile = { x: Math.floor(unit.x / (TILE_SIZE + SPACING)), y: Math.floor(unit.y / (TILE_SIZE + SPACING)) };
+      for (const enemy of enemies) {
+        if (!enemy.alive) continue;
+        const ex = Math.floor(enemy.x / (TILE_SIZE + SPACING));
+        const ey = Math.floor(enemy.y / (TILE_SIZE + SPACING));
+        const dist = Math.abs(ex - unitTile.x) + Math.abs(ey - unitTile.y);
+        if (dist <= 1) {
+          enemy.hp--;
+          unit.cooldown = 0.8;
+          projectiles.push({ x: unit.x + TILE_SIZE/2, y: unit.y + TILE_SIZE/2,
+            tx: enemy.x + enemy.size/2, ty: enemy.y + enemy.size/2, life: 0.3, maxLife: 0.3 });
+          if (enemy.hp <= 0) enemy.alive = false;
+          break;
+        }
+      }
+    } else {
+      // Ranged: attack enemies within Manhattan distance 3
+      const unitTile = { x: Math.floor(unit.x / (TILE_SIZE + SPACING)), y: Math.floor(unit.y / (TILE_SIZE + SPACING)) };
+      let bestEnemy = null;
+      let bestDist = Infinity;
+      for (const enemy of enemies) {
+        if (!enemy.alive) continue;
+        const ex = Math.floor(enemy.x / (TILE_SIZE + SPACING));
+        const ey = Math.floor(enemy.y / (TILE_SIZE + SPACING));
+        const dist = Math.abs(ex - unitTile.x) + Math.abs(ey - unitTile.y);
+        if (dist <= 3 && dist < bestDist) {
+          bestDist = dist;
+          bestEnemy = enemy;
+        }
+      }
+      if (bestEnemy) {
+        bestEnemy.hp--;
+        unit.cooldown = 1.2;
+        projectiles.push({ x: unit.x + TILE_SIZE/2, y: unit.y + TILE_SIZE/2,
+          tx: bestEnemy.x + bestEnemy.size/2, ty: bestEnemy.y + bestEnemy.size/2, life: 0.3, maxLife: 0.3 });
+        if (bestEnemy.hp <= 0) bestEnemy.alive = false;
+      }
+    }
+  }
+  enemies = enemies.filter(e => e.alive || e.hp > 0);
+}
+
+function updateProjectiles(dt) {
+  for (const p of projectiles) {
+    p.life -= dt;
+  }
+  projectiles = projectiles.filter(p => p.life > 0);
+}
+
+function updateWave() {
+  // Check if wave is done
+  if (gameRunning && enemiesSpawned >= enemiesThisWave && enemies.length === 0) {
+    wave++;
+    enemiesThisWave = Math.min(enemiesThisWave + 2, 20);
+    enemiesSpawned = 0;
+    updateHUD();
+    if (wave > 3) {
+      document.getElementById('status').textContent = '🎉 Victory!';
+      gameRunning = false;
+      document.getElementById('btn-start').disabled = true;
+    } else {
+      document.getElementById('status').textContent = `Wave ${wave} ready`;
+      gameRunning = false;
+      document.getElementById('btn-start').disabled = false;
+    }
+  }
+}
+
+function updateHUD() {
+  document.getElementById('hp').textContent = hp;
+  document.getElementById('wave').textContent = wave;
+  document.getElementById('enemy-count').textContent = enemies.length;
+}
+
+function render() {
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Grid
+  for (let y = 0; y < LEVEL.height; y++) {
+    for (let x = 0; x < LEVEL.width; x++) {
+      const tile = grid[y][x];
+      const px = x * (TILE_SIZE + SPACING) + SPACING;
+      const py = y * (TILE_SIZE + SPACING) + SPACING;
+
+      ctx.fillStyle = TILE_COLORS[tile.type] || '#1a1a2e';
+      ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
+
+      if (tile.type === 'spawn') {
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 16px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('S', px + TILE_SIZE/2, py + TILE_SIZE/2);
+      }
+      if (tile.type === 'objective') {
+        ctx.fillStyle = '#000';
+        ctx.font = '18px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('★', px + TILE_SIZE/2, py + TILE_SIZE/2);
+      }
+    }
+  }
+
+  // Deployment zone highlights
+  for (const unit of units) {
+    ctx.strokeStyle = unit.type === 'ground' ? '#4ade80' : '#60a5fa';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(unit.x, unit.y, TILE_SIZE, TILE_SIZE);
+  }
+
+  // Units
+  for (const unit of units) {
+    const cx = unit.x + TILE_SIZE/2;
+    const cy = unit.y + TILE_SIZE/2;
+    if (unit.type === 'ground') {
+      ctx.fillStyle = '#4ade80';
+      ctx.fillRect(unit.x + 4, unit.y + 4, TILE_SIZE - 8, TILE_SIZE - 8);
+    } else {
+      ctx.fillStyle = '#60a5fa';
+      ctx.beginPath();
+      ctx.arc(cx, cy, TILE_SIZE/2 - 4, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  // Enemies
+  for (const enemy of enemies) {
+    if (!enemy.alive) continue;
+    const cx = enemy.x + enemy.size/2;
+    const cy = enemy.y + enemy.size/2;
+    // Body
+    ctx.fillStyle = '#e94560';
+    ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+    // Eyes
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(enemy.x + 4, enemy.y + 4, 6, 6);
+    ctx.fillRect(enemy.x + enemy.size - 10, enemy.y + 4, 6, 6);
+    // HP bar
+    const hpPct = enemy.hp / enemy.maxHp;
+    ctx.fillStyle = '#333';
+    ctx.fillRect(enemy.x, enemy.y - 6, enemy.size, 4);
+    ctx.fillStyle = hpPct > 0.5 ? '#4ade80' : hpPct > 0.25 ? '#fbbf24' : '#ef4444';
+    ctx.fillRect(enemy.x, enemy.y - 6, enemy.size * hpPct, 4);
+  }
+
+  // Projectiles
+  for (const p of projectiles) {
+    const t = 1 - p.life / p.maxLife;
+    const cx = p.x + (p.tx - p.x) * t;
+    const cy = p.y + (p.ty - p.y) * t;
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function gameLoop(time) {
+  const dt = Math.min((time - lastTime) / 1000, 0.05);
+  lastTime = time;
+
+  if (gameRunning && !gamePaused) {
+    // Spawn enemies
+    if (enemiesSpawned < enemiesThisWave) {
+      enemySpawnTimer += dt * 1000;
+      if (enemySpawnTimer >= enemySpawnInterval) {
+        enemySpawnTimer = 0;
+        spawnEnemy();
+        updateHUD();
+      }
+    }
+
+    moveEnemies(dt);
+    updateCombat(dt);
+    updateProjectiles(dt);
+    updateWave();
+  }
+
+  render();
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+// Click to deploy
+canvas.addEventListener('click', (e) => {
+  if (gameRunning && !gamePaused) return; // can't deploy during active wave
+
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+  const gx = Math.floor(mx / (TILE_SIZE + SPACING));
+  const gy = Math.floor(my / (TILE_SIZE + SPACING));
+  if (gx < 0 || gx >= LEVEL.width || gy < 0 || gy >= LEVEL.height) return;
+
+  // Check if tile already has a unit
+  if (units.some(u => u.gx === gx && u.gy === gy)) return;
+
+  const tileType = grid[gy][gx].type;
+
+  if (selectedUnitType === 'ground' && tileType === 'route') {
+    units.push({
+      type: 'ground',
+      gx, gy,
+      x: gx * (TILE_SIZE + SPACING) + SPACING,
+      y: gy * (TILE_SIZE + SPACING) + SPACING,
+      cooldown: 0,
+    });
+  } else if (selectedUnitType === 'ranged' && (tileType === 'ranged' || tileType === 'ground')) {
+    units.push({
+      type: 'ranged',
+      gx, gy,
+      x: gx * (TILE_SIZE + SPACING) + SPACING,
+      y: gy * (TILE_SIZE + SPACING) + SPACING,
+      cooldown: 0,
+    });
+  }
+});
+
+// Controls
+document.getElementById('btn-start').addEventListener('click', () => {
+  gameRunning = true;
+  enemySpawnTimer = 0;
+  document.getElementById('btn-start').disabled = true;
+  document.getElementById('status').textContent = 'Wave in progress...';
+});
+
+document.getElementById('btn-pause').addEventListener('click', () => {
+  gamePaused = !gamePaused;
+  document.getElementById('btn-pause').textContent = gamePaused ? '▶ Resume' : '⏸ Pause';
+  document.getElementById('status').textContent = gamePaused ? 'Paused' : 'Wave in progress...';
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  loadLevel();
+});
+
+document.getElementById('btn-editor').addEventListener('click', () => {
+  window.open('editor.html', '_blank');
+});
+
+// Unit type selection
+document.querySelectorAll('#unit-palette button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#unit-palette button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedUnitType = btn.dataset.unit;
+  });
+});
+
+// Start
+loadLevel();
+animFrame = requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>

@@ -69,20 +69,23 @@ levels/            # JSON level files
 - Visual editor exports JSON consumed by game engine
 - Ground units deploy on route tiles, ranged units deploy off-route
 
-## Deferred (v2+)
-- Unit selection (choose which units to bring)
-- Simple gacha for unit acquisition
-- Unit talents, level-upgrade, stats, promotion
-- Progression unlocks (levels grant new units)
-- Pixel art visuals (military vehicles only — no living creatures ever)
-- Sound effects and music
-- Multiple spawn points / enemy type config
-- Advanced enemy AI (splitting, flying)
-- Unit blocking mechanics
+## Release Plan — Two Separate Games
+
+| | Holdfast 1 | Holdfast 2 |
+|---|---|---|
+| **Engine** | Phaser 3 (2D) | Low poly 3D (separate project) |
+| **Scope** | 3 chapters, simple TD | Full-featured game |
+| **Persistence** | None | TBD |
+| **Collection** | None | Could add systems |
+| **Base** | None | TBD |
+| **Art** | Colored shapes → pixel art | Low poly vehicles |
+
+Holdfast 1 is self-contained — no accounts, no collection, no base. Just 3 chapters of levels with sequential unlock. Holdfast 2 is a future separate project.
 
 ## Critical Constraints
 - **No living creatures** — never depict humans, animals, or living entities. All entities are mechanical/military vehicles (tanks, APCs, drones, artillery).
 - **itch.io AI disclosure** — code is AI-written, must tag "Code" on publish. Art is procedural, not AI-generated.
+- **No persistent/account storage** in Holdfast 1 — all progress is session-only or save-file.
 
 ## Reference Sources
 Arknights game mechanic references documented in `.opencode/explore/2026-06-12-design-decisions.md`:

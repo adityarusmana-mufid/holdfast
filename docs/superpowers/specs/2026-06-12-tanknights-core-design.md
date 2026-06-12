@@ -8,10 +8,23 @@
 
 ## 1. Vision
 
-A grid-based tower defense game inspired by Arknights, using pixel art geometry. Players deploy units on a grid to defend against enemies following a fixed route.
+A grid-based tower defense game inspired by Arknights, using geometric shapes (v1) → pixel art vehicles (v2). Players deploy military vehicles on a grid to defend against enemy vehicles following a fixed route.
 
-**MVP Scope:**
-- Single enemy spawn point
+### Release Plan — Two Separate Games
+
+| | Holdfast 1 (v1) | Holdfast 2 (v2) |
+|---|---|---|
+| **Engine** | Phaser 3 (2D) | Low poly 3D (Three.js/Godot) |
+| **Scope** | Simple TD with 3 chapters | Full-featured game with more depth |
+| **Persistence** | None — no accounts, no storage | TBD |
+| **Collection** | No unit growth/collection/gacha | Could add systems |
+| **Base** | No base feature | TBD |
+| **Art** | Colored shapes → pixel art | Low poly military vehicles |
+
+Holdfast 1 is a focused, complete tower defense experience with 3 chapters of levels, no account/collection/base systems. Holdfast 2 is a separate project (future, low poly 3D).
+
+**Holdfast 1 Scope:**
+- Single enemy spawn point per level
 - Single defense objective
 - Fixed enemy route (no pathfinding)
 - Ground units deploy on route tiles
@@ -22,16 +35,14 @@ A grid-based tower defense game inspired by Arknights, using pixel art geometry.
 - **Deployment limit** — cap on total active units at once (e.g., 6-8)
 - **Retreat** — remove a unit to free its deploy slot; refunds half its DP cost
 - **Block count** — ground units physically stop enemies from passing (1-3 enemies)
+- **3 chapters** — simple sequential level unlock (no account/persistence needed)
+- **No unit collection, no gacha, no base, no upgrades** — units are fixed per level
 
-**Future Scope (not MVP):**
-- Multiple spawn points with configurable enemy types
-- Multiple defense objectives
-- Unit blocking mechanics
-- Advanced enemy AI
-- **Unit selection** — choosing which units to bring into a level
-- **Simple gacha** — unit acquisition system
-- **Unit talents/upgrade/promotion** — level-up, stats, rank promotion
-- **Progression system** — levels unlock more units
+**Explicitly Excluded from Holdfast 1:**
+- Permanent or account-based storage
+- Unit growth/leveling/collection/gacha
+- Base feature (like Arknights base management)
+- Persistent progression (all progress is session-only or save-file)
 
 ---
 
@@ -380,26 +391,29 @@ This naturally reinforces the tank theme:
 
 ---
 
-## 10. Non-Goals (Deferred)
+## 10. Non-Goals (Holdfast 1)
 
-These are explicitly **not** part of the MVP:
+These are explicitly **not** part of Holdfast 1:
 - Multiple enemy spawn points
 - Enemy type configuration per spawn
 - Advanced enemy AI (splitting, flying)
 - Sound effects and music
-- Persistent progression/unlocks
 - Multiplayer or leaderboards
 - **Unit selection** — choosing which units to bring into a level
-- **Simple gacha** — unit acquisition system
-- **Unit talents/upgrade/promotion** — level-up, stats, rank promotion (v2+ features)
-- **Progression unlocks** — levels unlocking new units
+- **Unit collection / gacha** — no unit acquisition system
+- **Unit growth / promotion** — no level-up, stats, rank promotion
+- **Base feature** — no Arknights-style base management
+- **Persistent progression / unlocks** — no account storage
 - **Pixel art visuals** — colored geometric shapes are fine for v1
+- **Low poly 3D** — that's Holdfast 2, separate project entirely
+
+Holdfast 1 is self-contained: 3 chapters, fixed unit rosters per level, no accounts, no collection treadmill.
 
 ---
 
 ## 11. Success Criteria
 
-The MVP is successful when:
+Holdfast 1 is complete when:
 1. ✅ Level editor can create and export playable levels
 2. ✅ Game loads level JSON and renders correctly
 3. ✅ Units can be deployed on valid tiles
@@ -408,6 +422,9 @@ The MVP is successful when:
 6. ✅ Enemies die when HP reaches 0
 7. ✅ Game ends when enemy reaches objective
 8. ✅ Playable in browser, deployable to itch.io
+9. ✅ 3 chapters of levels playable start-to-finish
+10. ✅ Level select screen unlocks sequentially
+11. ✅ No accounts, no storage, no collection systems
 
 ---
 
@@ -460,10 +477,12 @@ Per [itch.io quality guidelines](https://itch.io/docs/creators/quality-guideline
 ## 14. Next Steps
 
 1. ✅ Design approval
-2. ⏳ Answer open questions
-3. ⏳ Write detailed implementation plan (phases breakdown)
-4. ⏳ Set up project scaffold (Vite + Phaser + TypeScript)
-5. ⏳ Begin Phase 1 implementation
+2. ✅ Define v1 vs v2 scope (Holdfast 1 = simple 2D TD, Holdfast 2 = low poly 3D separate project)
+3. ⏳ Phase 1: Grid + Editor
+4. ⏳ Phase 2: Unit Deployment + DP system
+5. ⏳ Phase 3: Enemy Movement + Blocking
+6. ⏳ Phase 4: Combat
+7. ⏳ Phase 5: Game Loop + Level Select + 3 chapters
 
 ---
 

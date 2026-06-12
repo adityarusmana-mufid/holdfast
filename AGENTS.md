@@ -1,4 +1,4 @@
-# Arknights Fan Game — Agent Documentation
+# Holdfast — Agent Documentation
 
 ## Development Commands
 - Lint: TBA
@@ -28,6 +28,8 @@
 | Level creation | Visual editor first | Faster iteration |
 | Deployment zones | Ground = route, Ranged = off-route | Mirrors Arknights core |
 | Visual style (v1) | Colored geometric shapes | Pixel art deferred to v2 |
+| No living creatures | All entities = mechanical/vehicles only | Religious constraint (Islamic aniconism) — non-negotiable |
+| itch.io AI policy | Must tag "Code" as AI-generated | Disclosure required; no ban, just transparency |
 
 ## Version Control Standards
 
@@ -72,11 +74,15 @@ levels/            # JSON level files
 - Simple gacha for unit acquisition
 - Unit talents, level-upgrade, stats, promotion
 - Progression unlocks (levels grant new units)
-- Pixel art visuals
+- Pixel art visuals (military vehicles only — no living creatures ever)
 - Sound effects and music
 - Multiple spawn points / enemy type config
 - Advanced enemy AI (splitting, flying)
 - Unit blocking mechanics
+
+## Critical Constraints
+- **No living creatures** — never depict humans, animals, or living entities. All entities are mechanical/military vehicles (tanks, APCs, drones, artillery).
+- **itch.io AI disclosure** — code is AI-written, must tag "Code" on publish. Art is procedural, not AI-generated.
 
 ## Reference Sources
 Arknights game mechanic references documented in `.opencode/explore/2026-06-12-design-decisions.md`:

@@ -305,8 +305,16 @@ class CombatSystem {
 
 ## 8. Rendering & Art Style
 
-### Visual Style
-- **Pixel art geometry** — simple shapes (squares, circles, triangles)
+### Design Constraint: No Living Creatures
+The game must **never depict living creatures** (humans, animals, monsters, etc.). All entities — player units, enemies, and environment — are mechanical/military vehicles and equipment only. This is a non-negotiable constraint per the creator's religious beliefs (Islamic aniconism).
+
+This naturally reinforces the tank theme:
+- **Player units:** Tanks, anti-tank guns, AA guns, artillery, self-propelled guns
+- **Enemy units:** Enemy tanks, APCs, drones, armored cars, missile launchers, walker mechs
+- **No soldiers, no infantry, no creatures of any kind**
+
+### Visual Style (v1)
+- **Colored geometric shapes** — squares, circles, triangles representing vehicle silhouettes
 - **Grid lines** — visible for debugging, toggleable
 - **Tile colors** (placeholder):
   - Route: light gray
@@ -315,6 +323,11 @@ class CombatSystem {
   - Blocked: dark gray
   - Spawn: red marker
   - Objective: yellow marker
+
+### Visual Style (v2 — Future)
+- **Pixel art military vehicles** — tanks, APCs, drones, artillery
+- Tanks are naturally boxy/geometric — ideal for pixel art translation
+- No living creatures will ever be introduced at any stage
 
 ### Rendering Layers (Phaser)
 1. **Background** — solid color
@@ -414,10 +427,37 @@ The MVP is successful when:
 | **Deployment limit** | Cap on active units (v1) | Prevents flooding; 6-8 default |
 | **Block count** | Ground units block 1-3 enemies (v1) | Makes melee units matter; Defenders hold the line, Guards duel |
 | **Visual style** | Colored geometric shapes (v1) | Pixel art deferred to v2; shapes work for debugging gameplay |
+| **No living creatures** | All entities are mechanical/vehicles only | Religious constraint (Islamic aniconism); naturally fits tank theme |
+| **AI disclosure** | Must tag "Code" on itch.io | Code is AI-written; art is procedural (not AI) |
 
 ---
 
-## 13. Next Steps
+## 13. Publishing & Legal
+
+### itch.io AI Disclosure Policy
+Per [itch.io quality guidelines](https://itch.io/docs/creators/quality-guidelines):
+- **No outright ban** on AI-generated content — disclosure/tagging is required
+- **Must tag** if project contains AI-generated graphics, sound, text, or code
+- Untagged AI content gets **delisted from search/indexing**
+- AI-tagged games appear on the "AI Assisted" browse page (users can filter)
+- **No penalty** from itch.io itself — no automatic filtering, just transparency
+
+**For Holdfast:**
+| Component | AI-generated? | Disclosure |
+|-----------|--------------|------------|
+| Code | Yes (written by AI) | Must tag "Code" |
+| Art (v1) | No (procedural geometric shapes) | No tag needed |
+| Art (v2) | TBD (hand-drawn or AI-assisted pixel art) | Tag if AI-assisted |
+| Sound | TBD | Tag if AI-generated |
+| Design decisions | Made by human creator | Not considered generative AI |
+
+### Trademark
+- Renamed from "Tanknights" to "Holdfast" to avoid trademark conflict with Arknights (Hypergryph)
+- Current name is a common English word (military term for defensive stronghold) — safe for use
+
+---
+
+## 14. Next Steps
 
 1. ✅ Design approval
 2. ⏳ Answer open questions

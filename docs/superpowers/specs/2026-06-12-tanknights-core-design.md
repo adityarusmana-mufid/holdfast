@@ -1,4 +1,4 @@
-# Tanknights — Core Level Logic Design
+# Holdfast — Core Level Logic Design
 
 **Date:** 2026-06-12  
 **Status:** Draft (pending approval)  
@@ -173,7 +173,7 @@ interface Position {
 
 ### Project Structure
 ```
-tanknights/
+holdfast/
 ├── src/
 │   ├── game/                    # Core game logic
 │   │   ├── scenes/              # Phaser scenes

@@ -1,4 +1,4 @@
-# Tanknights Checklist
+# Holdfast Checklist
 
 **Total items:** 20 across 5 phases
 **Last updated:** 2026-06-12

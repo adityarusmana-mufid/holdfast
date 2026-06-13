@@ -25,6 +25,17 @@
 - In-game HUD: DP counter, unit count/limit, selection palette
 - Files: `src/config/units.ts`, `src/systems/DeploymentSystem.ts`, `src/entities/Unit.ts`, `src/scenes/GameScene.ts`
 
+## [2026-06-13] Phase 3.5 — Gameplay Bugfixes & Multi-Route Planning
+- Fixed gameplay hang: `allWavesComplete` no longer gates movement/blocking/cleanup in EnemyManager
+- Fixed blocking: `Enemy.getCurrentTile()` uses pixel position, not waypoint index — blocking works between waypoints
+- Spawn/goal markers now survive `clearWaypoints()` and tile painting
+- Editor: painting tiles no longer clears waypoints; waypoint mode protects spawn/goal
+- Restart button added to GameScene
+- Medic renamed to Mechanic (atk=200, thermal damage)
+- Written multi-route plan: first-class Route objects, pseudo-3D oblique tilt perspective, air units via elevation, route differentiation strategies
+- Files: `src/entities/Enemy.ts`, `src/systems/EnemyManager.ts`, `src/systems/CombatSystem.ts`, `src/scenes/EditorScene.ts`, `src/scenes/GameScene.ts`, `src/config/units.ts`, `.opencode/plans/multi-route-plan.md`
+- Branch: `feat/waypoint-painting`
+
 ## [2026-06-12] Phase 3 — Enemy Movement
 - Enemy configs: Scout Car, APC, Tank, Drone (different speeds, HP, colors)
 - Enemy entity: colored circles, smooth pixel movement along waypoints

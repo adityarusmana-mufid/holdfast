@@ -121,6 +121,7 @@ export class EnemyManager {
     for (const enemy of this.enemies) {
       if (!enemy.alive) continue
       const tile = enemy.getCurrentTile()
+      if (!tile) continue
       const unit = this.depSystem.getUnitAt(tile.row, tile.col)
       if (unit && unit.config.type === 'ground' && unit.config.blockCount > 0) {
         const isAlreadyBlocked = unit.blocking.includes(enemy.id)

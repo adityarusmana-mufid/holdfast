@@ -60,7 +60,7 @@ export class CombatSystem {
     return enemies.filter(e => {
       if (!e.alive) return false
       const tile = e.getCurrentTile()
-      return rangeSet.has(`${tile.row},${tile.col}`)
+      return tile !== null && rangeSet.has(`${tile.row},${tile.col}`)
     })
   }
 
@@ -69,7 +69,7 @@ export class CombatSystem {
     for (const enemy of enemies) {
       if (!enemy.alive || !enemy.blocked) continue
       const enemyTile = enemy.getCurrentTile()
-      if (`${enemyTile.row},${enemyTile.col}` === unitTile) {
+      if (enemyTile && `${enemyTile.row},${enemyTile.col}` === unitTile) {
         return enemy
       }
     }

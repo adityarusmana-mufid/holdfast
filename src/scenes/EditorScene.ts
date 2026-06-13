@@ -229,7 +229,6 @@ export class EditorScene extends Phaser.Scene {
         this.grid.setGoal(pos)
       } else {
         this.grid.setTile(pos.row, pos.col, this.selectedType)
-        this.grid.clearWaypoints()
         if (this.selectedType === TileType.Route) {
           this.grid.updateRouteConnectivity()
         }

@@ -115,8 +115,8 @@ export class EnemySprite {
     }
   }
 
-  getCurrentTile(): { row: number; col: number } {
-    return this.waypoints[this.currentWaypoint]
+  getCurrentTile(): { row: number; col: number } | null {
+    return this.grid.pixelToTile(this.x, this.y)
   }
 
   isAtObjective(): boolean {

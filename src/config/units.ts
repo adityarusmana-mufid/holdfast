@@ -79,7 +79,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
   },
   {
     id: 'medic',
-    name: 'Support',
+    name: 'Mechanic',
     type: 'ranged',
     hp: 500,
     atk: 200,

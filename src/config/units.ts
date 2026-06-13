@@ -79,10 +79,10 @@ export const UNIT_CONFIGS: UnitConfig[] = [
   },
   {
     id: 'medic',
-    name: 'Medic',
+    name: 'Support',
     type: 'ranged',
     hp: 500,
-    atk: 0,
+    atk: 200,
     def: 40,
     damageType: 'thermal',
     attackInterval: 2.0,

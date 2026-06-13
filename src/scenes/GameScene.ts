@@ -189,12 +189,15 @@ export class GameScene extends Phaser.Scene {
     }
 
     actionBtn(px, '[Clear All]', COLORS.text.danger, () => this.clearAllUnits()).setY(actionY)
+    actionBtn(px, '[Restart]', COLORS.text.warning, () => {
+      if (this.levelData) this.loadLevel(this.levelData)
+    }).setY(actionY + 20)
     actionBtn(px, '[Load Level]', COLORS.text.accent, async () => {
       const data = await importLevelFromFile()
       if (data) this.loadLevel(data)
-    }).setY(actionY + 20)
+    }).setY(actionY + 40)
 
-    const editorBtn = this.add.text(px, actionY + 40, '< Back to Editor', {
+    const editorBtn = this.add.text(px, actionY + 60, '< Back to Editor', {
       fontSize: '11px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
     editorBtn.setInteractive({ cursor: 'pointer' })

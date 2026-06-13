@@ -97,26 +97,21 @@ export class Grid {
     return { row, col }
   }
 
-  getWaypoints(): Position[] {
-    const waypoints: Position[] = []
-    for (let r = 0; r < this.rows; r++) {
-      for (let c = 0; c < this.cols; c++) {
-        if (this.tiles[r][c].type === TileType.Route) {
-          waypoints.push({ row: r, col: c })
-        }
-      }
-    }
-    return waypoints
+  getFullRoute(): Position[] {
+    const route: Position[] = []
+    if (this.spawnMarker) route.push({ ...this.spawnMarker })
+    route.push(...this.routePath.map(wp => ({ ...wp })))
+    if (this.goalMarker) route.push({ ...this.goalMarker })
+    return route
   }
 
   toLevelData(name: string): LevelData {
-    const waypoints = this.routePath.length > 0 ? this.routePath : this.getWaypoints()
     return {
       name,
       cols: this.cols,
       rows: this.rows,
       tiles: this.tiles.map(row => row.map(t => ({ ...t }))),
-      waypoints,
+      waypoints: this.getFullRoute(),
       waves: [],
       startingDP: 10,
       dpRegenRate: 1,
@@ -130,11 +125,10 @@ export class Grid {
     this.cols = data.cols
     this.rows = data.rows
     this.tiles = data.tiles.map(row => row.map(t => ({ ...t })))
-    this.routePath = data.waypoints.map(w => ({ ...w }))
-    if (data.waypoints.length > 0) {
-      this.spawnMarker = data.waypoints[0]
-      this.goalMarker = data.waypoints[data.waypoints.length - 1]
-    }
+    const wps = data.waypoints || []
+    this.spawnMarker = wps.length > 0 ? { ...wps[0] } : null
+    this.goalMarker = wps.length > 1 ? { ...wps[wps.length - 1] } : null
+    this.routePath = wps.length > 2 ? wps.slice(1, -1).map(w => ({ ...w })) : []
   }
 
   render(): void {
@@ -195,41 +189,34 @@ export class Grid {
       this.gridLines.lineBetween(x, GRID_OFFSET_Y, x, GRID_OFFSET_Y + this.rows * TILE_SIZE)
     }
 
-    if (this.spawnMarker) {
-      const p = this.tileToPixel(this.spawnMarker.row, this.spawnMarker.col)
-      this.markerGraphics.fillStyle(0xd32f2f, 0.7)
-      this.markerGraphics.fillTriangle(
-        p.x, p.y - 20,
-        p.x - 16, p.y + 16,
-        p.x + 16, p.y + 16,
-      )
-    }
-
-    if (this.goalMarker) {
-      const p = this.tileToPixel(this.goalMarker.row, this.goalMarker.col)
-      this.markerGraphics.fillStyle(0x00c853, 0.7)
-      this.markerGraphics.fillCircle(p.x, p.y, 14)
-    }
-
-    if (this.routePath.length > 1) {
+    const fullRoute = this.getFullRoute()
+    if (fullRoute.length > 1) {
       this.waypointGraphics.lineStyle(3, 0x00a2ff, 0.5)
       this.waypointGraphics.beginPath()
-      const start = this.tileToPixel(this.routePath[0].row, this.routePath[0].col)
+      const start = this.tileToPixel(fullRoute[0].row, fullRoute[0].col)
       this.waypointGraphics.moveTo(start.x, start.y)
-      for (let i = 1; i < this.routePath.length; i++) {
-        const pt = this.tileToPixel(this.routePath[i].row, this.routePath[i].col)
+      for (let i = 1; i < fullRoute.length; i++) {
+        const pt = this.tileToPixel(fullRoute[i].row, fullRoute[i].col)
         this.waypointGraphics.lineTo(pt.x, pt.y)
       }
       this.waypointGraphics.strokePath()
-      this.routePath.forEach((wp, i) => {
+      fullRoute.forEach((wp, i) => {
         const p = this.tileToPixel(wp.row, wp.col)
-        const isFirstLast = i === 0 || i === this.routePath.length - 1
-        this.waypointGraphics.fillStyle(isFirstLast ? 0x00a2ff : 0x00c853, 0.7)
-        this.waypointGraphics.fillCircle(p.x, p.y, 10)
-        this.waypointGraphics.fillStyle(0xffffff, 1)
-        this.waypointGraphics.fillCircle(p.x, p.y, 7)
+        const isSpawn = i === 0
+        const isGoal = i === fullRoute.length - 1
+        if (isSpawn || isGoal) {
+          this.waypointGraphics.fillStyle(isSpawn ? 0xd32f2f : 0x00c853, 0.3)
+          this.waypointGraphics.fillCircle(p.x, p.y, 14)
+          this.waypointGraphics.lineStyle(2, isSpawn ? 0xd32f2f : 0x00c853, 0.8)
+          this.waypointGraphics.strokeCircle(p.x, p.y, 14)
+        } else {
+          this.waypointGraphics.fillStyle(0x00a2ff, 0.7)
+          this.waypointGraphics.fillCircle(p.x, p.y, 10)
+          this.waypointGraphics.fillStyle(0xffffff, 1)
+          this.waypointGraphics.fillCircle(p.x, p.y, 7)
+        }
         const num = this.scene.add.text(p.x, p.y, `${i + 1}`, {
-          fontSize: '10px', color: '#1a1a2e', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+          fontSize: '10px', color: isSpawn || isGoal ? '#ffffff' : '#1a1a2e', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
         })
         num.setOrigin(0.5)
         num.setDepth(12)
@@ -248,6 +235,12 @@ export class Grid {
 
   clearWaypoints(): void {
     this.routePath = []
+  }
+
+  clearAll(): void {
+    this.routePath = []
+    this.spawnMarker = null
+    this.goalMarker = null
   }
 
   getWaypointCount(): number {
@@ -296,7 +289,7 @@ export class Grid {
   resize(cols: number, rows: number): void {
     this.cols = cols
     this.rows = rows
-    this.routePath = []
+    this.clearAll()
     this.initEmpty(cols, rows)
     this.render()
   }

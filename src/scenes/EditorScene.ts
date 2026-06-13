@@ -98,7 +98,7 @@ export class EditorScene extends Phaser.Scene {
 
     makeLabel(this, px, y, 'GRID', COLORS.text.secondary, '12px')
     y += 18
-    makeButton(this, px, y, 'Clear Grid', () => { this.grid.resize(this.grid.cols, this.grid.rows); this.grid.disconnectedTiles.clear(); this.grid.clearWaypoints(); this.setStatus('Grid cleared'); this.isDirty = true }, { w: btnW, h: 24 })
+    makeButton(this, px, y, 'Clear Grid', () => { this.grid.resize(this.grid.cols, this.grid.rows); this.grid.disconnectedTiles.clear(); this.grid.clearAll(); this.setStatus('Grid cleared'); this.isDirty = true }, { w: btnW, h: 24 })
     y += 28
     makeButton(this, px, y, 'Export JSON', () => { this.exportLevel() }, { w: btnW, h: 24 })
     y += 28
@@ -114,9 +114,11 @@ export class EditorScene extends Phaser.Scene {
     this.waypointBtnLabel.on('pointerdown', () => {
       this.waypointMode = !this.waypointMode
       if (this.waypointMode) {
-        this.setStatus('Click tiles in order to define route path')
-        this.grid.clearWaypoints()
-        this.grid.render()
+        const hasSpawn = !!this.grid.getSpawn()
+        const hasGoal = !!this.grid.getGoal()
+        if (!hasSpawn) this.setStatus('Paint a Spawn tile first')
+        else if (!hasGoal) this.setStatus('Paint a Goal tile first')
+        else this.setStatus('Click route tiles to add waypoints between spawn → goal')
       }
       this.updateWaypointBtn()
     })
@@ -135,9 +137,8 @@ export class EditorScene extends Phaser.Scene {
       this.waypointMode = false
       this.updateWaypointBtn()
       this.grid.clearWaypoints()
-      this.grid.setRoutePath([])
       this.grid.render()
-      this.setStatus('Route cleared')
+      this.setStatus('Intermediate waypoints cleared (spawn/goal kept)')
     }, { w: btnW, h: 24, textColor: COLORS.text.danger })
     y += 28
 
@@ -190,7 +191,7 @@ export class EditorScene extends Phaser.Scene {
       if (this.waypointMode && this.grid.getWaypointCount() > 0) {
         this.grid.clearWaypoints()
         this.grid.render()
-        this.setStatus('Waypoints cleared')
+        this.setStatus('Intermediate waypoints cleared')
         return
       }
       this.grid.setTile(pos.row, pos.col, TileType.Floor)
@@ -203,17 +204,19 @@ export class EditorScene extends Phaser.Scene {
     }
 
     if (this.waypointMode) {
+      const isSpawnTile = this.grid.getSpawn() && this.grid.getSpawn()!.row === pos.row && this.grid.getSpawn()!.col === pos.col
+      const isGoalTile = this.grid.getGoal() && this.grid.getGoal()!.row === pos.row && this.grid.getGoal()!.col === pos.col
+      if (isSpawnTile) { this.setStatus('Spawn is fixed — clear route and re-paint to change'); return }
+      if (isGoalTile) { this.setStatus('Goal is fixed — clear route and re-paint to change'); return }
+
       const existing = this.grid.routePath.findIndex(wp => wp.row === pos.row && wp.col === pos.col)
       if (existing !== -1) {
         this.grid.routePath.splice(existing, 1)
-        this.setStatus(`Removed waypoint ${existing + 1}`)
+        this.setStatus(`Removed waypoint ${existing + 2}`)
       } else {
         this.grid.addWaypoint(pos)
-        this.setStatus(`Waypoint ${this.grid.getWaypointCount()}: (${pos.row}, ${pos.col})`)
+        this.setStatus(`Waypoint ${this.grid.getWaypointCount() + 1}: (${pos.row}, ${pos.col})`)
       }
-      this.grid.setSpawn(this.grid.routePath.length > 0 ? this.grid.routePath[0] : null)
-      this.grid.setGoal(this.grid.routePath.length > 1 ? this.grid.routePath[this.grid.routePath.length - 1] : null)
-      this.grid.setRoutePath([...this.grid.routePath])
       this.grid.render()
       this.isDirty = true
       return
@@ -222,16 +225,11 @@ export class EditorScene extends Phaser.Scene {
     if (this.editMode === EditMode.Paint) {
       if (this.selectedType === TileType.Spawn) {
         this.grid.setSpawn(pos)
-        this.grid.clearWaypoints()
-        this.grid.setRoutePath([])
       } else if (this.selectedType === TileType.Goal) {
         this.grid.setGoal(pos)
-        this.grid.clearWaypoints()
-        this.grid.setRoutePath([])
       } else {
         this.grid.setTile(pos.row, pos.col, this.selectedType)
         this.grid.clearWaypoints()
-        this.grid.setRoutePath([])
         if (this.selectedType === TileType.Route) {
           this.grid.updateRouteConnectivity()
         }
@@ -276,14 +274,16 @@ export class EditorScene extends Phaser.Scene {
       return
     }
 
-    const route = generateRoute(
+    const fullRoute = generateRoute(
       this.grid.tiles.map(row => row.map(t => t.type)),
       spawn, goal, this.grid.rows, this.grid.cols,
     )
-    if (route.length > 0) {
-      this.grid.setRoutePath(route)
+    if (fullRoute.length > 0) {
+      const intermediate = fullRoute.slice(1, -1)
+      this.grid.setRoutePath(intermediate)
       this.grid.render()
-      this.setStatus(`Route: ${route.length} waypoints ✅`)
+      const total = intermediate.length + (spawn ? 1 : 0) + (goal ? 1 : 0)
+      this.setStatus(`Route: ${total} waypoints ✅`)
     } else {
       this.setStatus('No route found! Ensure route tiles connect Spawn → Goal.')
     }
@@ -304,6 +304,7 @@ export class EditorScene extends Phaser.Scene {
   private playLevel(): void {
     const data = this.buildLevelData()
     if (data.waves.length === 0) { this.setStatus('Add waves first!'); return }
+    if (data.waypoints.length < 2) { this.setStatus('Set Spawn + Goal + at least one waypoint!'); return }
     this.scene.start('GameScene', { level: data })
   }
 

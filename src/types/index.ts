@@ -41,7 +41,10 @@ export interface LevelData {
   dpRegenRate: number
   dpCap: number
   deploymentLimit: number
+  lives: number
 }
+
+export type DamageType = 'kinetic' | 'thermal'
 
 export interface UnitConfig {
   id: string
@@ -50,6 +53,7 @@ export interface UnitConfig {
   hp: number
   atk: number
   def: number
+  damageType: DamageType
   attackInterval: number
   rangePattern: number[][]
   blockCount: number
@@ -63,7 +67,8 @@ export interface EnemyConfig {
   name: string
   hp: number
   atk: number
-  def: number
+  armor: number
+  insulation: number
   speed: number
   color: number
   dpOnKill: number
@@ -75,5 +80,5 @@ export interface DeployedUnit {
   col: number
   currentHp: number
   lastAttackTime: number
-  blocking: string[]
+  blocking: number[]
 }

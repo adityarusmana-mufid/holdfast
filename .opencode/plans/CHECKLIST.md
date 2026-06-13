@@ -21,41 +21,41 @@
 
 ---
 
-## Phase 1 — Grid & Editor
+## Phase 1 — Grid & Editor ✅
 
-- [ ] 1.1 Scaffold Phaser 3 + Vite + TypeScript project
-- [ ] 1.2 Implement grid rendering (tiles, borders, colors)
-- [ ] 1.3 Build level editor scene with tile palette
-- [ ] 1.4 Implement tile painting (click to set tile type)
-- [ ] 1.5 Add spawn/objective marker placement
-- [ ] 1.6 Route auto-generation from painted route tiles
-- [ ] 1.7 JSON export/import for levels
-- [ ] 1.8 Add level config fields to editor (startingDP, dpRegenRate, dpCap, deploymentLimit)
-
----
-
-## Phase 2 — Unit Deployment
-
-- [ ] 2.1 Unit config data structure (dpCost, blockCount, hp, attack, rangePattern)
-- [ ] 2.2 Unit placement system (click valid tile → deploy)
-- [ ] 2.3 Deployment validation (tile type, one-unit-per-tile)
-- [ ] 2.4 DP system — auto-generation at 1/sec, starting DP per level, cap
-- [ ] 2.5 Unit DP costs — deducted on deploy, checked before allow
-- [ ] 2.6 Deployment limit enforcement (max active units)
-- [ ] 2.7 Unit retreat — remove unit, refund half DP cost, start redeploy timer
-- [ ] 2.8 Unit rendering (colored shapes for v1)
+- [x] 1.1 Scaffold Phaser 3 + Vite + TypeScript project
+- [x] 1.2 Implement grid rendering (tiles, borders, colors)
+- [x] 1.3 Build level editor scene with tile palette
+- [x] 1.4 Implement tile painting (click to set tile type)
+- [x] 1.5 Add spawn/objective marker placement
+- [x] 1.6 Route auto-generation from painted route tiles
+- [x] 1.7 JSON export/import for levels
+- [x] 1.8 Add level config fields to editor (startingDP, dpRegenRate, dpCap, deploymentLimit)
 
 ---
 
-## Phase 3 — Enemy Movement
+## Phase 2 — Unit Deployment ✅
 
-- [ ] 3.1 Enemy spawning system
-- [ ] 3.2 Enemy config data structure (hp, attack, speed)
-- [ ] 3.3 Waypoint following along route tiles
-- [ ] 3.4 Block count collision — enemies stopped by blocking units, fight until death
-- [ ] 3.5 Walk-past — enemies bypass unit if block limit exceeded
-- [ ] 3.6 Objective collision detection (enemy reaches goal)
-- [ ] 3.7 Enemy rendering (colored shapes for v1)
+- [x] 2.1 Unit config data structure (dpCost, blockCount, hp, attack, rangePattern)
+- [x] 2.2 Unit placement system (click valid tile → deploy)
+- [x] 2.3 Deployment validation (tile type, one-unit-per-tile)
+- [x] 2.4 DP system — auto-generation at 1/sec, starting DP per level, cap
+- [x] 2.5 Unit DP costs — deducted on deploy, checked before allow
+- [x] 2.6 Deployment limit enforcement (max active units)
+- [x] 2.7 Unit retreat — remove unit, refund half DP cost, start redeploy timer
+- [x] 2.8 Unit rendering (colored shapes for v1)
+
+---
+
+## Phase 3 — Enemy Movement ✅
+
+- [x] 3.1 Enemy spawning system (wave-based, configurable entries per wave)
+- [x] 3.2 Enemy config data structure (hp, attack, speed, def, color, dpOnKill)
+- [x] 3.3 Waypoint following along route tiles (interpolated pixel movement)
+- [x] 3.4 Block count collision — enemies stopped by ground units, queued on unit
+- [x] 3.5 Walk-past — enemies bypass unit if block limit exceeded
+- [x] 3.6 Objective collision detection (enemy reaches goal = lose 1 life)
+- [x] 3.7 Enemy rendering (colored circles for v1, HP bars)
 
 ---
 

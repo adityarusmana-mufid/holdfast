@@ -1,0 +1,48 @@
+import { EnemyConfig } from '../types/index'
+
+export const ENEMY_CONFIGS: EnemyConfig[] = [
+  {
+    id: 'soldier',
+    name: 'Scout Car',
+    hp: 800,
+    atk: 100,
+    armor: 50,
+    insulation: 30,
+    speed: 60,
+    color: 0xe74c3c,
+    dpOnKill: 1,
+  },
+  {
+    id: 'trooper',
+    name: 'APC',
+    hp: 2000,
+    atk: 200,
+    armor: 100,
+    insulation: 80,
+    speed: 45,
+    color: 0xc0392b,
+    dpOnKill: 2,
+  },
+  {
+    id: 'heavy',
+    name: 'Tank',
+    hp: 5000,
+    atk: 400,
+    armor: 300,
+    insulation: 200,
+    speed: 30,
+    color: 0x8e44ad,
+    dpOnKill: 3,
+  },
+  {
+    id: 'drone',
+    name: 'Drone',
+    hp: 500,
+    atk: 150,
+    armor: 20,
+    insulation: 40,
+    speed: 80,
+    color: 0xf39c12,
+    dpOnKill: 1,
+  },
+]

@@ -8,11 +8,12 @@ const config: Phaser.Types.Core.GameConfig = {
   width: 1024,
   height: 768,
   parent: document.body,
-  backgroundColor: '#1a1a2e',
+  backgroundColor: '#f4f6f8',
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
+  dom: { createContainer: true },
   scene: [BootScene, EditorScene, GameScene],
 }
 

@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
-import { LevelData, UnitConfig } from '../types/index'
+import { DeployedUnit, Direction, LevelData, UnitConfig } from '../types/index'
+import { Position, positionsInRange, computeFacingTowardGoal } from '../shared/utils/GridMath'
 import { Grid } from '../entities/Grid'
 import { UnitSprite } from '../entities/Unit'
 import { EnemySprite } from '../entities/Enemy'
@@ -18,7 +19,6 @@ export class GameScene extends Phaser.Scene {
   private unitSprites: UnitSprite[] = []
   private selectedUnitIndex: number = 0
   private unitButtons: Phaser.GameObjects.Container[] = []
-  private selectedIndicator!: Phaser.GameObjects.Graphics
   private dpText!: Phaser.GameObjects.Text
   private limitText!: Phaser.GameObjects.Text
   private livesText!: Phaser.GameObjects.Text
@@ -30,6 +30,20 @@ export class GameScene extends Phaser.Scene {
   private battleButton!: Phaser.GameObjects.Text
   private resultText!: Phaser.GameObjects.Text
   private hoverIndicator!: Phaser.GameObjects.Graphics
+
+  private deployState: 'idle' | 'placing' | 'facing' = 'idle'
+  private pendingTile: Position | null = null
+  private pendingFacing: Direction = 'up'
+  private statsPanel!: Phaser.GameObjects.Container
+  private statsTexts!: Phaser.GameObjects.Text[]
+  private rangePreview!: Phaser.GameObjects.Graphics
+  private facingArrow!: Phaser.GameObjects.Graphics
+  private cancelFacingBtn!: Phaser.GameObjects.Text
+
+  private decisionMode: boolean = false
+  private inspectingUnit: DeployedUnit | null = null
+  private inspectRetreatBtn!: Phaser.GameObjects.Text
+  private inspectCloseBtn!: Phaser.GameObjects.Text
 
   constructor() {
     super({ key: 'GameScene' })
@@ -49,6 +63,11 @@ export class GameScene extends Phaser.Scene {
     this.selectedUnitIndex = 0
     this.battleActive = false
     this.battleEnded = false
+    this.deployState = 'idle'
+    this.pendingTile = null
+    this.pendingFacing = 'up'
+    this.decisionMode = false
+    this.inspectingUnit = null
 
     this.grid = new Grid(this, this.levelData?.cols ?? 12, this.levelData?.rows ?? 3)
     if (this.levelData) {
@@ -86,23 +105,65 @@ export class GameScene extends Phaser.Scene {
       },
     })
 
+    this.buildStatsPanel()
+    this.updateStatsPanel(0)
     this.buildUnitPalette()
     this.buildHUD()
-    this.buildSelectedIndicator()
     this.buildBattleButton()
 
-    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      const pos = this.grid.pixelToTile(pointer.x, pointer.y)
-      if (!pos) return
+    this.rangePreview = this.add.graphics()
+    this.rangePreview.setDepth(8)
+    this.rangePreview.setAlpha(0)
 
-      if (pointer.rightButtonDown()) {
-        const refund = this.depSystem.retreatUnit(pos.row, pos.col)
-        if (refund > 0) {
-          this.removeUnitSprite(pos.row, pos.col)
-          this.flashMessage(`RETREAT // +${refund} DP`, 0x00c853)
-        }
+    this.facingArrow = this.add.graphics()
+    this.facingArrow.setDepth(9)
+    this.facingArrow.setAlpha(0)
+
+    this.setupInput()
+  }
+
+  private setupInput(): void {
+    this.input.mouse?.disableContextMenu()
+
+    this.cancelFacingBtn = this.add.text(10, this.scale.height - 20, 'CANCEL', {
+      fontSize: '13px',
+      color: COLORS.text.danger,
+      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      fontStyle: 'bold',
+    })
+    this.cancelFacingBtn.setDepth(50)
+    this.cancelFacingBtn.setAlpha(0)
+    this.cancelFacingBtn.setInteractive({ cursor: 'pointer' })
+    this.cancelFacingBtn.on('pointerdown', () => this.cancelDeployment())
+
+    this.inspectRetreatBtn = this.add.text(10, 70, '', {
+      fontSize: '13px',
+      color: COLORS.text.danger,
+      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      fontStyle: 'bold',
+    })
+    this.inspectRetreatBtn.setDepth(50)
+    this.inspectRetreatBtn.setAlpha(0)
+    this.inspectRetreatBtn.setInteractive({ cursor: 'pointer' })
+    this.inspectRetreatBtn.on('pointerdown', () => this.retreatInspectedUnit())
+
+    this.inspectCloseBtn = this.add.text(10, 88, '[ CLOSE ]', {
+      fontSize: '12px',
+      color: COLORS.text.secondary,
+      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    })
+    this.inspectCloseBtn.setDepth(50)
+    this.inspectCloseBtn.setAlpha(0)
+    this.inspectCloseBtn.setInteractive({ cursor: 'pointer' })
+    this.inspectCloseBtn.on('pointerdown', () => this.exitDecisionMode())
+
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (this.deployState === 'facing') {
         return
       }
+
+      const pos = this.grid.pixelToTile(pointer.x, pointer.y)
+      if (!pos) return
 
       if (this.battleEnded) {
         this.flashMessage('SIMULATION TERMINATED', 0xff9100)
@@ -114,12 +175,42 @@ export class GameScene extends Phaser.Scene {
         return
       }
 
-      const config = UNIT_CONFIGS[this.selectedUnitIndex]
-      const deployed = this.depSystem.deployUnit(config, pos.row, pos.col)
-      if (deployed) {
-        const sprite = new UnitSprite(this, this.grid, config, pos.row, pos.col, config.hp)
-        this.unitSprites.push(sprite)
-        this.flashMessage(`DEPLOY // ${config.name}  -${config.dpCost} DP`, config.color)
+      if (this.decisionMode && this.inspectingUnit) {
+        const clickedOccupied = this.depSystem.getUnitAt(pos.row, pos.col)
+        if (clickedOccupied && clickedOccupied !== this.inspectingUnit) {
+          this.enterInspectMode(pos)
+        } else {
+          this.exitDecisionMode()
+        }
+        return
+      }
+
+      if (this.deployState === 'placing') {
+        const occupiedUnit = this.depSystem.getUnitAt(pos.row, pos.col)
+        if (occupiedUnit) {
+          this.enterInspectMode(pos)
+          return
+        }
+        const config = UNIT_CONFIGS[this.selectedUnitIndex]
+        const check = this.depSystem.canDeploy(config, pos.row, pos.col)
+        if (check.ok) {
+          this.pendingTile = pos
+          this.pendingFacing = computeFacingTowardGoal(pos, this.getGoalPositions())
+          this.deployState = 'facing'
+          this.showRangePreview(config, pos, this.pendingFacing)
+          this.showFacingArrow(pos, this.pendingFacing)
+          this.hoverIndicator.setAlpha(0)
+          this.cancelFacingBtn.setAlpha(1)
+          this.flashMessage(`DIRECTION // ${config.name}`, config.color)
+        } else {
+          this.flashMessage(check.reason ?? 'Cannot deploy', 0xd32f2f)
+        }
+      }
+    })
+
+    this.input.on('pointerup', () => {
+      if (this.deployState === 'facing') {
+        this.confirmDeployment()
       }
     })
 
@@ -127,6 +218,18 @@ export class GameScene extends Phaser.Scene {
     this.hoverIndicator.setDepth(15)
     this.hoverIndicator.setAlpha(0)
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (this.deployState === 'facing') {
+        if (!this.pendingTile) return
+        const unitConfig = UNIT_CONFIGS[this.selectedUnitIndex]
+        const facing = this.computeFacingFromPointer(pointer)
+        if (facing !== this.pendingFacing) {
+          this.pendingFacing = facing
+          this.showRangePreview(unitConfig, this.pendingTile, facing)
+          this.showFacingArrow(this.pendingTile, facing)
+        }
+        return
+      }
+
       if (!this.battleActive || this.battleEnded) {
         this.hoverIndicator.setAlpha(0)
         return
@@ -145,22 +248,198 @@ export class GameScene extends Phaser.Scene {
     })
   }
 
+  private getGoalPositions(): Position[] {
+    const goals: Position[] = []
+    for (let r = 0; r < this.grid.rows; r++) {
+      for (let c = 0; c < this.grid.cols; c++) {
+        const tile = this.grid.getTile(r, c)
+        if (tile && tile.type === 'goal') {
+          goals.push({ row: r, col: c })
+        }
+      }
+    }
+    return goals
+  }
+
+  private computeFacingFromPointer(pointer: Phaser.Input.Pointer): Direction {
+    if (!this.pendingTile) return 'up'
+    const center = this.grid.tileToPixel(this.pendingTile.row, this.pendingTile.col)
+    const dx = pointer.x - center.x
+    const dy = pointer.y - center.y
+    const threshold = 8
+    if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) {
+      return this.pendingFacing
+    }
+    if (Math.abs(dx) > Math.abs(dy)) {
+      return dx > 0 ? 'right' : 'left'
+    } else {
+      return dy > 0 ? 'down' : 'up'
+    }
+  }
+
+  private showRangePreview(config: UnitConfig, pos: Position, facing: Direction): void {
+    const tiles = positionsInRange(pos, config.rangePattern, this.grid.rows, this.grid.cols, facing)
+    this.rangePreview.clear()
+    this.rangePreview.setAlpha(1)
+    const half = 32
+    for (const t of tiles) {
+      const px = this.grid.tileToPixel(t.row, t.col)
+      this.rangePreview.fillStyle(0x00a2ff, 0.2)
+      this.rangePreview.fillRect(px.x - half, px.y - half, 64, 64)
+      this.rangePreview.lineStyle(2, 0x00a2ff, 0.6)
+      this.rangePreview.strokeRect(px.x - half, px.y - half, 64, 64)
+    }
+  }
+
+  private showFacingArrow(pos: Position, facing: Direction): void {
+    const center = this.grid.tileToPixel(pos.row, pos.col)
+    this.facingArrow.clear()
+    this.facingArrow.setAlpha(1)
+    const len = 16
+    const head = 6
+    let ex = center.x, ey = center.y
+    switch (facing) {
+      case 'up':    ey = center.y - len; break
+      case 'down':  ey = center.y + len; break
+      case 'right': ex = center.x + len; break
+      case 'left':  ex = center.x - len; break
+    }
+    this.facingArrow.lineStyle(3, 0x00a2ff, 0.9)
+    this.facingArrow.beginPath()
+    this.facingArrow.moveTo(center.x, center.y)
+    this.facingArrow.lineTo(ex, ey)
+    this.facingArrow.strokePath()
+    this.facingArrow.fillStyle(0x00a2ff, 0.9)
+    if (facing === 'up' || facing === 'down') {
+      const dir = facing === 'up' ? -1 : 1
+      this.facingArrow.fillTriangle(ex, ey + dir * head, ex - head / 2, ey - dir * head / 2, ex + head / 2, ey - dir * head / 2)
+    } else {
+      const dir = facing === 'right' ? 1 : -1
+      this.facingArrow.fillTriangle(ex + dir * head, ey, ex - dir * head / 2, ey - head / 2, ex - dir * head / 2, ey + head / 2)
+    }
+  }
+
+  private clearRangePreview(): void {
+    this.rangePreview.clear()
+    this.rangePreview.setAlpha(0)
+    this.facingArrow.clear()
+    this.facingArrow.setAlpha(0)
+  }
+
+  private confirmDeployment(): void {
+    if (!this.pendingTile) return
+    const config = UNIT_CONFIGS[this.selectedUnitIndex]
+    const deployed = this.depSystem.deployUnit(config, this.pendingTile.row, this.pendingTile.col, this.pendingFacing)
+    if (deployed) {
+      const sprite = new UnitSprite(this, this.grid, config, this.pendingTile.row, this.pendingTile.col, config.hp, this.pendingFacing)
+      this.unitSprites.push(sprite)
+      this.flashMessage(`DEPLOY // ${config.name}  -${config.dpCost} DP`, config.color)
+    }
+    this.clearRangePreview()
+    this.cancelFacingBtn.setAlpha(0)
+    this.pendingTile = null
+    this.deployState = 'placing'
+    this.exitDecisionMode()
+  }
+
+  private cancelDeployment(): void {
+    this.clearRangePreview()
+    this.cancelFacingBtn.setAlpha(0)
+    this.pendingTile = null
+    this.deployState = 'placing'
+    this.exitDecisionMode()
+    this.flashMessage('DEPLOYMENT CANCELLED', 0xff9100)
+  }
+
+  private enterInspectMode(pos: Position): void {
+    const unit = this.depSystem.getUnitAt(pos.row, pos.col)
+    if (!unit) return
+    this.inspectRetreatBtn.setAlpha(0)
+    this.inspectCloseBtn.setAlpha(0)
+    this.inspectingUnit = unit
+    this.decisionMode = true
+    this.updateStatsPanel(unit.config, unit)
+    const refund = Math.floor(unit.config.dpCost / 2)
+    this.inspectRetreatBtn.setText(`RETREAT  [+${refund} DP]`)
+    this.inspectRetreatBtn.setAlpha(1)
+    this.inspectCloseBtn.setAlpha(1)
+    this.flashMessage(`INSPECT // ${unit.config.name}`, 0x00a2ff)
+  }
+
+  private exitDecisionMode(): void {
+    if (this.inspectingUnit) {
+      this.inspectRetreatBtn.setAlpha(0)
+      this.inspectCloseBtn.setAlpha(0)
+      this.inspectingUnit = null
+    }
+    this.decisionMode = false
+    this.updateStatsPanel(this.selectedUnitIndex)
+  }
+
+  private retreatInspectedUnit(): void {
+    if (!this.inspectingUnit) return
+    const { row, col, config } = this.inspectingUnit
+    const refund = this.depSystem.retreatUnit(row, col)
+    if (refund > 0) {
+      this.removeUnitSprite(row, col)
+      this.flashMessage(`RETREAT // ${config.name}  +${refund} DP`, 0x00c853)
+    }
+    this.exitDecisionMode()
+  }
+
   update(_time: number, delta: number): void {
     const dt = delta / 1000
 
     if (this.battleActive && !this.battleEnded) {
-      this.depSystem.update(dt)
-      this.enemyManager.update(dt)
-      this.combatSystem.update(delta, this.unitSprites, this.enemyManager.getEnemies())
+      const speed = this.decisionMode ? 0.5 : 1
+      this.depSystem.update(dt * speed)
+      this.enemyManager.update(dt * speed)
+      this.combatSystem.update(delta * speed, this.unitSprites, this.enemyManager.getEnemies())
       this.checkBattleEnd()
     }
 
     this.updateHUD()
   }
 
+  private buildStatsPanel(): void {
+    const px = 10
+    const py = 10
+    const texts: Phaser.GameObjects.Text[] = []
+    const lines = ['', '', '']
+    for (let i = 0; i < 3; i++) {
+      const t = this.add.text(px + 6, py + 4 + i * 16, lines[i], {
+        fontSize: '12px',
+        color: COLORS.text.secondary,
+        fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      })
+      texts.push(t)
+    }
+    this.statsTexts = texts
+    this.statsPanel = this.add.container(0, 0, texts)
+  }
+
+  private updateStatsPanel(indexOrConfig: number | UnitConfig, deployed?: DeployedUnit): void {
+    const unit = typeof indexOrConfig === 'number' ? UNIT_CONFIGS[indexOrConfig] : indexOrConfig
+    if (!unit) {
+      this.statsTexts.forEach(t => t.setText(''))
+      return
+    }
+    const dmIcon = unit.damageType === 'thermal' ? '~' : '>'
+    const typeLabel = unit.type === 'ground' ? 'GND' : 'RNG'
+    this.statsTexts[0].setText(`${unit.name} (${typeLabel})`)
+    if (deployed) {
+      const dirArrow: Record<string, string> = { up: '\u2191', down: '\u2193', left: '\u2190', right: '\u2192' }
+      this.statsTexts[1].setText(`HP: ${deployed.currentHp}/${unit.hp}  ${dirArrow[deployed.facing] ?? ''}`)
+      this.statsTexts[2].setText(`ATK:${dmIcon}${unit.atk}  DEF:${unit.def}  BLK:${unit.blockCount}`)
+    } else {
+      this.statsTexts[1].setText(`HP:${unit.hp} ATK:${dmIcon}${unit.atk} DEF:${unit.def}`)
+      this.statsTexts[2].setText(`BLK:${unit.blockCount}  DP:${unit.dpCost}`)
+    }
+  }
+
   private buildUnitPalette(): void {
     const px = 10
-    let startY = 50
+    let startY = 70
     const btnW = 140
     const btnH = 48
 
@@ -260,11 +539,6 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private buildSelectedIndicator(): void {
-    this.selectedIndicator = this.add.graphics()
-    this.selectedIndicator.setDepth(5)
-  }
-
   private buildBattleButton(): void {
     this.battleButton = this.add.text(512, this.scale.height - 24, '[ START SIMULATION ]', {
       fontSize: '15px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
@@ -273,6 +547,10 @@ export class GameScene extends Phaser.Scene {
     this.battleButton.setInteractive({ cursor: 'pointer' })
     this.battleButton.on('pointerdown', () => {
       if (!this.battleActive && !this.battleEnded) {
+        if (this.deployState === 'facing') {
+          this.cancelDeployment()
+        }
+        this.deployState = 'placing'
         this.battleActive = true
         this.enemyManager.startBattle()
         this.battleButton.setText('[ SIMULATION ACTIVE ]')
@@ -291,6 +569,19 @@ export class GameScene extends Phaser.Scene {
 
   private selectUnit(index: number): void {
     this.selectedUnitIndex = index
+    this.updateStatsPanel(index)
+    if (this.battleActive && !this.battleEnded) {
+      if (this.deployState === 'facing') {
+        this.cancelDeployment()
+      }
+      if (this.inspectingUnit) {
+        this.inspectRetreatBtn.setAlpha(0)
+        this.inspectCloseBtn.setAlpha(0)
+        this.inspectingUnit = null
+      }
+      this.deployState = 'placing'
+      this.decisionMode = true
+    }
     this.unitButtons.forEach((btn, i) => {
       const bg = btn.getAt(0) as Phaser.GameObjects.Graphics
       bg.clear()
@@ -315,6 +606,7 @@ export class GameScene extends Phaser.Scene {
       this.removeUnitSprite(r, c)
     })
     this.depSystem.activeUnits.clear()
+    this.exitDecisionMode()
     this.flashMessage('All units cleared', 0xd32f2f)
   }
 
@@ -433,9 +725,16 @@ export class GameScene extends Phaser.Scene {
     this.enemyManager.setWaves(data.waves, data.lives)
     this.battleActive = false
     this.battleEnded = false
+    this.deployState = 'idle'
+    this.pendingTile = null
+    this.exitDecisionMode()
+    this.inspectRetreatBtn.setAlpha(0)
+    this.inspectCloseBtn.setAlpha(0)
+    this.clearRangePreview()
     this.resultText.setAlpha(0)
     this.battleButton.setText('[ START SIMULATION ]')
     this.battleButton.setStyle({ color: COLORS.text.accent })
+    this.updateStatsPanel(this.selectedUnitIndex)
     this.updateHUD()
   }
 

@@ -44,6 +44,7 @@ export interface LevelData {
   lives: number
 }
 
+export type Direction = 'up' | 'down' | 'left' | 'right'
 export type DamageType = 'kinetic' | 'thermal'
 
 export interface UnitConfig {
@@ -81,4 +82,5 @@ export interface DeployedUnit {
   currentHp: number
   lastAttackTime: number
   blocking: number[]
+  facing: Direction
 }

@@ -54,7 +54,7 @@ export class CombatSystem {
 
   private getEnemiesInRange(unit: UnitSprite, enemies: EnemySprite[]): EnemySprite[] {
     const unitPos: Position = { row: unit.row, col: unit.col }
-    const rangeTiles = positionsInRange(unitPos, unit.config.rangePattern, this.grid.rows, this.grid.cols)
+    const rangeTiles = positionsInRange(unitPos, unit.config.rangePattern, this.grid.rows, this.grid.cols, unit.facing)
     const rangeSet = new Set(rangeTiles.map(p => `${p.row},${p.col}`))
 
     return enemies.filter(e => {

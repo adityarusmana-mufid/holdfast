@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { UnitConfig } from '../types/index'
+import { Direction, UnitConfig } from '../types/index'
 import { Grid, TILE_SIZE } from './Grid'
 
 export class UnitSprite {
@@ -15,20 +15,22 @@ export class UnitSprite {
   row: number
   col: number
   currentHp: number
+  facing: Direction
 
-  constructor(scene: Phaser.Scene, grid: Grid, config: UnitConfig, row: number, col: number, hp: number) {
+  constructor(scene: Phaser.Scene, grid: Grid, config: UnitConfig, row: number, col: number, hp: number, facing: Direction = 'up') {
     this.scene = scene
     this.config = config
     this.row = row
     this.col = col
     this.currentHp = hp
+    this.facing = facing
 
     const pos = grid.tileToPixel(row, col)
     const size = TILE_SIZE * 0.7
     const half = size / 2
 
     this.body = scene.add.graphics()
-    this.drawBody(config, size)
+    this.drawBody(config, size, facing)
 
     this.hpBg = scene.add.graphics()
     this.hpBg.fillStyle(0xcfd8dc, 0.6)
@@ -48,7 +50,7 @@ export class UnitSprite {
     this.container.setDepth(10)
   }
 
-  private drawBody(config: UnitConfig, size: number): void {
+  private drawBody(config: UnitConfig, size: number, facing: Direction): void {
     const half = size / 2
     this.body.fillStyle(config.color, 1)
 
@@ -56,6 +58,23 @@ export class UnitSprite {
       this.body.fillRoundedRect(-half, -half, size, size, 4)
       this.body.lineStyle(2, 0x00a2ff, 0.4)
       this.body.strokeRoundedRect(-half, -half, size, size, 4)
+
+      const indSize = 4
+      this.body.fillStyle(0xffffff, 0.7)
+      switch (facing) {
+        case 'up':
+          this.body.fillRect(-indSize / 2, -half - indSize - 1, indSize, indSize)
+          break
+        case 'down':
+          this.body.fillRect(-indSize / 2, half + 1, indSize, indSize)
+          break
+        case 'right':
+          this.body.fillRect(half + 1, -indSize / 2, indSize, indSize)
+          break
+        case 'left':
+          this.body.fillRect(-half - indSize - 1, -indSize / 2, indSize, indSize)
+          break
+      }
 
       if (config.blockCount > 1) {
         const inner = size * 0.25
@@ -65,9 +84,16 @@ export class UnitSprite {
         }
       }
     } else {
-      this.body.fillTriangle(0, -half, -half, half, half, half)
+      const faces = {
+        up:    [{ x: 0, y: -half }, { x: -half, y: half }, { x: half, y: half }],
+        down:  [{ x: 0, y: half }, { x: -half, y: -half }, { x: half, y: -half }],
+        right: [{ x: half, y: 0 }, { x: -half, y: -half }, { x: -half, y: half }],
+        left:  [{ x: -half, y: 0 }, { x: half, y: -half }, { x: half, y: half }],
+      }
+      const tri = faces[facing]
+      this.body.fillTriangle(tri[0].x, tri[0].y, tri[1].x, tri[1].y, tri[2].x, tri[2].y)
       this.body.lineStyle(2, 0x00a2ff, 0.4)
-      this.body.strokeTriangle(0, -half, -half, half, half, half)
+      this.body.strokeTriangle(tri[0].x, tri[0].y, tri[1].x, tri[1].y, tri[2].x, tri[2].y)
     }
   }
 

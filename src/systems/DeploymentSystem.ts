@@ -1,4 +1,4 @@
-import { UnitConfig, DeployedUnit, TileType } from '../types/index'
+import { Direction, UnitConfig, DeployedUnit, TileType } from '../types/index'
 import { Grid } from '../entities/Grid'
 
 export class DeploymentSystem {
@@ -42,7 +42,7 @@ export class DeploymentSystem {
     return { ok: true }
   }
 
-  deployUnit(unit: UnitConfig, row: number, col: number): DeployedUnit | null {
+  deployUnit(unit: UnitConfig, row: number, col: number, facing: Direction = 'up'): DeployedUnit | null {
     const check = this.canDeploy(unit, row, col)
     if (!check.ok) return null
 
@@ -54,6 +54,7 @@ export class DeploymentSystem {
       currentHp: unit.hp,
       lastAttackTime: 0,
       blocking: [],
+      facing,
     }
     this.activeUnits.set(`${row},${col}`, deployed)
     return deployed

@@ -7,6 +7,7 @@ import { exportLevelToFile, importLevelFromFile } from '../editor/LevelSerialize
 import { ENEMY_CONFIGS } from '../config/enemies'
 import { COLORS, FONTS, hex } from '../ui/Constants'
 import { makeButton, makeLabel } from '../ui/Components'
+import { TEST_LEVEL } from '../levels/testLevel'
 
 injectEditorStyles()
 
@@ -31,6 +32,7 @@ export class EditorScene extends Phaser.Scene {
   private waypointBtnLabel!: Phaser.GameObjects.Text
   private paletteButtons: Phaser.GameObjects.Container[] = []
   private statusText!: Phaser.GameObjects.Text
+  private addEraseBtn!: Phaser.GameObjects.Text
   private configPanel!: ConfigPanel
   private wavePanel!: WavePanel
   private isDirty: boolean = false
@@ -58,10 +60,10 @@ export class EditorScene extends Phaser.Scene {
     this.wavePanel = new WavePanel(this, PANEL_X, 340, PANEL_W)
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      this.handleClick(pointer.x, pointer.y, pointer.rightButtonDown())
+      this.handleClick(pointer.x, pointer.y)
     })
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      if (pointer.isDown) this.handleClick(pointer.x, pointer.y, pointer.rightButtonDown())
+      if (pointer.isDown) this.handleClick(pointer.x, pointer.y)
     })
   }
 
@@ -142,9 +144,25 @@ export class EditorScene extends Phaser.Scene {
     }, { w: btnW, h: 24, textColor: COLORS.text.danger })
     y += 28
 
+    makeLabel(this, px, y + 8, 'TOOLS', COLORS.text.secondary, '12px')
+    y += 26
+    this.addEraseBtn = this.add.text(px + 8, y + 4, '[ Erase ]', {
+      ...FONTS.small, color: COLORS.text.danger,
+    })
+    this.addEraseBtn.setInteractive({ cursor: 'pointer' })
+    this.addEraseBtn.on('pointerdown', () => {
+      this.editMode = this.editMode === EditMode.Erase ? EditMode.Paint : EditMode.Erase
+      this.setStatus(this.editMode === EditMode.Erase ? 'Erase mode' : 'Paint mode')
+      this.addEraseBtn.setText(this.editMode === EditMode.Erase ? '[■ Erase]' : '[ Erase ]')
+      this.addEraseBtn.setColor(this.editMode === EditMode.Erase ? COLORS.text.success : COLORS.text.danger)
+    })
+    y += 28
+
     makeLabel(this, px, y + 8, 'PLAY', COLORS.text.secondary, '12px')
     y += 26
     makeButton(this, px, y, '▶ Play', () => { this.playLevel() }, { w: btnW, h: 24, textColor: COLORS.text.success })
+    y += 28
+    makeButton(this, px, y, 'Test Combat', () => { this.playTestLevel() }, { w: btnW, h: 24, textColor: COLORS.text.warning })
 
     y += 8
     makeLabel(this, px, y, 'SIZE', COLORS.text.secondary, '12px')
@@ -174,6 +192,10 @@ export class EditorScene extends Phaser.Scene {
   private selectTileType(type: TileType): void {
     this.selectedType = type
     this.editMode = EditMode.Paint
+    if (this.addEraseBtn) {
+      this.addEraseBtn.setText('[ Erase ]')
+      this.addEraseBtn.setColor(COLORS.text.danger)
+    }
     this.paletteButtons.forEach((btn, i) => {
       const bg = btn.getAt(0) as Phaser.GameObjects.Rectangle
       const item = PALETTE_ITEMS[i]
@@ -183,11 +205,11 @@ export class EditorScene extends Phaser.Scene {
     this.setStatus(`Selected: ${type}`)
   }
 
-  private handleClick(px: number, py: number, rightButton: boolean = false): void {
+  private handleClick(px: number, py: number): void {
     const pos = this.grid.pixelToTile(px, py)
     if (!pos) return
 
-    if (rightButton) {
+    if (this.editMode === EditMode.Erase) {
       if (this.waypointMode && this.grid.getWaypointCount() > 0) {
         this.grid.clearWaypoints()
         this.grid.render()
@@ -305,6 +327,10 @@ export class EditorScene extends Phaser.Scene {
     if (data.waves.length === 0) { this.setStatus('Add waves first!'); return }
     if (data.waypoints.length < 2) { this.setStatus('Set Spawn + Goal + at least one waypoint!'); return }
     this.scene.start('GameScene', { level: data })
+  }
+
+  private playTestLevel(): void {
+    this.scene.start('GameScene', { level: TEST_LEVEL })
   }
 
   private buildLevelData(): LevelData {

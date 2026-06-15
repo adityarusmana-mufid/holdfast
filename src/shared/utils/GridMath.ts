@@ -1,4 +1,4 @@
-import { TileType } from '../../types/index'
+import { Direction, TileType } from '../../types/index'
 
 export interface Position {
   row: number
@@ -89,14 +89,44 @@ export function isAdjacent8(a: Position, b: Position): boolean {
   return Math.abs(a.row - b.row) <= 1 && Math.abs(a.col - b.col) <= 1
 }
 
+export function rotatePattern(pattern: number[][], facing: Direction): number[][] {
+  return pattern.map(([dr, dc]) => {
+    switch (facing) {
+      case 'up':    return [dr, dc]
+      case 'down':  return [-dr, -dc]
+      case 'right': return [dc, -dr]
+      case 'left':  return [-dc, dr]
+    }
+  })
+}
+
+export function computeFacingTowardGoal(unit: Position, goals: Position[]): Direction {
+  if (goals.length === 0) return 'up'
+  let closest = goals[0]
+  let minDist = Infinity
+  for (const g of goals) {
+    const d = Math.abs(g.row - unit.row) + Math.abs(g.col - unit.col)
+    if (d < minDist) { minDist = d; closest = g }
+  }
+  const dr = closest.row - unit.row
+  const dc = closest.col - unit.col
+  if (Math.abs(dr) >= Math.abs(dc)) {
+    return dr > 0 ? 'down' : 'up'
+  } else {
+    return dc > 0 ? 'right' : 'left'
+  }
+}
+
 export function positionsInRange(
   center: Position,
   rangePattern: number[][],
   rows: number,
   cols: number,
+  facing?: Direction,
 ): Position[] {
+  const pattern = facing ? rotatePattern(rangePattern, facing) : rangePattern
   const result: Position[] = []
-  for (const [dr, dc] of rangePattern) {
+  for (const [dr, dc] of pattern) {
     const r = center.row + dr
     const c = center.col + dc
     if (r >= 0 && r < rows && c >= 0 && c < cols) {
@@ -107,14 +137,15 @@ export function positionsInRange(
 }
 
 export const RANGE_PATTERNS: Record<string, number[][]> = {
-  melee: [[0, 0]],
-  cross1: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]],
-  cross2: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1], [-2, 0], [2, 0], [0, -2], [0, 2]],
-  square1: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]],
-  diamond2: [
-    [0, 0],
-    [-1, 0], [1, 0], [0, -1], [0, 1],
-    [-2, 0], [2, 0], [0, -2], [0, 2],
-    [-1, -1], [-1, 1], [1, -1], [1, 1],
-  ],
+  selfOnly: [[0, 0]],
+  meleeFront: [[-1, 0], [0, 0]],
+  ranged4x3: (() => {
+    const tiles: number[][] = []
+    for (let r = -3; r <= 0; r++) {
+      for (let c = -1; c <= 1; c++) {
+        tiles.push([r, c])
+      }
+    }
+    return tiles
+  })(),
 }

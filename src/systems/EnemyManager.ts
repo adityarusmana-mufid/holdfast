@@ -77,6 +77,7 @@ export class EnemyManager {
 
     this.updateMovement(delta)
     this.updateBlocking()
+    this.updateVisualStacking()
     this.updateObjectiveCheck()
     this.removeDead()
   }
@@ -156,6 +157,41 @@ export class EnemyManager {
         enemy.alive = false
         this.events.onEnemyReachedObjective(enemy.config)
       }
+    }
+  }
+
+  private updateVisualStacking(): void {
+    const tileGroups = new Map<string, EnemySprite[]>()
+    for (const enemy of this.enemies) {
+      if (!enemy.alive) continue
+      if (!enemy.blocked) {
+        enemy.visualOffsetX = 0
+        enemy.visualOffsetY = 0
+        enemy.applyVisualPosition()
+        continue
+      }
+      const tile = enemy.getCurrentTile()
+      if (!tile) continue
+      const key = `${tile.row},${tile.col}`
+      if (!tileGroups.has(key)) tileGroups.set(key, [])
+      tileGroups.get(key)!.push(enemy)
+    }
+    const offsetTable = [
+      { x: 0, y: 0 },
+      { x: -14, y: -10 },
+      { x: 14, y: -10 },
+      { x: -14, y: 12 },
+      { x: 14, y: 12 },
+      { x: 0, y: -18 },
+      { x: 0, y: 18 },
+    ]
+    for (const [, group] of tileGroups) {
+      group.forEach((enemy, idx) => {
+        const off = idx < offsetTable.length ? offsetTable[idx] : offsetTable[offsetTable.length - 1]
+        enemy.visualOffsetX = off.x
+        enemy.visualOffsetY = off.y
+        enemy.applyVisualPosition()
+      })
     }
   }
 

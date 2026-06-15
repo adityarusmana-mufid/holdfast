@@ -23,6 +23,8 @@ export class EnemySprite {
   blocked: boolean = false
   alive: boolean = true
   blockerUnitKey: string | null = null
+  visualOffsetX: number = 0
+  visualOffsetY: number = 0
 
   private grid: Grid
 
@@ -77,6 +79,10 @@ export class EnemySprite {
     this.hpBar.fillRect(-half, -half - 10, size * ratio, 3)
   }
 
+  applyVisualPosition(): void {
+    this.container.setPosition(this.x + this.visualOffsetX, this.y + this.visualOffsetY)
+  }
+
   takeDamage(amount: number): number {
     this.currentHp = Math.max(0, this.currentHp - amount)
     this.drawHp(TILE_SIZE * 0.6)
@@ -105,12 +111,12 @@ export class EnemySprite {
       this.x = targetPos.x
       this.y = targetPos.y
       this.currentWaypoint++
-      this.container.setPosition(this.x, this.y)
+      this.applyVisualPosition()
       return true
     } else {
       this.x += (dx / dist) * step
       this.y += (dy / dist) * step
-      this.container.setPosition(this.x, this.y)
+      this.applyVisualPosition()
       return false
     }
   }

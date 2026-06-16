@@ -5,18 +5,30 @@ export interface Tile {
 }
 
 export enum TileType {
+  Ground = 'ground',
   Floor = 'floor',
+  Ranged = 'ranged',
   Wall = 'wall',
-  Route = 'route',
   Spawn = 'spawn',
   Goal = 'goal',
-  DeployGround = 'deploy_ground',
-  DeployRanged = 'deploy_ranged',
+}
+
+export interface Position {
+  row: number
+  col: number
 }
 
 export interface Waypoint {
   row: number
   col: number
+  pauseDuration?: number
+}
+
+export interface Route {
+  color: number
+  spawn: Position
+  goal: Position
+  waypoints: Waypoint[]
 }
 
 export interface WaveEntry {
@@ -26,6 +38,7 @@ export interface WaveEntry {
 }
 
 export interface Wave {
+  routeIndex: number
   entries: WaveEntry[]
   preludeDuration: number
 }
@@ -35,7 +48,7 @@ export interface LevelData {
   cols: number
   rows: number
   tiles: Tile[][]
-  waypoints: Waypoint[]
+  routes: Route[]
   waves: Wave[]
   startingDP: number
   dpRegenRate: number

@@ -1,60 +1,68 @@
-import { Direction, TileType } from '../../types/index'
+import { Direction, TileType, Position, Route } from '../../types/index'
 
-export interface Position {
-  row: number
-  col: number
-}
+export const ROUTE_COLORS = [
+  0xff4444, 0x4488ff, 0x44dd44, 0xffaa00,
+  0xcc44ff, 0x00cccc, 0xff66aa, 0x888888,
+]
 
 export function tileColor(type: TileType): number {
   switch (type) {
-    case TileType.Floor: return 0xebeff5
-    case TileType.Wall: return 0xd5dbe3
-    case TileType.Route: return 0xdce3ed
-    case TileType.Spawn: return 0xf5d4d4
-    case TileType.Goal: return 0xd4f5de
-    case TileType.DeployGround: return 0xd4edda
-    case TileType.DeployRanged: return 0xd4e4ed
+    case TileType.Ground: return 0x3a3a3a
+    case TileType.Floor: return 0x2a2a2a
+    case TileType.Ranged: return 0x4a4a3a
+    case TileType.Wall: return 0x1a1a1a
+    case TileType.Spawn: return 0x4a1a1a
+    case TileType.Goal: return 0x1a1a4a
+    default: return 0x3a3a3a
   }
 }
 
 export function tileBorderColor(type: TileType): number {
   switch (type) {
-    case TileType.Spawn: return 0xd32f2f
-    case TileType.Goal: return 0x00c853
-    case TileType.Route: return 0xb0bec5
-    default: return 0xcfd8dc
+    case TileType.Ground: return 0x555555
+    case TileType.Floor: return 0x444444
+    case TileType.Ranged: return 0x666655
+    case TileType.Wall: return 0x333333
+    case TileType.Spawn: return 0x883333
+    case TileType.Goal: return 0x333388
+    default: return 0x555555
   }
 }
 
 export function tileTextColor(type: TileType): string {
   switch (type) {
-    case TileType.Wall: return '#8a8a9a'
-    case TileType.DeployGround: return '#4caf50'
-    case TileType.DeployRanged: return '#2196f3'
-    case TileType.Spawn: return '#d32f2f'
-    case TileType.Goal: return '#00c853'
-    default: return '#8a8a9a'
+    case TileType.Spawn: return '#ff6666'
+    case TileType.Goal: return '#6666ff'
+    default: return '#888888'
   }
 }
 
 export function tileLabel(type: TileType): string {
   switch (type) {
-    case TileType.Floor: return ''
-    case TileType.Wall: return 'W'
-    case TileType.Route: return ''
+    case TileType.Ground: return ''
+    case TileType.Floor: return '//'
+    case TileType.Ranged: return '⬆'
+    case TileType.Wall: return '▤'
     case TileType.Spawn: return 'S'
     case TileType.Goal: return 'G'
-    case TileType.DeployGround: return 'G'
-    case TileType.DeployRanged: return 'R'
+    default: return ''
   }
 }
 
 export function isDeployable(type: TileType): boolean {
-  return type === TileType.DeployGround || type === TileType.DeployRanged || type === TileType.Route
+  return type === TileType.Ground || type === TileType.Ranged
 }
 
 export function isWalkable(type: TileType): boolean {
-  return type === TileType.Route
+  return type === TileType.Floor || type === TileType.Spawn || type === TileType.Goal
+}
+
+export function validateRoutePath(route: Route): boolean {
+  const path = [route.spawn, ...route.waypoints, route.goal]
+  for (let i = 1; i < path.length; i++) {
+    if (chebyshevDistance(path[i - 1], path[i]) > 1) return false
+  }
+  return path.length >= 3
 }
 
 export function positionsEqual(a: Position, b: Position): boolean {

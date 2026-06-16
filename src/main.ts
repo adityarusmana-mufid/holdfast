@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 import { BootScene } from './scenes/BootScene'
 import { EditorScene } from './scenes/EditorScene'
 import { GameScene } from './scenes/GameScene'
+import { SquadScene } from './scenes/SquadScene'
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -14,7 +15,7 @@ const config: Phaser.Types.Core.GameConfig = {
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   dom: { createContainer: true },
-  scene: [BootScene, EditorScene, GameScene],
+  scene: [BootScene, SquadScene, EditorScene, GameScene],
 }
 
 new Phaser.Game(config)

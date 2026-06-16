@@ -45,13 +45,23 @@ export class GameScene extends Phaser.Scene {
   private inspectRetreatBtn!: Phaser.GameObjects.Text
   private inspectCloseBtn!: Phaser.GameObjects.Text
 
+  private unitConfigs: UnitConfig[] = UNIT_CONFIGS
+  private fromSquad: boolean = false
+
   constructor() {
     super({ key: 'GameScene' })
   }
 
-  init(data: { level?: LevelData }): void {
+  init(data: { level?: LevelData; squad?: UnitConfig[] }): void {
     if (data?.level) {
       this.levelData = data.level
+    }
+    if (data?.squad) {
+      this.unitConfigs = data.squad
+      this.fromSquad = true
+    } else {
+      this.unitConfigs = UNIT_CONFIGS
+      this.fromSquad = false
     }
   }
 
@@ -189,7 +199,7 @@ export class GameScene extends Phaser.Scene {
           this.enterInspectMode(pos)
           return
         }
-        const config = UNIT_CONFIGS[this.selectedUnitIndex]
+        const config = this.unitConfigs[this.selectedUnitIndex]
         const check = this.depSystem.canDeploy(config, pos.row, pos.col)
         if (check.ok) {
           this.pendingTile = pos
@@ -218,7 +228,7 @@ export class GameScene extends Phaser.Scene {
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       if (this.deployState === 'facing') {
         if (!this.pendingTile) return
-        const unitConfig = UNIT_CONFIGS[this.selectedUnitIndex]
+        const unitConfig = this.unitConfigs[this.selectedUnitIndex]
         const facing = this.computeFacingFromPointer(pointer)
         if (facing !== this.pendingFacing) {
           this.pendingFacing = facing
@@ -234,7 +244,7 @@ export class GameScene extends Phaser.Scene {
       }
       const pos = this.grid.pixelToTile(pointer.x, pointer.y)
       if (!pos) { this.hoverIndicator.setAlpha(0); return }
-      const config = UNIT_CONFIGS[this.selectedUnitIndex]
+      const config = this.unitConfigs[this.selectedUnitIndex]
       const check = this.depSystem.canDeploy(config, pos.row, pos.col)
       const px = this.grid.tileToPixel(pos.row, pos.col)
       this.hoverIndicator.clear()
@@ -320,7 +330,7 @@ export class GameScene extends Phaser.Scene {
 
   private confirmDeployment(): void {
     if (!this.pendingTile) return
-    const config = UNIT_CONFIGS[this.selectedUnitIndex]
+    const config = this.unitConfigs[this.selectedUnitIndex]
     const deployed = this.depSystem.deployUnit(config, this.pendingTile.row, this.pendingTile.col, this.pendingFacing)
     if (deployed) {
       const sprite = new UnitSprite(this, this.grid, config, this.pendingTile.row, this.pendingTile.col, config.hp, this.pendingFacing)
@@ -411,7 +421,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateStatsPanel(indexOrConfig: number | UnitConfig, deployed?: DeployedUnit): void {
-    const unit = typeof indexOrConfig === 'number' ? UNIT_CONFIGS[indexOrConfig] : indexOrConfig
+    const unit = typeof indexOrConfig === 'number' ? this.unitConfigs[indexOrConfig] : indexOrConfig
     if (!unit) {
       this.statsTexts.forEach(t => t.setText(''))
       return
@@ -439,7 +449,7 @@ export class GameScene extends Phaser.Scene {
       fontSize: '12px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
 
-    UNIT_CONFIGS.forEach((unit, i) => {
+    this.unitConfigs.forEach((unit, i) => {
       const y = startY + i * (btnH + 2)
       this.unitButtons.push(this.makeUnitButton(px, y, btnW, btnH, unit, i))
       startY = y
@@ -468,13 +478,14 @@ export class GameScene extends Phaser.Scene {
       if (data) this.loadLevel(data)
     }).setY(actionY + 40)
 
-    const editorBtn = this.add.text(px, actionY + 60, '< Back to Editor', {
+    const backLabel = this.fromSquad ? '< Back to Squad Selection' : '< Back to Editor'
+    const editorBtn = this.add.text(px, actionY + 60, backLabel, {
       fontSize: '11px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
     editorBtn.setInteractive({ cursor: 'pointer' })
     editorBtn.on('pointerover', () => editorBtn.setColor(COLORS.text.primary))
     editorBtn.on('pointerout', () => editorBtn.setColor(COLORS.text.accent))
-    editorBtn.on('pointerdown', () => this.scene.start('EditorScene'))
+    editorBtn.on('pointerdown', () => this.scene.start(this.fromSquad ? 'SquadScene' : 'EditorScene'))
   }
 
   private makeUnitButton(px: number, y: number, btnW: number, btnH: number, unit: UnitConfig, index: number): Phaser.GameObjects.Container {
@@ -577,7 +588,7 @@ export class GameScene extends Phaser.Scene {
     this.unitButtons.forEach((btn, i) => {
       const bg = btn.getAt(0) as Phaser.GameObjects.Graphics
       bg.clear()
-      const unit = UNIT_CONFIGS[i]
+      const unit = this.unitConfigs[i]
       bg.fillStyle(0xffffff, 1)
       bg.fillRoundedRect(0, 0, 140, 48, 4)
       bg.lineStyle(i === index ? 2 : 1, i === index ? 0x00a2ff : 0xcfd8dc, 1)
@@ -671,7 +682,7 @@ export class GameScene extends Phaser.Scene {
     editorBtn.setOrigin(0.5)
     editorBtn.setDepth(50)
     editorBtn.setInteractive({ cursor: 'pointer' })
-    editorBtn.on('pointerdown', () => this.scene.start('EditorScene'))
+    editorBtn.on('pointerdown', () => this.scene.start(this.fromSquad ? 'SquadScene' : 'EditorScene'))
   }
 
   private showDamageNumber(damage: number, enemy: EnemySprite, damageType: string): void {

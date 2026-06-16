@@ -111,6 +111,15 @@ export class UnitSprite {
     this.drawHp(TILE_SIZE * 0.7)
   }
 
+  heal(amount: number): number {
+    const canBeHealed = this.config.canBeHealed ?? true
+    if (canBeHealed) {
+      this.currentHp = Math.min(this.currentHp + amount, this.config.hp)
+      this.drawHp(TILE_SIZE * 0.7)
+    }
+    return this.currentHp
+  }
+
   takeDamage(amount: number): number {
     this.currentHp = Math.max(0, this.currentHp - amount)
     this.drawHp(TILE_SIZE * 0.7)

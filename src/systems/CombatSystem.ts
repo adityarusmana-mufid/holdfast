@@ -5,8 +5,9 @@ import { Position } from '../types/index'
 import { positionsInRange } from '../shared/utils/GridMath'
 
 export interface CombatEvents {
-  onEnemyKilled: (enemy: EnemySprite) => void
+  onEnemyKilled: (enemy: EnemySprite, killer: UnitSprite | null) => void
   onDamageDealt: (damage: number, enemy: EnemySprite, damageType: string) => void
+  onHealApplied?: (target: UnitSprite, amount: number, source: UnitSprite) => void
 }
 
 export class CombatSystem {
@@ -35,7 +36,7 @@ export class CombatSystem {
           this.events.onDamageDealt(damage, target, unit.config.damageType)
         }
         if (!target.alive) {
-          this.events.onEnemyKilled(target)
+          this.events.onEnemyKilled(target, unit)
         }
       }
     }

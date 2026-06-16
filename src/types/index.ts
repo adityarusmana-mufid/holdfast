@@ -95,6 +95,7 @@ export interface UnitTraitConfig {
   radius?: number
   maxTargets?: number
   damageFalloff?: number
+  damageMultiplier?: number
 }
 
 export interface StatusEffect {

@@ -95,9 +95,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.combatSystem = new CombatSystem(this.grid, {
-      onEnemyKilled: (enemy: EnemySprite) => {
+      onEnemyKilled: (enemy: EnemySprite, _killer: UnitSprite | null) => {
         this.depSystem.addDP(enemy.config.dpOnKill)
-        this.flashMessage(`SYNC +${enemy.config.dpOnKill} // ${enemy.config.name} PURGED`, 0x00c853)
       },
       onDamageDealt: (damage: number, enemy: EnemySprite, damageType: string) => {
         this.showDamageNumber(damage, enemy, damageType)

@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { EnemyConfig, Position } from '../types/index'
+import { EnemyConfig, Position, StatusEffect } from '../types/index'
 import { Grid, TILE_SIZE } from '../entities/Grid'
 
 let nextEnemyId = 0
@@ -24,6 +24,7 @@ export class EnemySprite {
   blockerUnitKey: string | null = null
   visualOffsetX: number = 0
   visualOffsetY: number = 0
+  statusEffects: StatusEffect[] = []
 
   private grid: Grid
 
@@ -91,9 +92,38 @@ export class EnemySprite {
     return this.currentHp
   }
 
+  applyStatusEffect(effect: StatusEffect): void {
+    const existing = this.statusEffects.find(e => e.type === effect.type)
+    if (existing) {
+      existing.remainingDuration = Math.max(existing.remainingDuration, effect.remainingDuration)
+      existing.factor = Math.min(existing.factor, effect.factor)
+    } else {
+      this.statusEffects.push({ ...effect })
+    }
+  }
+
+  updateStatusEffects(delta: number): void {
+    for (let i = this.statusEffects.length - 1; i >= 0; i--) {
+      this.statusEffects[i].remainingDuration -= delta
+      if (this.statusEffects[i].remainingDuration <= 0) {
+        this.statusEffects.splice(i, 1)
+      }
+    }
+  }
+
+  getSpeedMultiplier(): number {
+    let mult = 1
+    for (const e of this.statusEffects) {
+      if (e.type === 'slow') mult *= e.factor
+    }
+    return mult
+  }
+
   move(delta: number): boolean {
     if (this.blocked || !this.alive) return false
     if (this.currentWaypoint >= this.path.length - 1) return false
+
+    this.updateStatusEffects(delta)
 
     const target = this.path[this.currentWaypoint + 1]
     const targetPos = this.grid.tileToPixel(target.row, target.col)
@@ -104,7 +134,7 @@ export class EnemySprite {
     const angle = Math.atan2(dy, dx)
     this.dirIndicator.rotation = angle
 
-    const step = this.config.speed * delta
+    const step = this.config.speed * this.getSpeedMultiplier() * delta
 
     if (dist <= step) {
       this.x = targetPos.x

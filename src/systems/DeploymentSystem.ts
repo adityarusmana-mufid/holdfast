@@ -30,12 +30,12 @@ export class DeploymentSystem {
     if (this.currentDP < unit.dpCost) return { ok: false, reason: `Need ${unit.dpCost} DP, have ${this.currentDP}` }
 
     if (unit.type === 'ground') {
-      if (tile.type !== TileType.Route && tile.type !== TileType.DeployGround) {
-        return { ok: false, reason: 'Ground units need route/ground tiles' }
+      if (tile.type !== TileType.Ground) {
+        return { ok: false, reason: 'Ground units need ground tiles' }
       }
     } else {
-      if (tile.type !== TileType.DeployRanged && tile.type !== TileType.Floor) {
-        return { ok: false, reason: 'Ranged units need deploy_ranged/floor tiles' }
+      if (tile.type !== TileType.Ranged) {
+        return { ok: false, reason: 'Ranged units need ranged tiles' }
       }
     }
 

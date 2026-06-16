@@ -155,7 +155,22 @@ export class EnemyManager {
               if (idx !== -1) oldUnit.blocking.splice(idx, 1)
             }
           }
-          enemy.setBlocked(false)
+          const adjacentOffsets = [[-1,0],[1,0],[0,-1],[0,1]]
+          let transferred = false
+          for (const [dr, dc] of adjacentOffsets) {
+            const nr = tile.row + dr
+            const nc = tile.col + dc
+            const adjUnit = this.depSystem.getUnitAt(nr, nc)
+            if (adjUnit && adjUnit.config.type === 'ground' && adjUnit.config.blockCount > 0 && adjUnit.blocking.length < adjUnit.config.blockCount) {
+              adjUnit.blocking.push(enemy.id)
+              enemy.setBlocked(true, `${nr},${nc}`)
+              transferred = true
+              break
+            }
+          }
+          if (!transferred) {
+            enemy.setBlocked(false)
+          }
         }
       }
     }

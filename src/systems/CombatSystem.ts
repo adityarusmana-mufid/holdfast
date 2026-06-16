@@ -55,6 +55,15 @@ export class CombatSystem {
           this.healAllyOnAttack(unit, units)
         }
 
+        if (this.hasTrait(unit, UnitTrait.HealOnAttack)) {
+          const traitConfig = unit.config.traits.find(t => t.traitId === UnitTrait.HealOnAttack)
+          const healAmount = traitConfig?.value ?? 50
+          const healed = unit.heal(healAmount)
+          if (healed > 0 && this.events.onHealApplied) {
+            this.events.onHealApplied(unit, healed, unit)
+          }
+        }
+
         if (this.hasTrait(unit, UnitTrait.AoESplash) && unit.config.splashConfig) {
           this.executeSplashDamage(unit, target, enemies, params.atk)
         }
@@ -306,6 +315,7 @@ export class CombatSystem {
 
   private calculateDamage(unit: UnitSprite, target: EnemySprite, atkOverride?: number): number {
     const atk = atkOverride ?? unit.config.atk
+    if (unit.config.damageType === 'true') return atk
     let def: number
     if (unit.config.damageType === 'kinetic') {
       def = target.config.armor

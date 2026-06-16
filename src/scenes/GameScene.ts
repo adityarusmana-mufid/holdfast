@@ -113,6 +113,14 @@ export class GameScene extends Phaser.Scene {
           const dpTrait = killer.config.traits.find(t => t.traitId === UnitTrait.DPOnKill)
           this.depSystem.addDP(dpTrait!.value ?? 1)
         }
+        if (killer?.config.traits?.some(t => t.traitId === UnitTrait.HealPerHitCapped)) {
+          const healTrait = killer.config.traits.find(t => t.traitId === UnitTrait.HealPerHitCapped)
+          const healAmount = healTrait?.value ?? 50
+          const healed = killer.heal(healAmount)
+          if (healed > 0) {
+            this.showHealNumber(healed, killer)
+          }
+        }
       },
       onDamageDealt: (damage: number, enemy: EnemySprite, damageType: string) => {
         this.showDamageNumber(damage, enemy, damageType)

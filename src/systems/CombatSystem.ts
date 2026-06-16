@@ -1,7 +1,7 @@
 import { Grid } from '../entities/Grid'
 import { EnemySprite } from '../entities/Enemy'
 import { UnitSprite } from '../entities/Unit'
-import { Position } from '../types/index'
+import { Position, UnitTrait } from '../types/index'
 import { positionsInRange } from '../shared/utils/GridMath'
 
 export interface CombatEvents {
@@ -23,22 +23,32 @@ export class CombatSystem {
     for (const unit of units) {
       if (!unit.isAlive()) continue
 
-      const target = this.findTarget(unit, enemies)
-      if (!target) continue
-
       const dt = delta / 1000
       unit.lastAttackTime += dt
 
-      if (unit.lastAttackTime >= unit.config.attackInterval) {
-        const damage = this.performAttack(unit, target)
-        unit.lastAttackTime = 0
-        if (damage > 0) {
-          this.events.onDamageDealt(damage, target, unit.config.damageType)
-        }
-        if (!target.alive) {
-          this.events.onEnemyKilled(target, unit)
+      if (unit.lastAttackTime < unit.config.attackInterval) continue
+      unit.lastAttackTime = 0
+
+      if (this.hasTrait(unit, UnitTrait.LinearAoE)) {
+        this.executeLinearAoEAttack(unit, enemies)
+      } else {
+        const target = this.findTarget(unit, enemies)
+        if (!target || !target.alive) continue
+
+        const hitCount = this.hasTrait(unit, UnitTrait.DoubleHit) ? 2 : 1
+        for (let i = 0; i < hitCount; i++) {
+          if (!target.alive) break
+          this.applyDamage(unit, target)
         }
       }
+    }
+  }
+
+  private executeLinearAoEAttack(unit: UnitSprite, enemies: EnemySprite[]): void {
+    const targets = this.getEnemiesInRange(unit, enemies)
+    for (const target of targets) {
+      if (!target.alive) continue
+      this.applyDamage(unit, target)
     }
   }
 
@@ -49,6 +59,10 @@ export class CombatSystem {
     if (unit.config.type === 'ground') {
       const blockedTarget = this.findBlockedTarget(unit, inRange)
       if (blockedTarget) return blockedTarget
+    }
+
+    if (this.hasTrait(unit, UnitTrait.TargetingLowestDef)) {
+      return this.findLowestDef(inRange)
     }
 
     return this.findClosestToGoal(inRange)
@@ -95,7 +109,32 @@ export class CombatSystem {
     return closest
   }
 
-  private performAttack(unit: UnitSprite, target: EnemySprite): number {
+  private findLowestDef(enemies: EnemySprite[]): EnemySprite | null {
+    let lowest: EnemySprite | null = null
+    let minDef = Infinity
+    for (const enemy of enemies) {
+      if (!enemy.alive) continue
+      if (enemy.config.armor < minDef) {
+        minDef = enemy.config.armor
+        lowest = enemy
+      }
+    }
+    return lowest
+  }
+
+  private applyDamage(unit: UnitSprite, target: EnemySprite): void {
+    const damage = this.calculateDamage(unit, target)
+    target.takeDamage(damage)
+
+    if (damage > 0) {
+      this.events.onDamageDealt(damage, target, unit.config.damageType)
+    }
+    if (!target.alive) {
+      this.events.onEnemyKilled(target, unit)
+    }
+  }
+
+  private calculateDamage(unit: UnitSprite, target: EnemySprite): number {
     const atk = unit.config.atk
     let def: number
     if (unit.config.damageType === 'kinetic') {
@@ -103,8 +142,10 @@ export class CombatSystem {
     } else {
       def = target.config.insulation
     }
-    const damage = Math.max(Math.floor(atk * 0.05), atk - def)
-    target.takeDamage(damage)
-    return damage
+    return Math.max(Math.floor(atk * 0.05), atk - def)
+  }
+
+  private hasTrait(unit: UnitSprite, traitId: UnitTrait): boolean {
+    return unit.config.traits?.some(t => t.traitId === traitId) ?? false
   }
 }

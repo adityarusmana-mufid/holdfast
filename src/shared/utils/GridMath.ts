@@ -153,4 +153,7 @@ export const RANGE_PATTERNS: Record<string, number[][]> = {
     }
     return tiles
   })(),
+  pointBlank: [[-1, 0]],
+  line4: [[-1, 0], [-2, 0], [-3, 0], [-4, 0]],
+  meleeCross: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]],
 }

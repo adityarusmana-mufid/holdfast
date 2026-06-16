@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { DeployedUnit, Direction, LevelData, UnitConfig, Position } from '../types/index'
+import { DeployedUnit, Direction, LevelData, UnitConfig, Position, UnitTrait } from '../types/index'
 import { positionsInRange, computeFacingTowardGoal } from '../shared/utils/GridMath'
 import { Grid } from '../entities/Grid'
 import { UnitSprite } from '../entities/Unit'
@@ -105,8 +105,12 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.combatSystem = new CombatSystem(this.grid, {
-      onEnemyKilled: (enemy: EnemySprite, _killer: UnitSprite | null) => {
+      onEnemyKilled: (enemy: EnemySprite, killer: UnitSprite | null) => {
         this.depSystem.addDP(enemy.config.dpOnKill)
+        if (killer?.config.traits?.some(t => t.traitId === UnitTrait.DPOnKill)) {
+          const dpTrait = killer.config.traits.find(t => t.traitId === UnitTrait.DPOnKill)
+          this.depSystem.addDP(dpTrait!.value ?? 1)
+        }
       },
       onDamageDealt: (damage: number, enemy: EnemySprite, damageType: string) => {
         this.showDamageNumber(damage, enemy, damageType)

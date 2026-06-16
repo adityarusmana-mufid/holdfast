@@ -1,4 +1,4 @@
-import { Direction, UnitConfig, DeployedUnit, TileType } from '../types/index'
+import { Direction, UnitConfig, DeployedUnit, TileType, UnitTrait } from '../types/index'
 import { Grid } from '../entities/Grid'
 
 export class DeploymentSystem {
@@ -65,7 +65,8 @@ export class DeploymentSystem {
     const unit = this.activeUnits.get(key)
     if (!unit) return 0
 
-    const refund = Math.floor(unit.config.dpCost / 2)
+    const isFullRefund = unit.config.traits?.some(t => t.traitId === UnitTrait.FullRefundRetreat)
+    const refund = isFullRefund ? unit.config.dpCost : Math.floor(unit.config.dpCost / 2)
     this.currentDP = Math.min(this.currentDP + refund, this.dpCap)
     this.activeUnits.delete(key)
     return refund

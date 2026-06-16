@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
-import { DeployedUnit, Direction, LevelData, UnitConfig } from '../types/index'
-import { Position, positionsInRange, computeFacingTowardGoal } from '../shared/utils/GridMath'
+import { DeployedUnit, Direction, LevelData, UnitConfig, Position } from '../types/index'
+import { positionsInRange, computeFacingTowardGoal } from '../shared/utils/GridMath'
 import { Grid } from '../entities/Grid'
 import { UnitSprite } from '../entities/Unit'
 import { EnemySprite } from '../entities/Enemy'
@@ -83,8 +83,7 @@ export class GameScene extends Phaser.Scene {
       this.levelData?.deploymentLimit ?? 8,
     )
 
-    const waypoints = this.levelData?.waypoints ?? []
-    this.enemyManager = new EnemyManager(this, this.grid, this.depSystem, waypoints, {
+    this.enemyManager = new EnemyManager(this, this.grid, this.depSystem, {
       onEnemyReachedObjective: (_config) => {
         this.flashMessage(`DESYNC — Enemy reached objective`, 0xd32f2f)
         this.checkBattleEnd()
@@ -92,7 +91,7 @@ export class GameScene extends Phaser.Scene {
       onEnemyKilled: () => {},
     })
     if (this.levelData) {
-      this.enemyManager.setWaves(this.levelData.waves, this.levelData.lives)
+      this.enemyManager.setWaves(this.levelData.waves, this.levelData.routes, this.levelData.lives)
     }
 
     this.combatSystem = new CombatSystem(this.grid, {
@@ -249,16 +248,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   private getGoalPositions(): Position[] {
-    const goals: Position[] = []
-    for (let r = 0; r < this.grid.rows; r++) {
-      for (let c = 0; c < this.grid.cols; c++) {
-        const tile = this.grid.getTile(r, c)
-        if (tile && tile.type === 'goal') {
-          goals.push({ row: r, col: c })
-        }
-      }
+    if (this.levelData?.routes) {
+      return this.levelData.routes.map(r => r.goal)
     }
-    return goals
+    return []
   }
 
   private computeFacingFromPointer(pointer: Phaser.Input.Pointer): Direction {
@@ -722,7 +715,7 @@ export class GameScene extends Phaser.Scene {
     this.grid.render()
     this.levelData = data
     this.depSystem.reset(data.startingDP, data.dpRegenRate, data.dpCap, data.deploymentLimit)
-    this.enemyManager.setWaves(data.waves, data.lives)
+    this.enemyManager.setWaves(data.waves, data.routes, data.lives)
     this.battleActive = false
     this.battleEnded = false
     this.deployState = 'idle'

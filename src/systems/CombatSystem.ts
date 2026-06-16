@@ -40,6 +40,14 @@ export class CombatSystem {
           if (!target.alive) break
           this.applyDamage(unit, target)
         }
+
+        if (this.hasTrait(unit, UnitTrait.AoESplash) && unit.config.splashConfig) {
+          this.executeSplashDamage(unit, target, enemies)
+        }
+
+        if (this.hasTrait(unit, UnitTrait.ChainJump)) {
+          this.executeChainAttack(unit, target, enemies)
+        }
       }
     }
   }
@@ -49,6 +57,65 @@ export class CombatSystem {
     for (const target of targets) {
       if (!target.alive) continue
       this.applyDamage(unit, target)
+    }
+  }
+
+  private executeSplashDamage(unit: UnitSprite, primary: EnemySprite, enemies: EnemySprite[]): void {
+    const splashConfig = unit.config.splashConfig!
+    const tile = primary.getCurrentTile()
+    if (!tile) return
+
+    const splashTargets = this.getEnemiesInRadius(tile, splashConfig.radius, enemies, primary)
+    for (const target of splashTargets) {
+      if (!target.alive) continue
+      const baseDamage = this.calculateDamage(unit, target)
+      const splashDmg = Math.max(1, Math.floor(baseDamage * splashConfig.damageMultiplier))
+      target.takeDamage(splashDmg)
+      if (splashDmg > 0) {
+        this.events.onDamageDealt(splashDmg, target, splashConfig.damageType ?? unit.config.damageType)
+      }
+      if (!target.alive) {
+        this.events.onEnemyKilled(target, unit)
+      }
+      this.applySlow(unit, target)
+    }
+  }
+
+  private executeChainAttack(unit: UnitSprite, primary: EnemySprite, enemies: EnemySprite[]): void {
+    const traitConfig = unit.config.traits.find(t => t.traitId === UnitTrait.ChainJump)
+    if (!traitConfig) return
+
+    const maxTargets = traitConfig.maxTargets ?? 2
+    const radius = traitConfig.radius ?? 2
+    const falloff = traitConfig.damageFalloff ?? 0.5
+    const primaryTile = primary.getCurrentTile()
+    if (!primaryTile) return
+
+    const hitEnemies = new Set<EnemySprite>([primary])
+    const chain: EnemySprite[] = [primary]
+
+    for (let jump = 0; jump < maxTargets; jump++) {
+      const last = chain[chain.length - 1]
+      const lastTile = last.getCurrentTile()
+      if (!lastTile) break
+
+      const candidates = this.getEnemiesInRadius(lastTile, radius, enemies, primary)
+        .filter(e => !hitEnemies.has(e) && e.alive)
+      if (candidates.length === 0) break
+
+      const next = candidates[0]
+      chain.push(next)
+      hitEnemies.add(next)
+
+      const baseDmg = this.calculateDamage(unit, next)
+      const chainDmg = Math.max(1, Math.floor(baseDmg * Math.max(0.05, 1 - falloff * (jump + 1))))
+      next.takeDamage(chainDmg)
+      if (chainDmg > 0) {
+        this.events.onDamageDealt(chainDmg, next, unit.config.damageType)
+      }
+      if (!next.alive) {
+        this.events.onEnemyKilled(next, unit)
+      }
     }
   }
 
@@ -77,6 +144,15 @@ export class CombatSystem {
       if (!e.alive) return false
       const tile = e.getCurrentTile()
       return tile !== null && rangeSet.has(`${tile.row},${tile.col}`)
+    })
+  }
+
+  private getEnemiesInRadius(pos: Position, radius: number, enemies: EnemySprite[], exclude?: EnemySprite): EnemySprite[] {
+    return enemies.filter(e => {
+      if (!e.alive || e === exclude) return false
+      const tile = e.getCurrentTile()
+      if (!tile) return false
+      return Math.abs(tile.row - pos.row) <= radius && Math.abs(tile.col - pos.col) <= radius
     })
   }
 
@@ -131,7 +207,20 @@ export class CombatSystem {
     }
     if (!target.alive) {
       this.events.onEnemyKilled(target, unit)
+    } else {
+      this.applySlow(unit, target)
     }
+  }
+
+  private applySlow(unit: UnitSprite, target: EnemySprite): void {
+    if (!this.hasTrait(unit, UnitTrait.SlowOnHit)) return
+    const traitConfig = unit.config.traits.find(t => t.traitId === UnitTrait.SlowOnHit)
+    if (!traitConfig) return
+    target.applyStatusEffect({
+      type: 'slow',
+      remainingDuration: traitConfig.duration ?? 2,
+      factor: traitConfig.value ?? 0.5,
+    })
   }
 
   private calculateDamage(unit: UnitSprite, target: EnemySprite): number {

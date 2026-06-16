@@ -156,4 +156,13 @@ export const RANGE_PATTERNS: Record<string, number[][]> = {
   pointBlank: [[-1, 0]],
   line4: [[-1, 0], [-2, 0], [-3, 0], [-4, 0]],
   meleeCross: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]],
+  ranged5x3: (() => {
+    const tiles: number[][] = []
+    for (let r = -5; r <= -1; r++) {
+      for (let c = -1; c <= 1; c++) {
+        tiles.push([r, c])
+      }
+    }
+    return tiles
+  })(),
 }

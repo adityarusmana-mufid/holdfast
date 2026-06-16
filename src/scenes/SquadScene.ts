@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { UnitConfig, UnitTrait } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
-import { COLORS, FONTS } from '../ui/Constants'
+import { COLORS, FONTS, hex } from '../ui/Constants'
 import { makeButton } from '../ui/Components'
 import { TEST_LEVEL } from '../levels/testLevel'
 
@@ -10,6 +10,32 @@ const SLOT_GAP = 12
 const COLS = 4
 const ROWS = 3
 
+const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
+  [UnitTrait.BlocksTwo]: 'Blocks up to 2 enemies',
+  [UnitTrait.BlocksThree]: 'Blocks up to 3 enemies',
+  [UnitTrait.DPOnKill]: 'Gains DP per kill',
+  [UnitTrait.FullRefundRetreat]: 'Full DP refund on retreat',
+  [UnitTrait.RangedAttack80]: '80% ATK when attacking at range',
+  [UnitTrait.AoESplash]: 'AoE splash damage around target',
+  [UnitTrait.ArtsDamage]: 'Deals thermal damage',
+  [UnitTrait.FastAttack]: 'Fast attack speed',
+  [UnitTrait.DoubleHit]: 'Attacks twice per cycle',
+  [UnitTrait.HealOnAttack]: 'Heals self on attack',
+  [UnitTrait.HealPerHitCapped]: 'Heals on kill',
+  [UnitTrait.CannotBeHealed]: 'Cannot be healed by allies',
+  [UnitTrait.SlowOnHit]: 'Slows enemies on hit',
+  [UnitTrait.ChainJump]: 'Attack chains to nearby enemies',
+  [UnitTrait.LinearAoE]: 'Hits all enemies in a line',
+  [UnitTrait.TargetingLowestDef]: 'Prioritizes lowest DEF target',
+  [UnitTrait.RangedWhenNotBlocking]: 'Uses ranged attack when not blocking',
+  [UnitTrait.RangedAoEWhenNotBlocking]: 'Ranged AoE when not blocking',
+  [UnitTrait.AttackHealsAlly]: 'Attack also heals an ally',
+  [UnitTrait.HealAlly]: 'Heals a wounded ally',
+  [UnitTrait.AoEHoT]: 'Area health over time',
+  [UnitTrait.LongRangeAttack]: 'Extended attack range',
+  [UnitTrait.PassiveDPRegen]: 'Passive DP generation',
+}
+
 export class SquadScene extends Phaser.Scene {
   private slots: (UnitConfig | null)[] = new Array(12).fill(null)
   private slotContainers: Phaser.GameObjects.Container[] = []
@@ -17,6 +43,10 @@ export class SquadScene extends Phaser.Scene {
   private pickerContainer!: Phaser.GameObjects.Container
   private pickerActive: boolean = false
   private selectedSlotIndex: number = -1
+  private pickedUnit: UnitConfig | null = null
+  private confirmBtn!: Phaser.GameObjects.Graphics
+  private confirmTxt!: Phaser.GameObjects.Text
+  private infoContainer!: Phaser.GameObjects.Container
 
   constructor() {
     super({ key: 'SquadScene' })
@@ -63,6 +93,10 @@ export class SquadScene extends Phaser.Scene {
     this.pickerContainer = this.add.container(0, 0)
     this.pickerContainer.setVisible(false)
     this.pickerContainer.setDepth(20)
+
+    this.infoContainer = this.add.container(0, 0)
+    this.infoContainer.setDepth(25)
+    this.infoContainer.setVisible(false)
 
     makeButton(this, 20, H - 48, 'Editor', () => {
       this.scene.start('EditorScene')
@@ -128,97 +162,223 @@ export class SquadScene extends Phaser.Scene {
 
   private showPicker(): void {
     this.pickerActive = true
+    this.pickedUnit = null
     this.pickerContainer.removeAll(true)
+    this.infoContainer.removeAll(true)
+    this.infoContainer.setVisible(false)
 
     const overlay = this.add.graphics()
     overlay.fillStyle(0x000000, 0.4)
     overlay.fillRect(0, 0, 1024, 768)
     overlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, 1024, 768), Phaser.Geom.Rectangle.Contains)
-    overlay.on('pointerdown', () => this.hidePicker())
+    overlay.on('pointerdown', () => {
+      if (!this.pickedUnit) this.hidePicker()
+    })
     this.pickerContainer.add(overlay)
 
-    const panelH = 340
-    const panelY = 768 - panelH
+    const panelX = 220
+    const panelY = 380
+    const panelW = 790
+    const panelH = 380
+
     const panel = this.add.graphics()
     panel.fillStyle(COLORS.panel.bg, 1)
-    panel.fillRoundedRect(0, panelY, 1024, panelH, 8)
+    panel.fillRoundedRect(panelX, panelY, panelW, panelH, 8)
     panel.lineStyle(1, COLORS.panel.border, 0.6)
-    panel.strokeRoundedRect(0, panelY, 1024, panelH, 8)
+    panel.strokeRoundedRect(panelX, panelY, panelW, panelH, 8)
     this.pickerContainer.add(panel)
 
-    const title = this.add.text(16, panelY + 10, 'Select Unit', {
-      ...FONTS.h3, color: COLORS.text.primary,
+    const title = this.add.text(panelX + 10, panelY + 8, 'Select Unit (click a card)', {
+      ...FONTS.body, color: COLORS.text.secondary,
     })
     this.pickerContainer.add(title)
 
-    const cardW = 130
-    const cardH = 100
-    const cardGap = 8
-    const startX = 16
-    const startY2 = panelY + 40
-
     const available = UNIT_CONFIGS.filter(u => !this.slots.some(s => s?.id === u.id))
+    const cardW = 120
+    const cardH = 88
+    const cardGap = 6
+    const startX2 = panelX + 10
+    const startY2 = panelY + 30
+    const cols = 6
+
+    const cardContainers: { bg: Phaser.GameObjects.Graphics; elements: Phaser.GameObjects.GameObject[]; unit: UnitConfig; cx: number; cy: number }[] = []
 
     available.forEach((unit, i) => {
-      const col = i % 7
-      const row = Math.floor(i / 7)
-      const cx = startX + col * (cardW + cardGap)
+      const col = i % cols
+      const row = Math.floor(i / cols)
+      const cx = startX2 + col * (cardW + cardGap)
       const cy = startY2 + row * (cardH + cardGap)
 
-      const card = this.add.graphics()
-      card.fillStyle(0xffffff, 1)
-      card.fillRoundedRect(cx, cy, cardW, cardH, 4)
-      card.lineStyle(1, unit.color, 0.5)
-      card.strokeRoundedRect(cx, cy, cardW, cardH, 4)
-      card.setInteractive(new Phaser.Geom.Rectangle(cx, cy, cardW, cardH), Phaser.Geom.Rectangle.Contains)
-      if (card.input) card.input.cursor = 'pointer'
-      this.pickerContainer.add(card)
+      const bg = this.add.graphics()
+      bg.fillStyle(0xffffff, 1)
+      bg.fillRoundedRect(cx, cy, cardW, cardH, 4)
+      bg.lineStyle(1, unit.color, 0.5)
+      bg.strokeRoundedRect(cx, cy, cardW, cardH, 4)
+      bg.setInteractive(new Phaser.Geom.Rectangle(cx, cy, cardW, cardH), Phaser.Geom.Rectangle.Contains)
+      if (bg.input) bg.input.cursor = 'pointer'
+      this.pickerContainer.add(bg)
 
-      const name = this.add.text(cx + cardW / 2, cy + 16, unit.subtypeLabel, {
+      const label = this.add.text(cx + cardW / 2, cy + 12, unit.subtypeLabel, {
         ...FONTS.bodyBold, color: COLORS.text.primary, align: 'center',
       }).setOrigin(0.5, 0)
-      this.pickerContainer.add(name)
+      this.pickerContainer.add(label)
 
-      const archetype = this.add.text(cx + cardW / 2, cy + 34, unit.archetype.toUpperCase(), {
-        fontSize: '10px', color: COLORS.text.dim, align: 'center', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      const arch = this.add.text(cx + cardW / 2, cy + 28, unit.archetype.toUpperCase(), {
+        fontSize: '9px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5, 0)
-      this.pickerContainer.add(archetype)
+      this.pickerContainer.add(arch)
 
-      const stats = this.add.text(cx + cardW / 2, cy + 52, `${unit.hp}HP/${unit.atk}ATK/${unit.def}DEF`, {
-        fontSize: '9px', color: COLORS.text.secondary, align: 'center', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      const stats = this.add.text(cx + cardW / 2, cy + 44, `${unit.hp}HP ${unit.atk}ATK`, {
+        fontSize: '9px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5, 0)
       this.pickerContainer.add(stats)
 
-      const dpCost = this.add.text(cx + cardW / 2, cy + 68, `${unit.dpCost} DP / Blk ${unit.blockCount}`, {
-        fontSize: '9px', color: COLORS.text.accent, align: 'center', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      const dpLine = this.add.text(cx + cardW / 2, cy + 58, `${unit.dpCost}DP`, {
+        fontSize: '9px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5, 0)
-      this.pickerContainer.add(dpCost)
+      this.pickerContainer.add(dpLine)
 
-      const traits = unit.traits.map(t =>
-        Object.entries(UnitTrait).find(([_, v]) => v === t.traitId)?.[0] ?? ''
-      ).filter(Boolean).join(', ')
-      if (traits) {
-        const t = this.add.text(cx + cardW / 2, cy + 82, traits, {
-          fontSize: '8px', color: COLORS.text.dim, align: 'center', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', wordWrap: { width: cardW - 8 },
-        }).setOrigin(0.5, 0)
-        this.pickerContainer.add(t)
-      }
+      const el: Phaser.GameObjects.GameObject[] = [bg, label, arch, stats, dpLine]
+      cardContainers.push({ bg, elements: el, unit, cx, cy })
 
-      card.on('pointerdown', () => {
-        if (this.selectedSlotIndex >= 0) {
-          this.slots[this.selectedSlotIndex] = unit
-          this.drawSlot(this.slotContainers[this.selectedSlotIndex], unit)
-          this.updateSquadLabel()
-        }
-        this.hidePicker()
+      bg.on('pointerdown', () => {
+        this.selectPickedUnit(unit, cardContainers, cardW, cardH)
       })
     })
+
+    this.confirmTxt = this.add.text(panelX + panelW - 10, panelY + 8, '', {
+      ...FONTS.bodyBold, color: COLORS.text.success, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    })
+    this.confirmTxt.setOrigin(1, 0)
+    this.confirmTxt.setAlpha(0)
+    this.pickerContainer.add(this.confirmTxt)
+
+    this.confirmBtn = this.add.graphics()
+    this.confirmBtn.setAlpha(0)
+    this.pickerContainer.add(this.confirmBtn)
+  }
+
+  private selectPickedUnit(
+    unit: UnitConfig,
+    cardContainers: { bg: Phaser.GameObjects.Graphics; cx: number; cy: number; unit: UnitConfig }[],
+    cardW: number, cardH: number,
+  ): void {
+    this.pickedUnit = unit
+
+    for (const cc of cardContainers) {
+      cc.bg.clear()
+      const isSelected = cc.unit.id === unit.id
+      cc.bg.fillStyle(0xffffff, 1)
+      cc.bg.fillRoundedRect(cc.cx, cc.cy, cardW, cardH, 4)
+      cc.bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x00a2ff : cc.unit.color, isSelected ? 1 : 0.5)
+      cc.bg.strokeRoundedRect(cc.cx, cc.cy, cardW, cardH, 4)
+    }
+
+    const current = cardContainers.find(c => c.unit.id === unit.id)
+    if (!current) return
+
+    this.confirmTxt.setText(`[ Confirm - ${unit.subtypeLabel} ]`)
+    this.confirmTxt.setAlpha(1)
+
+    this.confirmBtn.clear()
+    this.confirmBtn.setAlpha(1)
+    const btnX = current.cx
+    const btnY = current.cy + cardH + 6
+    this.confirmBtn.fillStyle(0x00c853, 0.15)
+    this.confirmBtn.fillRoundedRect(btnX, btnY, 130, 22, 4)
+    this.confirmBtn.lineStyle(1, 0x00c853, 0.6)
+    this.confirmBtn.strokeRoundedRect(btnX, btnY, 130, 22, 4)
+    this.confirmBtn.setInteractive(new Phaser.Geom.Rectangle(btnX, btnY, 130, 22), Phaser.Geom.Rectangle.Contains)
+    if (this.confirmBtn.input) this.confirmBtn.input.cursor = 'pointer'
+    this.confirmBtn.removeAllListeners('pointerdown')
+    this.confirmBtn.on('pointerdown', () => this.confirmPick())
+
+    this.showUnitInfo(unit)
+  }
+
+  private showUnitInfo(unit: UnitConfig): void {
+    this.infoContainer.removeAll(true)
+    this.infoContainer.setVisible(true)
+
+    const px = 14
+    const py = 56
+
+    const bg = this.add.graphics()
+    bg.fillStyle(0xffffff, 0.9)
+    bg.fillRoundedRect(px - 4, py - 4, 200, 320, 6)
+    bg.lineStyle(1, unit.color, 0.5)
+    bg.strokeRoundedRect(px - 4, py - 4, 200, 320, 6)
+    this.infoContainer.add(bg)
+
+    const name = this.add.text(px, py, unit.subtypeLabel, {
+      ...FONTS.h3, color: COLORS.text.primary,
+    })
+    this.infoContainer.add(name)
+
+    const arch = this.add.text(px, py + 22, `${unit.archetype.toUpperCase()} — ${unit.type === 'ground' ? 'GND' : 'RNG'}`, {
+      ...FONTS.small, color: COLORS.text.dim,
+    })
+    this.infoContainer.add(arch)
+
+    const dmIcon = unit.damageType === 'thermal' ? '~' : unit.damageType === 'true' ? '!!' : '>'
+    const statsLines = [
+      `HP: ${unit.hp}`,
+      `ATK: ${dmIcon}${unit.atk}`,
+      `DEF: ${unit.def}  |  INS: ${unit.insulation}`,
+      `BLK: ${unit.blockCount}  |  DP: ${unit.dpCost}`,
+      `Interval: ${unit.attackInterval.toFixed(2)}s`,
+      unit.canBeHealed === false ? 'Cannot be healed' : 'Can be healed',
+    ]
+
+    let ly = py + 44
+    for (const line of statsLines) {
+      const t = this.add.text(px, ly, line, {
+        fontSize: '11px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      })
+      this.infoContainer.add(t)
+      ly += 16
+    }
+
+    ly += 4
+    const tHeader = this.add.text(px, ly, 'TRAITS', {
+      fontSize: '10px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    })
+    this.infoContainer.add(tHeader)
+    ly += 16
+
+    if (unit.traits.length === 0) {
+      const none = this.add.text(px + 4, ly, '—', {
+        fontSize: '10px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      })
+      this.infoContainer.add(none)
+    } else {
+      for (const t of unit.traits) {
+        const desc = TRAIT_DESCRIPTIONS[t.traitId] ?? t.traitId
+        const extra = t.value !== undefined ? ` (${t.value})` : t.duration !== undefined ? ` (${t.duration}s)` : ''
+        const line = this.add.text(px + 4, ly, `• ${desc}${extra}`, {
+          fontSize: '10px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', wordWrap: { width: 190 },
+        })
+        this.infoContainer.add(line)
+        ly += 14
+      }
+    }
+  }
+
+  private confirmPick(): void {
+    if (!this.pickedUnit || this.selectedSlotIndex < 0) return
+    this.slots[this.selectedSlotIndex] = this.pickedUnit
+    this.drawSlot(this.slotContainers[this.selectedSlotIndex], this.pickedUnit)
+    this.updateSquadLabel()
+    this.hidePicker()
   }
 
   private hidePicker(): void {
     this.pickerActive = false
+    this.pickedUnit = null
     this.pickerContainer.removeAll(true)
     this.pickerContainer.setVisible(false)
+    this.infoContainer.removeAll(true)
+    this.infoContainer.setVisible(false)
   }
 
   private autoFill(): void {

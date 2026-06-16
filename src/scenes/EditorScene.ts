@@ -1,24 +1,22 @@
 import Phaser from 'phaser'
-import { TileType, LevelData, Wave, WaveEntry } from '../types/index'
+import { TileType, LevelData, Wave, WaveEntry, Route, Position } from '../types/index'
 import { Grid, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../entities/Grid'
-import { tileColor, Position, RANGE_PATTERNS } from '../shared/utils/GridMath'
-import { generateRoute } from '../systems/RouteGenerator'
+import { tileColor, ROUTE_COLORS, validateRoutePath } from '../shared/utils/GridMath'
 import { exportLevelToFile, importLevelFromFile } from '../editor/LevelSerializer'
 import { ENEMY_CONFIGS } from '../config/enemies'
-import { COLORS, FONTS, hex } from '../ui/Constants'
+import { COLORS, FONTS } from '../ui/Constants'
 import { makeButton, makeLabel } from '../ui/Components'
 import { TEST_LEVEL } from '../levels/testLevel'
 
 injectEditorStyles()
 
 const PALETTE_ITEMS: { type: TileType; label: string; color: number }[] = [
-  { type: TileType.Floor, label: 'Floor', color: 0xebeff5 },
-  { type: TileType.Wall, label: 'Wall', color: 0xd5dbe3 },
-  { type: TileType.Route, label: 'Route', color: 0xdce3ed },
-  { type: TileType.DeployGround, label: 'Ground', color: 0xd4edda },
-  { type: TileType.DeployRanged, label: 'Ranged', color: 0xd4e4ed },
-  { type: TileType.Spawn, label: 'Spawn', color: 0xf5d4d4 },
-  { type: TileType.Goal, label: 'Goal', color: 0xd4f5de },
+  { type: TileType.Ground, label: 'Ground', color: 0x3a3a3a },
+  { type: TileType.Floor, label: 'Floor', color: 0x2a2a2a },
+  { type: TileType.Ranged, label: 'Ranged', color: 0x4a4a3a },
+  { type: TileType.Wall, label: 'Wall', color: 0x1a1a1a },
+  { type: TileType.Spawn, label: 'Spawn', color: 0x4a1a1a },
+  { type: TileType.Goal, label: 'Goal', color: 0x1a1a4a },
 ]
 
 const PANEL_W = 200
@@ -26,16 +24,22 @@ const PANEL_X = 1024 - PANEL_W - 6
 
 export class EditorScene extends Phaser.Scene {
   private grid!: Grid
-  private selectedType: TileType = TileType.Route
+  private selectedType: TileType = TileType.Ground
   private editMode: EditMode = EditMode.Paint
   private waypointMode: boolean = false
-  private waypointBtnLabel!: Phaser.GameObjects.Text
   private paletteButtons: Phaser.GameObjects.Container[] = []
   private statusText!: Phaser.GameObjects.Text
   private addEraseBtn!: Phaser.GameObjects.Text
+
   private configPanel!: ConfigPanel
   private wavePanel!: WavePanel
   private isDirty: boolean = false
+
+  private routes: Route[] = []
+  private selectedRouteIndex: number = -1
+  private nextRouteColorIndex: number = 0
+  private routePanel: Phaser.GameObjects.DOMElement | null = null
+  private routePreviewGraphics!: Phaser.GameObjects.Graphics
 
   constructor() {
     super({ key: 'EditorScene' })
@@ -52,12 +56,19 @@ export class EditorScene extends Phaser.Scene {
     this.grid = new Grid(this, 12, 8)
     this.grid.render()
 
+    this.routes = []
+    this.selectedRouteIndex = -1
+    this.nextRouteColorIndex = 0
+
     this.buildPalette()
     this.buildToolbar()
+    this.buildRoutePanel()
     this.buildStatusBar()
 
     this.configPanel = new ConfigPanel(this, PANEL_X, 148, PANEL_W)
     this.wavePanel = new WavePanel(this, PANEL_X, 340, PANEL_W)
+
+    this.routePreviewGraphics = this.add.graphics()
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       this.handleClick(pointer.x, pointer.y)
@@ -77,70 +88,53 @@ export class EditorScene extends Phaser.Scene {
 
     PALETTE_ITEMS.forEach((item) => {
       const bg = this.add.rectangle(px + btnW / 2, y + btnH / 2, btnW, btnH, item.color, 1)
-        .setStrokeStyle(1, 0xcfd8dc)
+        .setStrokeStyle(1, 0x444444)
         .setInteractive({ cursor: 'pointer' })
       bg.on('pointerdown', () => this.selectTileType(item.type))
 
       const label = this.add.text(px + 8, y + btnH / 2, item.label, {
-        fontSize: '14px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        fontSize: '14px', color: '#cccccc', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       }).setOrigin(0, 0.5)
 
       const container = this.add.container(0, 0, [bg, label])
       this.paletteButtons.push(container)
       y += btnH + 4
     })
-
-    makeLabel(this, px, y + 8, 'MARKERS', COLORS.text.secondary, '12px')
   }
 
   private buildToolbar(): void {
     const px = 10
-    let y = 50 + PALETTE_ITEMS.length * 40 + 40
+    let y = 50 + PALETTE_ITEMS.length * 40 + 8
     const btnW = 140
 
     makeLabel(this, px, y, 'GRID', COLORS.text.secondary, '12px')
     y += 18
-    makeButton(this, px, y, 'Clear Grid', () => { this.grid.resize(this.grid.cols, this.grid.rows); this.grid.disconnectedTiles.clear(); this.grid.clearAll(); this.setStatus('Grid cleared'); this.isDirty = true }, { w: btnW, h: 24 })
+    makeButton(this, px, y, 'Clear Grid', () => { this.grid.resize(this.grid.cols, this.grid.rows); this.setStatus('Grid cleared'); this.isDirty = true }, { w: btnW, h: 24 })
     y += 28
     makeButton(this, px, y, 'Export JSON', () => { this.exportLevel() }, { w: btnW, h: 24 })
     y += 28
     makeButton(this, px, y, 'Import JSON', () => { this.importLevel() }, { w: btnW, h: 24 })
 
-    makeLabel(this, px, y + 8, 'ROUTE', COLORS.text.secondary, '12px')
+    makeLabel(this, px, y + 8, 'ROUTES', COLORS.text.secondary, '12px')
     y += 26
 
-    this.waypointBtnLabel = this.add.text(px + 8, y + 4, '[ Paint Waypoints ]', {
-      ...FONTS.small, color: COLORS.text.accent, fontStyle: 'bold',
-    })
-    this.waypointBtnLabel.setInteractive({ cursor: 'pointer' })
-    this.waypointBtnLabel.on('pointerdown', () => {
-      this.waypointMode = !this.waypointMode
-      if (this.waypointMode) {
-        const hasSpawn = !!this.grid.getSpawn()
-        const hasGoal = !!this.grid.getGoal()
-        if (!hasSpawn) this.setStatus('Paint a Spawn tile first')
-        else if (!hasGoal) this.setStatus('Paint a Goal tile first')
-        else this.setStatus('Click route tiles to add waypoints between spawn → goal')
+    makeButton(this, px, y, 'Waypoints', () => {
+      if (this.selectedRouteIndex < 0) {
+        this.setStatus('Select a route first')
+        return
       }
-      this.updateWaypointBtn()
-    })
-    this.waypointBtnLabel.on('pointerover', () => this.waypointBtnLabel.setColor(COLORS.text.primary))
-    this.waypointBtnLabel.on('pointerout', () => this.waypointBtnLabel.setColor(this.waypointMode ? COLORS.text.success : COLORS.text.accent))
+      this.waypointMode = !this.waypointMode
+      this.setStatus(this.waypointMode ? 'Waypoint mode: click to add/remove' : 'Paint mode')
+    }, { w: btnW, h: 24, textColor: this.waypointMode ? COLORS.text.success : COLORS.text.accent })
     y += 28
 
-    makeButton(this, px, y, 'Auto Route', () => {
-      this.waypointMode = false
-      this.updateWaypointBtn()
-      this.generateWaypoints()
-    }, { w: btnW, h: 24 })
-    y += 28
-
-    makeButton(this, px, y, 'Clear Route', () => {
-      this.waypointMode = false
-      this.updateWaypointBtn()
-      this.grid.clearWaypoints()
-      this.grid.render()
-      this.setStatus('Intermediate waypoints cleared (spawn/goal kept)')
+    makeButton(this, px, y, 'Clear Waypoints', () => {
+      const route = this.routes[this.selectedRouteIndex]
+      if (!route) { this.setStatus('Select a route first'); return }
+      route.waypoints = []
+      this.renderRouteList()
+      this.drawRoutePreview()
+      this.setStatus('Waypoints cleared')
     }, { w: btnW, h: 24, textColor: COLORS.text.danger })
     y += 28
 
@@ -180,9 +174,135 @@ export class EditorScene extends Phaser.Scene {
     })
   }
 
-  private updateWaypointBtn(): void {
-    this.waypointBtnLabel.setText(this.waypointMode ? '[■ Painting Waypoints]' : '[ Paint Waypoints ]')
-    this.waypointBtnLabel.setColor(this.waypointMode ? COLORS.text.success : COLORS.text.accent)
+  private buildRoutePanel(): void {
+    const panel = this.add.dom(0, 0, document.createElement('div'))
+    panel.setClassName('editor-panel')
+    panel.setPosition(PANEL_X, 10)
+    const el = panel.node as HTMLDivElement
+    el.id = 'route-panel'
+    el.innerHTML = `
+      <div class="ep-title">ROUTES</div>
+      <button id="add-route-btn" class="ef-add" style="margin-bottom:6px;display:inline-block;">+ Add Route</button>
+      <div id="route-list"></div>
+    `
+    el.querySelector('#add-route-btn')!.addEventListener('click', () => this.addRoute())
+    this.routePanel = panel
+    this.renderRouteList()
+  }
+
+  private renderRouteList(): void {
+    if (!this.routePanel) return
+    const el = this.routePanel.node as HTMLDivElement
+    const list = el.querySelector('#route-list')
+    if (!list) return
+
+    if (this.routes.length === 0) {
+      list.innerHTML = '<div style="color:#666;font-size:11px;padding:4px 0;">No routes yet</div>'
+      return
+    }
+
+    list.innerHTML = this.routes.map((r, i) => {
+      const valid = validateRoutePath(r) ? '' : ' !!'
+      return `<div class="route-item ${i === this.selectedRouteIndex ? 'selected' : ''}" data-idx="${i}">
+        <span class="route-swatch" style="background:#${r.color.toString(16).padStart(6, '0')}"></span>
+        <span style="flex:1;">Route ${i + 1}${valid}</span>
+        <span style="font-size:10px;color:#888;">${r.waypoints.length}wp</span>
+        <span class="ef-del" data-action="del-route" data-idx="${i}" style="margin-left:4px;">[del]</span>
+      </div>`
+    }).join('')
+
+    list.querySelectorAll('.route-item').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).dataset.action === 'del-route') return
+        const idx = parseInt((el as HTMLElement).dataset.idx || '0', 10)
+        this.selectRoute(idx)
+      })
+    })
+    list.querySelectorAll('[data-action="del-route"]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const idx = parseInt((el as HTMLElement).dataset.idx || '0', 10)
+        this.deleteRoute(idx)
+      })
+    })
+  }
+
+  private addRoute(): void {
+    const color = ROUTE_COLORS[this.nextRouteColorIndex % ROUTE_COLORS.length]
+    this.nextRouteColorIndex++
+    this.routes.push({ color, spawn: { row: 0, col: 0 }, goal: { row: 0, col: 0 }, waypoints: [] })
+    this.selectedRouteIndex = this.routes.length - 1
+    this.renderRouteList()
+    this.drawRoutePreview()
+    this.wavePanel.setRoutes(this.routes)
+    this.setStatus(`Route ${this.routes.length} added`)
+  }
+
+  private deleteRoute(index: number): void {
+    if (this.routes.length <= 1) { this.setStatus('Need at least 1 route'); return }
+    if (!confirm(`Delete Route ${index + 1}?`)) return
+    this.routes.splice(index, 1)
+    if (this.selectedRouteIndex >= this.routes.length) {
+      this.selectedRouteIndex = this.routes.length - 1
+    }
+    if (this.routes.length === 0) this.selectedRouteIndex = -1
+    this.renderRouteList()
+    this.drawRoutePreview()
+    this.wavePanel.setRoutes(this.routes)
+    this.setStatus(`Route ${index + 1} deleted`)
+  }
+
+  private selectRoute(index: number): void {
+    this.selectedRouteIndex = index
+    this.renderRouteList()
+    this.drawRoutePreview()
+    this.setStatus(`Route ${index + 1} selected`)
+  }
+
+  private drawRoutePreview(): void {
+    this.routePreviewGraphics.clear()
+    const route = this.routes[this.selectedRouteIndex]
+    if (!route) return
+
+    const path = [route.spawn, ...route.waypoints, route.goal]
+    if (path.length < 2) return
+
+    for (let i = 1; i < path.length; i++) {
+      const prev = path[i - 1]
+      const curr = path[i]
+      const x0 = prev.col * TILE_SIZE + TILE_SIZE / 2 + GRID_OFFSET_X
+      const y0 = prev.row * TILE_SIZE + TILE_SIZE / 2 + GRID_OFFSET_Y
+      const x1 = curr.col * TILE_SIZE + TILE_SIZE / 2 + GRID_OFFSET_X
+      const y1 = curr.row * TILE_SIZE + TILE_SIZE / 2 + GRID_OFFSET_Y
+
+      this.routePreviewGraphics.lineStyle(3, route.color, 0.7)
+      this.routePreviewGraphics.beginPath()
+      this.routePreviewGraphics.moveTo(x0, y0)
+      this.routePreviewGraphics.lineTo(x1, y1)
+      this.routePreviewGraphics.strokePath()
+
+      const angle = Math.atan2(y1 - y0, x1 - x0)
+      this.routePreviewGraphics.fillStyle(route.color, 0.7)
+      this.routePreviewGraphics.fillTriangle(
+        x1, y1,
+        x1 - 10 * Math.cos(angle - 0.4), y1 - 10 * Math.sin(angle - 0.4),
+        x1 - 10 * Math.cos(angle + 0.4), y1 - 10 * Math.sin(angle + 0.4),
+      )
+    }
+
+    // Spawn marker
+    const sp = this.grid.tileToPixel(route.spawn.row, route.spawn.col)
+    this.routePreviewGraphics.fillStyle(route.color, 0.3)
+    this.routePreviewGraphics.fillCircle(sp.x, sp.y, 14)
+    this.routePreviewGraphics.lineStyle(2, route.color, 0.8)
+    this.routePreviewGraphics.strokeCircle(sp.x, sp.y, 14)
+
+    // Goal marker
+    const gp = this.grid.tileToPixel(route.goal.row, route.goal.col)
+    this.routePreviewGraphics.fillStyle(route.color, 0.3)
+    this.routePreviewGraphics.fillRect(gp.x - 10, gp.y - 10, 20, 20)
+    this.routePreviewGraphics.lineStyle(2, route.color, 0.8)
+    this.routePreviewGraphics.strokeRect(gp.x - 10, gp.y - 10, 20, 20)
   }
 
   private buildStatusBar(): void {
@@ -200,7 +320,7 @@ export class EditorScene extends Phaser.Scene {
       const bg = btn.getAt(0) as Phaser.GameObjects.Rectangle
       const item = PALETTE_ITEMS[i]
       bg.setFillStyle(item.color, 1)
-      bg.setStrokeStyle(item.type === type ? 2 : 1, item.type === type ? 0x00a2ff : 0xcfd8dc, item.type === type ? 1 : 0.5)
+      bg.setStrokeStyle(item.type === type ? 2 : 1, item.type === type ? 0x00a2ff : 0x444444, item.type === type ? 1 : 0.5)
     })
     this.setStatus(`Selected: ${type}`)
   }
@@ -210,54 +330,68 @@ export class EditorScene extends Phaser.Scene {
     if (!pos) return
 
     if (this.editMode === EditMode.Erase) {
-      if (this.waypointMode && this.grid.getWaypointCount() > 0) {
-        this.grid.clearWaypoints()
-        this.grid.render()
-        this.setStatus('Intermediate waypoints cleared')
-        return
-      }
-      this.grid.setTile(pos.row, pos.col, TileType.Floor)
-      this.grid.updateRouteConnectivity()
+      this.grid.setTile(pos.row, pos.col, TileType.Ground)
       this.grid.render()
       this.isDirty = true
-      this.updateRouteStatus()
       this.setStatus(`Erased (${pos.row}, ${pos.col})`)
       return
     }
 
     if (this.waypointMode) {
-      const isSpawnTile = this.grid.getSpawn() && this.grid.getSpawn()!.row === pos.row && this.grid.getSpawn()!.col === pos.col
-      const isGoalTile = this.grid.getGoal() && this.grid.getGoal()!.row === pos.row && this.grid.getGoal()!.col === pos.col
-      if (isSpawnTile) { this.setStatus('Spawn is fixed — clear route and re-paint to change'); return }
-      if (isGoalTile) { this.setStatus('Goal is fixed — clear route and re-paint to change'); return }
-
-      const existing = this.grid.routePath.findIndex(wp => wp.row === pos.row && wp.col === pos.col)
-      if (existing !== -1) {
-        this.grid.routePath.splice(existing, 1)
-        this.setStatus(`Removed waypoint ${existing + 2}`)
-      } else {
-        this.grid.addWaypoint(pos)
-        this.setStatus(`Waypoint ${this.grid.getWaypointCount() + 1}: (${pos.row}, ${pos.col})`)
-      }
-      this.grid.render()
-      this.isDirty = true
+      this.handleWaypointClick(pos.row, pos.col)
       return
     }
 
-    if (this.editMode === EditMode.Paint) {
-      if (this.selectedType === TileType.Spawn) {
-        this.grid.setSpawn(pos)
-      } else if (this.selectedType === TileType.Goal) {
-        this.grid.setGoal(pos)
-      } else {
-        this.grid.setTile(pos.row, pos.col, this.selectedType)
-        if (this.selectedType === TileType.Route) {
-          this.grid.updateRouteConnectivity()
-        }
+    this.grid.setTile(pos.row, pos.col, this.selectedType)
+    this.grid.render()
+    this.isDirty = true
+  }
+
+  private handleWaypointClick(row: number, col: number): void {
+    const route = this.routes[this.selectedRouteIndex]
+    if (!route) { this.setStatus('Select a route first'); return }
+
+    const tile = this.grid.getTile(row, col)
+    if (!tile) return
+
+    if (this.editMode === EditMode.Erase) {
+      const idx = route.waypoints.findIndex(wp => wp.row === row && wp.col === col)
+      if (idx >= 0) {
+        route.waypoints.splice(idx, 1)
+        this.renderRouteList()
+        this.drawRoutePreview()
+        this.setStatus(`Waypoint removed (${row}, ${col})`)
       }
-      this.grid.render()
-      this.isDirty = true
-      this.updateRouteStatus()
+      return
+    }
+
+    if (tile.type === TileType.Spawn) {
+      route.spawn = { row, col }
+      this.renderRouteList()
+      this.drawRoutePreview()
+      this.setStatus(`Route ${this.selectedRouteIndex + 1} spawn set`)
+      return
+    }
+
+    if (tile.type === TileType.Goal) {
+      route.goal = { row, col }
+      this.renderRouteList()
+      this.drawRoutePreview()
+      this.setStatus(`Route ${this.selectedRouteIndex + 1} goal set`)
+      return
+    }
+
+    if (tile.type !== TileType.Wall) {
+      const existing = route.waypoints.findIndex(wp => wp.row === row && wp.col === col)
+      if (existing !== -1) {
+        route.waypoints.splice(existing, 1)
+        this.setStatus(`Waypoint removed (${row}, ${col})`)
+      } else {
+        route.waypoints.push({ row, col })
+        this.setStatus(`Waypoint ${route.waypoints.length}: (${row}, ${col})`)
+      }
+      this.renderRouteList()
+      this.drawRoutePreview()
     }
   }
 
@@ -269,63 +403,44 @@ export class EditorScene extends Phaser.Scene {
   private async importLevel(): Promise<void> {
     const data = await importLevelFromFile()
     if (data) {
-      this.grid.fromLevelData(data)
-      this.grid.updateRouteConnectivity()
+      const migrated = data.routes ? data : Grid.migrateLevelData(data)
+      this.grid.fromLevelData(migrated)
       this.grid.render()
-      this.configPanel.load(data)
-      this.wavePanel.load(data.waves)
+      this.configPanel.load(migrated)
+      this.routes = migrated.routes.map(r => ({ ...r, waypoints: r.waypoints.map(w => ({ ...w })) }))
+      this.selectedRouteIndex = this.routes.length > 0 ? 0 : -1
+      this.nextRouteColorIndex = this.routes.length
+      this.wavePanel.setRoutes(this.routes)
+      this.wavePanel.load(migrated.waves)
+      this.renderRouteList()
+      this.drawRoutePreview()
       this.isDirty = true
-      this.updateRouteStatus()
-      this.setStatus(`Loaded: ${data.name}`)
+      this.setStatus(`Loaded: ${migrated.name}`)
     } else {
       this.setStatus('Import failed!')
     }
   }
 
-  private generateWaypoints(): void {
-    const spawn = this.grid.getSpawn()
-    const goal = this.grid.getGoal()
-    if (!spawn || !goal) { this.setStatus('Set Spawn and Goal markers first!'); return }
-
-    this.grid.updateRouteConnectivity()
-    const disconnected = this.grid.getDisconnectedTiles()
-    if (disconnected.size > 0) {
-      this.setStatus(`⚠ ${disconnected.size} route tile(s) disconnected! Paint them adjacent to connect.`)
-      this.grid.render()
-      return
+  private areRoutesValid(): boolean {
+    if (this.routes.length === 0) return false
+    for (const route of this.routes) {
+      if (!validateRoutePath(route)) return false
+      const spawnTile = this.grid.getTile(route.spawn.row, route.spawn.col)
+      const goalTile = this.grid.getTile(route.goal.row, route.goal.col)
+      if (!spawnTile || spawnTile.type !== TileType.Spawn) return false
+      if (!goalTile || goalTile.type !== TileType.Goal) return false
     }
-
-    const fullRoute = generateRoute(
-      this.grid.tiles.map(row => row.map(t => t.type)),
-      spawn, goal, this.grid.rows, this.grid.cols,
-    )
-    if (fullRoute.length > 0) {
-      const intermediate = fullRoute.slice(1, -1)
-      this.grid.setRoutePath(intermediate)
-      this.grid.render()
-      const total = intermediate.length + (spawn ? 1 : 0) + (goal ? 1 : 0)
-      this.setStatus(`Route: ${total} waypoints ✅`)
-    } else {
-      this.setStatus('No route found! Ensure route tiles connect Spawn → Goal.')
+    const waves = this.wavePanel.waves
+    for (const wave of waves) {
+      if (wave.routeIndex < 0 || wave.routeIndex >= this.routes.length) return false
     }
-  }
-
-  private updateRouteStatus(): void {
-    const disconnected = this.grid.getDisconnectedTiles()
-    if (disconnected.size > 0) {
-      this.setStatus(`⚠ ${disconnected.size} route tile(s) have no route connection`)
-    } else {
-      const routeTiles = this.grid.tiles.flat().filter(t => t.type === TileType.Route).length
-      if (routeTiles > 0) {
-        this.setStatus(`Route: ${routeTiles} tile(s), all connected ✅`)
-      }
-    }
+    return true
   }
 
   private playLevel(): void {
     const data = this.buildLevelData()
     if (data.waves.length === 0) { this.setStatus('Add waves first!'); return }
-    if (data.waypoints.length < 2) { this.setStatus('Set Spawn + Goal + at least one waypoint!'); return }
+    if (!this.areRoutesValid()) { this.setStatus('Fix route issues before playing!'); return }
     this.scene.start('GameScene', { level: data })
   }
 
@@ -334,29 +449,34 @@ export class EditorScene extends Phaser.Scene {
   }
 
   private buildLevelData(): LevelData {
-    const data = this.grid.toLevelData(this.configPanel.getName())
-    data.startingDP = this.configPanel.startingDP
-    data.dpRegenRate = this.configPanel.dpRegenRate
-    data.dpCap = this.configPanel.dpCap
-    data.deploymentLimit = this.configPanel.deploymentLimit
-    data.lives = this.configPanel.lives
-    data.waves = this.wavePanel.waves
-    return data
+    return {
+      name: this.configPanel.getName(),
+      cols: this.grid.cols,
+      rows: this.grid.rows,
+      tiles: this.grid.tiles,
+      routes: this.routes,
+      waves: this.wavePanel.waves,
+      startingDP: this.configPanel.startingDP,
+      dpRegenRate: this.configPanel.dpRegenRate,
+      dpCap: this.configPanel.dpCap,
+      deploymentLimit: this.configPanel.deploymentLimit,
+      lives: this.configPanel.lives,
+    }
   }
 
   private setStatus(msg: string): void { this.statusText.setText(msg) }
 }
 
-enum EditMode { Paint, MarkerSpawn, MarkerGoal, Erase }
+enum EditMode { Paint, Erase }
 
 function drawBgGradient(scene: Phaser.Scene): void {
   const g = scene.add.graphics()
   const { width: w, height: h } = scene.scale
   for (let y = 0; y < h; y++) {
     const t = y / h
-    const r = Phaser.Math.Interpolation.Linear([0xf4, 0xf0], t)
-    const gv = Phaser.Math.Interpolation.Linear([0xf6, 0xf4], t)
-    const b = Phaser.Math.Interpolation.Linear([0xf8, 0xf8], t)
+    const r = Phaser.Math.Interpolation.Linear([0x1a, 0x1a], t)
+    const gv = Phaser.Math.Interpolation.Linear([0x1a, 0x1a], t)
+    const b = Phaser.Math.Interpolation.Linear([0x2e, 0x2e], t)
     g.fillStyle(Phaser.Display.Color.GetColor(r, gv, b), 1)
     g.fillRect(0, y, w, 1)
   }
@@ -379,14 +499,14 @@ function injectEditorStyles(): void {
   const s = document.createElement('style')
   s.textContent = `
 .editor-panel {
-  background: #ffffff;
-  border: 1px solid #cfd8dc;
+  background: #1a1a2e;
+  border: 1px solid #2a2a4e;
   border-radius: 6px;
   padding: 10px;
   font-family: "Share Tech Mono", "Roboto Mono", monospace;
   font-size: 13px;
-  color: #1a1a2e;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  color: #cccccc;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 .editor-panel .ep-title {
   color: #00a2ff;
@@ -405,25 +525,25 @@ function injectEditorStyles(): void {
   cursor: pointer;
   padding: 0 2px;
 }
-.ef-row:hover { background: #f0f4ff; border-radius: 3px; }
-.ef-label { color: #4a4a5a; }
+.ef-row:hover { background: #2a2a4e; border-radius: 3px; }
+.ef-label { color: #8888aa; }
 .ef-value { 
-  color: #1a1a2e; font-weight: bold; cursor: pointer;
+  color: #cccccc; font-weight: bold; cursor: pointer;
   padding: 1px 4px; border-radius: 3px;
 }
-.ef-value:hover { background: #e3f0ff; color: #00a2ff; }
+.ef-value:hover { background: #2a3a5e; color: #00a2ff; }
 .ef-input {
   width: 60px; text-align: right;
   font-family: "Share Tech Mono", "Roboto Mono", monospace;
   font-size: 12px; font-weight: bold;
-  border: 1px solid #cfd8dc; border-radius: 3px; padding: 1px 4px;
-  background: #f8f9fb; color: #1a1a2e;
+  border: 1px solid #2a2a4e; border-radius: 3px; padding: 1px 4px;
+  background: #1a1a2e; color: #cccccc;
 }
 .ef-input:focus { outline: 1px solid #00a2ff; border-color: #00a2ff; }
 .ef-del { color: #d32f2f; cursor: pointer; padding: 0 2px; }
-.ef-del:hover { background: #ffe8e8; border-radius: 3px; }
+.ef-del:hover { background: #3a1a1a; border-radius: 3px; }
 .ef-add { color: #00c853; cursor: pointer; margin-top: 4px; display: inline-block; }
-.ef-add:hover { background: #e8f8ee; border-radius: 3px; padding: 0 2px; }
+.ef-add:hover { background: #1a3a2a; border-radius: 3px; padding: 0 2px; }
 .ef-cycle { cursor: pointer; font-weight: bold; }
 .ef-cycle:hover { color: #00a2ff; }
 .ef-header {
@@ -434,10 +554,16 @@ function injectEditorStyles(): void {
 }
 .ef-header:hover { color: #0091e0; }
 .ef-wave {
-  margin: 4px 0; padding: 4px; border: 1px solid #e8ecf0; border-radius: 4px;
-  background: #fafbfc;
+  margin: 4px 0; padding: 4px; border: 1px solid #2a2a4e; border-radius: 4px;
+  background: #16162a;
 }
 .ef-entry { margin: 2px 0 2px 8px; font-size: 12px; }
+.route-item {
+  display: flex; align-items: center; padding: 4px; cursor: pointer; border-radius: 3px;
+}
+.route-item:hover { background: #2a2a4e; }
+.route-item.selected { background: #2a3a5e; }
+.route-swatch { width: 16px; height: 16px; border-radius: 3px; margin-right: 8px; display: inline-block; }
 `
   document.head.appendChild(s)
 }
@@ -447,11 +573,11 @@ class ConfigPanel {
   private x: number; private y: number; private w: number
   private domEl: Phaser.GameObjects.DOMElement | null = null
   name: string = 'level-01'
-  startingDP: number = 10
+  startingDP: number = 30
   dpRegenRate: number = 1
   dpCap: number = 99
   deploymentLimit: number = 8
-  lives: number = 3
+  lives: number = 10
 
   constructor(scene: Phaser.Scene, x: number, y: number, w: number) {
     this.scene = scene; this.x = x; this.y = y; this.w = w
@@ -505,7 +631,6 @@ class ConfigPanel {
       { id: 'lives', set: (v) => { this.lives = v; this.draw() } },
     ]
     for (const f of numFields) {
-      const span = d.querySelector(`.ef-row:has(+ * #cp-${f.id}) .ef-value`) as HTMLElement
       const allSpans = d.querySelectorAll('.ef-value')
       const idx = numFields.indexOf(f)
       if (allSpans[idx]) {
@@ -553,14 +678,21 @@ class WavePanel {
   private domEl: Phaser.GameObjects.DOMElement | null = null
   waves: Wave[] = []
   expanded: boolean = true
+  private routes: Route[] = []
 
   constructor(scene: Phaser.Scene, x: number, y: number, w: number) {
     this.scene = scene; this.x = x; this.y = y; this.w = w
     this.draw()
   }
 
+  setRoutes(routes: Route[]): void {
+    this.routes = routes
+    this.draw()
+  }
+
   load(waves: Wave[]): void {
     this.waves = waves.map(w => ({
+      routeIndex: w.routeIndex ?? 0,
       preludeDuration: w.preludeDuration,
       entries: w.entries.map(e => ({ ...e })),
     }))
@@ -576,9 +708,16 @@ class WavePanel {
       const enemyIds = ENEMY_CONFIGS.map(e => e.id)
 
       this.waves.forEach((wave, wi) => {
+        const routeOpts = this.routes.map((r, ri) =>
+          `<option value="${ri}" ${ri === wave.routeIndex ? 'selected' : ''}>Route ${ri + 1}</option>`
+        ).join('')
+
         content += `<div class="ef-wave">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-weight:bold;color:#1a1a2e;">Wave ${wi + 1}</span>
+            <span style="font-weight:bold;color:#cccccc;">Wave ${wi + 1}</span>
+            <select class="route-select" data-wi="${wi}" style="font-family:inherit;font-size:11px;background:#1a1a2e;color:#ccc;border:1px solid #2a2a4e;border-radius:3px;padding:1px 4px;">
+              ${routeOpts}
+            </select>
             <span class="ef-del" data-action="del-wave" data-idx="${wi}">[del]</span>
           </div>`
         wave.entries.forEach((entry, ei) => {
@@ -638,7 +777,7 @@ class WavePanel {
     })
     d.querySelectorAll('[data-action="add-wave"]').forEach(el => {
       el.addEventListener('click', () => {
-        this.waves.push({ preludeDuration: 0, entries: [{ enemyType: 'soldier', count: 3, spawnInterval: 2.0 }] })
+        this.waves.push({ routeIndex: 0, preludeDuration: 0, entries: [{ enemyType: 'soldier', count: 3, spawnInterval: 2.0 }] })
         this.draw()
       })
     })
@@ -647,6 +786,13 @@ class WavePanel {
         const wi = parseInt((el as HTMLElement).dataset.idx || '0', 10)
         this.waves[wi]?.entries.push({ enemyType: 'soldier', count: 1, spawnInterval: 2.0 })
         this.draw()
+      })
+    })
+
+    d.querySelectorAll('.route-select').forEach(el => {
+      el.addEventListener('change', (e) => {
+        const wi = parseInt((el as HTMLElement).dataset.wi || '0', 10)
+        this.waves[wi].routeIndex = parseInt((e.target as HTMLSelectElement).value, 10)
       })
     })
 
@@ -662,7 +808,6 @@ class WavePanel {
         input.min = '1'
         input.value = String(entry.count)
         input.style.width = '50px'
-        const parent = el.parentElement
         el.replaceWith(input)
         input.focus()
         input.addEventListener('blur', () => {
@@ -690,7 +835,6 @@ class WavePanel {
         input.step = '0.1'
         input.value = String(entry.spawnInterval)
         input.style.width = '50px'
-        const parent = el.parentElement
         el.replaceWith(input)
         input.focus()
         input.addEventListener('blur', () => {

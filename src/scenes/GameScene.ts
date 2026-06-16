@@ -19,6 +19,9 @@ export class GameScene extends Phaser.Scene {
   private combatSystem!: CombatSystem
   private healingSystem!: HealingSystem
   private unitSprites: UnitSprite[] = []
+  private paletteScrollY: number = 0
+  private paletteContainer!: Phaser.GameObjects.Container
+  private paletteActionsContainer!: Phaser.GameObjects.Container
   private selectedUnitIndex: number = 0
   private unitButtons: Phaser.GameObjects.Container[] = []
   private dpText!: Phaser.GameObjects.Text
@@ -273,6 +276,13 @@ export class GameScene extends Phaser.Scene {
       this.hoverIndicator.strokeRect(px.x - 32, px.y - 32, 64, 64)
       this.hoverIndicator.setAlpha(1)
     })
+
+    this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
+      if (!this.paletteContainer) return
+      const maxScroll = Math.max(0, this.unitConfigs.length * 36 - (this.scale.height - 180))
+      this.paletteScrollY = Phaser.Math.Clamp(this.paletteScrollY - dy * 0.5, -maxScroll, 0)
+      this.paletteContainer.setY(this.paletteScrollY)
+    })
   }
 
   private getGoalPositions(): Position[] {
@@ -468,24 +478,29 @@ export class GameScene extends Phaser.Scene {
     const btnH = 34
     const gap = 2
     const slotH = btnH + gap
-    const totalH = this.unitConfigs.length * slotH
     const headerH = 16
 
     this.add.text(px, baseY - headerH, 'UNIT SELECT', {
       fontSize: '12px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
 
+    this.paletteContainer = this.add.container(0, 0)
     this.unitButtons = []
     this.unitConfigs.forEach((unit, i) => {
       const y = baseY + i * slotH
-      this.unitButtons.push(this.makeUnitButton(px, y, btnW, btnH, unit, i))
+      const btn = this.makeUnitButton(px, y, btnW, btnH, unit, i)
+      this.unitButtons.push(btn)
+      this.paletteContainer.add(btn)
     })
 
-    const listEnd = baseY + totalH
-    const actionY = listEnd + gap
-    this.add.text(px, actionY - 12, 'ACTIONS', {
+    const listEnd = baseY + this.unitConfigs.length * slotH
+    const actionY = Math.min(listEnd + gap, this.scale.height - 100)
+
+    this.paletteActionsContainer = this.add.container(0, 0)
+    const header = this.add.text(px, actionY - 12, 'ACTIONS', {
       fontSize: '12px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
+    this.paletteActionsContainer.add(header)
 
     const actionBtn = (tx: number, text: string, color: string, cb: () => void) => {
       const t = this.add.text(tx, 0, text, {
@@ -496,14 +511,22 @@ export class GameScene extends Phaser.Scene {
       return t
     }
 
-    actionBtn(px, '[Clear All]', COLORS.text.danger, () => this.clearAllUnits()).setY(actionY)
-    actionBtn(px, '[Restart]', COLORS.text.warning, () => {
+    const clearBtn = actionBtn(px, '[Clear All]', COLORS.text.danger, () => this.clearAllUnits())
+    clearBtn.setY(actionY)
+    this.paletteActionsContainer.add(clearBtn)
+
+    const restartBtn = actionBtn(px, '[Restart]', COLORS.text.warning, () => {
       if (this.levelData) this.loadLevel(this.levelData)
-    }).setY(actionY + 20)
-    actionBtn(px, '[Load Level]', COLORS.text.accent, async () => {
+    })
+    restartBtn.setY(actionY + 20)
+    this.paletteActionsContainer.add(restartBtn)
+
+    const loadBtn = actionBtn(px, '[Load Level]', COLORS.text.accent, async () => {
       const data = await importLevelFromFile()
       if (data) this.loadLevel(data)
-    }).setY(actionY + 40)
+    })
+    loadBtn.setY(actionY + 40)
+    this.paletteActionsContainer.add(loadBtn)
 
     const backLabel = this.fromSquad ? '< Back to Squad Selection' : '< Back to Editor'
     const editorBtn = this.add.text(px, actionY + 60, backLabel, {
@@ -513,6 +536,7 @@ export class GameScene extends Phaser.Scene {
     editorBtn.on('pointerover', () => editorBtn.setColor(COLORS.text.primary))
     editorBtn.on('pointerout', () => editorBtn.setColor(COLORS.text.accent))
     editorBtn.on('pointerdown', () => this.scene.start(this.fromSquad ? 'SquadScene' : 'EditorScene'))
+    this.paletteActionsContainer.add(editorBtn)
   }
 
   private makeUnitButton(px: number, y: number, btnW: number, btnH: number, unit: UnitConfig, index: number): Phaser.GameObjects.Container {
@@ -780,6 +804,8 @@ export class GameScene extends Phaser.Scene {
     this.resultText.setAlpha(0)
     this.battleButton.setText('[ START SIMULATION ]')
     this.battleButton.setStyle({ color: COLORS.text.accent })
+    this.paletteScrollY = 0
+    if (this.paletteContainer) this.paletteContainer.setY(0)
     this.updateStatsPanel(this.selectedUnitIndex)
     this.updateHUD()
   }

@@ -448,9 +448,9 @@ export class GameScene extends Phaser.Scene {
       this.statsTexts.forEach(t => t.setText(''))
       return
     }
-    const dmIcon = unit.damageType === 'thermal' ? '~' : '>'
+    const dmIcon = unit.damageType === 'thermal' ? '~' : unit.damageType === 'true' ? '!!' : '>'
     const typeLabel = unit.type === 'ground' ? 'GND' : 'RNG'
-    this.statsTexts[0].setText(`${unit.name} (${typeLabel})`)
+    this.statsTexts[0].setText(`${unit.subtypeLabel} (${typeLabel})`)
     if (deployed) {
       const dirArrow: Record<string, string> = { up: '\u2191', down: '\u2193', left: '\u2190', right: '\u2192' }
       this.statsTexts[1].setText(`HP: ${deployed.currentHp}/${unit.hp}  ${dirArrow[deployed.facing] ?? ''}`)
@@ -463,21 +463,26 @@ export class GameScene extends Phaser.Scene {
 
   private buildUnitPalette(): void {
     const px = 10
-    let startY = 70
+    const baseY = 70
     const btnW = 140
-    const btnH = 48
+    const btnH = 34
+    const gap = 2
+    const slotH = btnH + gap
+    const totalH = this.unitConfigs.length * slotH
+    const headerH = 16
 
-    this.add.text(px, startY - 16, 'UNIT SELECT', {
+    this.add.text(px, baseY - headerH, 'UNIT SELECT', {
       fontSize: '12px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
 
+    this.unitButtons = []
     this.unitConfigs.forEach((unit, i) => {
-      const y = startY + i * (btnH + 2)
+      const y = baseY + i * slotH
       this.unitButtons.push(this.makeUnitButton(px, y, btnW, btnH, unit, i))
-      startY = y
     })
 
-    const actionY = startY + btnH + 10
+    const listEnd = baseY + totalH
+    const actionY = listEnd + gap
     this.add.text(px, actionY - 12, 'ACTIONS', {
       fontSize: '12px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
@@ -519,18 +524,18 @@ export class GameScene extends Phaser.Scene {
     const icon = this.add.graphics()
     if (unit.type === 'ground') {
       icon.fillStyle(unit.color, 1)
-      icon.fillRoundedRect(6, 8, 16, 16, 3)
+      icon.fillRoundedRect(6, 6, 12, 12, 3)
     } else {
       icon.fillStyle(unit.color, 1)
-      icon.fillTriangle(14, 8, 4, 28, 24, 28)
+      icon.fillTriangle(12, 6, 4, 22, 20, 22)
     }
 
-    const nameLabel = this.add.text(28, 8, unit.name, {
-      fontSize: '13px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    const nameLabel = this.add.text(22, 5, unit.subtypeLabel, {
+      fontSize: '11px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
-    const dmIcon = unit.damageType === 'thermal' ? '~' : '>'
-    const infoLabel = this.add.text(28, 26, `DP ${unit.dpCost} | ${dmIcon}${unit.atk}`, {
-      fontSize: '10px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    const dmIcon = unit.damageType === 'thermal' ? '~' : unit.damageType === 'true' ? '!!' : '>'
+    const infoLabel = this.add.text(22, 20, `DP ${unit.dpCost} | ${dmIcon}${unit.atk} | ${unit.name}`, {
+      fontSize: '9px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
 
     const container = this.add.container(px, y, [bg, icon, nameLabel, infoLabel])
@@ -612,7 +617,7 @@ export class GameScene extends Phaser.Scene {
       bg.clear()
       const unit = this.unitConfigs[i]
       bg.fillStyle(0xffffff, 1)
-      bg.fillRoundedRect(0, 0, 140, 48, 4)
+      bg.fillRoundedRect(0, 0, 140, 34, 4)
       bg.lineStyle(i === index ? 2 : 1, i === index ? 0x00a2ff : 0xcfd8dc, 1)
     })
   }

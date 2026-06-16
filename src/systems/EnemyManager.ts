@@ -1,9 +1,8 @@
 import Phaser from 'phaser'
-import { EnemyConfig, Wave, WaveEntry } from '../types/index'
+import { EnemyConfig, Wave, Route, Position } from '../types/index'
 import { Grid } from '../entities/Grid'
 import { EnemySprite } from '../entities/Enemy'
 import { DeploymentSystem } from './DeploymentSystem'
-import { Position } from '../shared/utils/GridMath'
 import { ENEMY_CONFIGS } from '../config/enemies'
 
 export interface EnemyManagerEvents {
@@ -17,7 +16,8 @@ export class EnemyManager {
   private depSystem: DeploymentSystem
   private events: EnemyManagerEvents
   private enemies: EnemySprite[] = []
-  private waypoints: Position[]
+  private routes: Route[] = []
+  private currentRoute: Route | null = null
 
   private waveQueue: Wave[] = []
   private currentWave: number = -1
@@ -29,16 +29,16 @@ export class EnemyManager {
   private battleStarted: boolean = false
   private lives: number = 3
 
-  constructor(scene: Phaser.Scene, grid: Grid, depSystem: DeploymentSystem, waypoints: Position[], events: EnemyManagerEvents) {
+  constructor(scene: Phaser.Scene, grid: Grid, depSystem: DeploymentSystem, events: EnemyManagerEvents) {
     this.scene = scene
     this.grid = grid
     this.depSystem = depSystem
-    this.waypoints = waypoints
     this.events = events
   }
 
-  setWaves(waves: Wave[], lives: number = 3): void {
+  setWaves(waves: Wave[], routes: Route[], lives: number = 3): void {
     this.waveQueue = [...waves]
+    this.routes = routes
     this.currentWave = -1
     this.lives = lives
     this.allWavesComplete = false
@@ -56,6 +56,15 @@ export class EnemyManager {
       this.allWavesComplete = true
       return
     }
+    const wave = this.waveQueue[this.currentWave]
+    const route = this.routes[wave.routeIndex]
+    if (!route) {
+      console.error(`EnemyManager: route index ${wave.routeIndex} not found`)
+      this.waveActive = false
+      this.startNextWave()
+      return
+    }
+    this.currentRoute = route
     this.waveActive = true
     this.waveEntryIndex = 0
     this.waveSpawnIndex = 0
@@ -63,8 +72,11 @@ export class EnemyManager {
   }
 
   private spawnEnemy(config: EnemyConfig): void {
-    if (this.waypoints.length < 2) return
-    const enemy = new EnemySprite(this.scene, this.grid, config, this.waypoints)
+    const route = this.currentRoute
+    if (!route) return
+    const path: Position[] = [route.spawn, ...route.waypoints, route.goal]
+    if (path.length < 2) return
+    const enemy = new EnemySprite(this.scene, this.grid, config, path)
     this.enemies.push(enemy)
   }
 

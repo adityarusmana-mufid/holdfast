@@ -59,10 +59,7 @@ export function isWalkable(type: TileType): boolean {
 
 export function validateRoutePath(route: Route): boolean {
   const path = [route.spawn, ...route.waypoints, route.goal]
-  for (let i = 1; i < path.length; i++) {
-    if (chebyshevDistance(path[i - 1], path[i]) > 1) return false
-  }
-  return path.length >= 3
+  return path.length >= 2
 }
 
 export function positionsEqual(a: Position, b: Position): boolean {

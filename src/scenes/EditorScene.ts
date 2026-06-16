@@ -421,26 +421,72 @@ export class EditorScene extends Phaser.Scene {
     }
   }
 
-  private areRoutesValid(): boolean {
-    if (this.routes.length === 0) return false
-    for (const route of this.routes) {
-      if (!validateRoutePath(route)) return false
+  private pathCrossesWall(a: Position, b: Position): Position | null {
+    const dr = Math.abs(b.row - a.row)
+    const dc = Math.abs(b.col - a.col)
+    const steps = Math.max(dr, dc)
+    for (let i = 0; i <= steps; i++) {
+      const t = steps === 0 ? 0 : i / steps
+      const r = Math.round(a.row + t * (b.row - a.row))
+      const c = Math.round(a.col + t * (b.col - a.col))
+      const tile = this.grid.getTile(r, c)
+      if (tile && tile.type === TileType.Wall) return { row: r, col: c }
+    }
+    return null
+  }
+
+  private getRouteErrors(): string[] {
+    const errors: string[] = []
+    if (this.routes.length === 0) {
+      errors.push('No routes defined — add a route')
+      return errors
+    }
+    for (let ri = 0; ri < this.routes.length; ri++) {
+      const route = this.routes[ri]
+      const label = `Route ${ri + 1}`
+
+      const path = [route.spawn, ...route.waypoints, route.goal]
+      if (path.length < 2) {
+        errors.push(`${label}: need at least spawn + goal (only ${path.length} point(s))`)
+        continue
+      }
+
       const spawnTile = this.grid.getTile(route.spawn.row, route.spawn.col)
       const goalTile = this.grid.getTile(route.goal.row, route.goal.col)
-      if (!spawnTile || spawnTile.type !== TileType.Spawn) return false
-      if (!goalTile || goalTile.type !== TileType.Goal) return false
+      if (!spawnTile || spawnTile.type !== TileType.Spawn) {
+        errors.push(`${label}: spawn at (${route.spawn.row},${route.spawn.col}) is not a Spawn tile`)
+      }
+      if (!goalTile || goalTile.type !== TileType.Goal) {
+        errors.push(`${label}: goal at (${route.goal.row},${route.goal.col}) is not a Goal tile`)
+      }
+
+      for (let i = 1; i < path.length; i++) {
+        const wall = this.pathCrossesWall(path[i - 1], path[i])
+        if (wall) {
+          errors.push(`${label}: path passes through Wall at (${wall.row},${wall.col}) between ${i === 1 ? 'spawn' : 'waypoint ' + i} and ${i === path.length - 1 ? 'goal' : 'waypoint ' + (i + 1)}`)
+        }
+      }
     }
+
     const waves = this.wavePanel.waves
-    for (const wave of waves) {
-      if (wave.routeIndex < 0 || wave.routeIndex >= this.routes.length) return false
+    for (let wi = 0; wi < waves.length; wi++) {
+      const ri = waves[wi].routeIndex
+      if (ri < 0 || ri >= this.routes.length) {
+        errors.push(`Wave ${wi + 1}: references route index ${ri}, but only ${this.routes.length} route(s) exist`)
+      }
     }
-    return true
+
+    return errors
   }
 
   private playLevel(): void {
     const data = this.buildLevelData()
     if (data.waves.length === 0) { this.setStatus('Add waves first!'); return }
-    if (!this.areRoutesValid()) { this.setStatus('Fix route issues before playing!'); return }
+    const routeErrors = this.getRouteErrors()
+    if (routeErrors.length > 0) {
+      this.setStatus(routeErrors[0])
+      return
+    }
     this.scene.start('GameScene', { level: data })
   }
 

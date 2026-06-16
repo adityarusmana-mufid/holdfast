@@ -1,7 +1,8 @@
 import { Grid } from '../entities/Grid'
 import { EnemySprite } from '../entities/Enemy'
 import { UnitSprite } from '../entities/Unit'
-import { Position, positionsInRange } from '../shared/utils/GridMath'
+import { Position } from '../types/index'
+import { positionsInRange } from '../shared/utils/GridMath'
 
 export interface CombatEvents {
   onEnemyKilled: (enemy: EnemySprite) => void

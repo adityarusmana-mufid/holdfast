@@ -468,6 +468,23 @@ export class EditorScene extends Phaser.Scene {
       }
     }
 
+    if (this.routes.length > 0) {
+      const usedSpawns = new Set(this.routes.map(r => `${r.spawn.row},${r.spawn.col}`))
+      const usedGoals = new Set(this.routes.map(r => `${r.goal.row},${r.goal.col}`))
+      for (let r = 0; r < this.grid.rows; r++) {
+        for (let c = 0; c < this.grid.cols; c++) {
+          const tile = this.grid.getTile(r, c)
+          if (!tile) continue
+          if (tile.type === TileType.Spawn && !usedSpawns.has(`${r},${c}`)) {
+            errors.push(`Spawn tile at (${r},${c}) has no route using it — assign or remove it`)
+          }
+          if (tile.type === TileType.Goal && !usedGoals.has(`${r},${c}`)) {
+            errors.push(`Goal tile at (${r},${c}) has no route using it — assign or remove it`)
+          }
+        }
+      }
+    }
+
     const waves = this.wavePanel.waves
     for (let wi = 0; wi < waves.length; wi++) {
       const ri = waves[wi].routeIndex

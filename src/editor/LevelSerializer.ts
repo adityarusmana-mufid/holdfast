@@ -1,4 +1,5 @@
 import { LevelData, Tile, TileType } from '../types/index'
+import { Grid } from '../entities/Grid'
 
 export function serializeLevel(data: LevelData): string {
   return JSON.stringify(data, null, 2)
@@ -6,7 +7,8 @@ export function serializeLevel(data: LevelData): string {
 
 export function deserializeLevel(json: string): LevelData | null {
   try {
-    const data = JSON.parse(json) as LevelData
+    const raw = JSON.parse(json)
+    const data = raw.routes ? raw as LevelData : Grid.migrateLevelData(raw)
     if (!validateLevel(data)) return null
     return data
   } catch {
@@ -26,6 +28,7 @@ function validateLevel(data: LevelData): boolean {
       if (!Object.values(TileType).includes(tile.type)) return false
     }
   }
+  if (!Array.isArray(data.routes) || data.routes.length === 0) return false
   return true
 }
 

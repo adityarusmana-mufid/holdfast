@@ -7,6 +7,7 @@ import { EnemySprite } from '../entities/Enemy'
 import { DeploymentSystem } from '../systems/DeploymentSystem'
 import { EnemyManager } from '../systems/EnemyManager'
 import { CombatSystem } from '../systems/CombatSystem'
+import { HealingSystem } from '../systems/HealingSystem'
 import { UNIT_CONFIGS } from '../config/units'
 import { importLevelFromFile } from '../editor/LevelSerializer'
 import { COLORS } from '../ui/Constants'
@@ -16,6 +17,7 @@ export class GameScene extends Phaser.Scene {
   private depSystem!: DeploymentSystem
   private enemyManager!: EnemyManager
   private combatSystem!: CombatSystem
+  private healingSystem!: HealingSystem
   private unitSprites: UnitSprite[] = []
   private selectedUnitIndex: number = 0
   private unitButtons: Phaser.GameObjects.Container[] = []
@@ -115,7 +117,12 @@ export class GameScene extends Phaser.Scene {
       onDamageDealt: (damage: number, enemy: EnemySprite, damageType: string) => {
         this.showDamageNumber(damage, enemy, damageType)
       },
+      onHealApplied: (target: UnitSprite, amount: number, _source: UnitSprite) => {
+        this.showHealNumber(amount, target)
+      },
     })
+
+    this.healingSystem = new HealingSystem(this.grid)
 
     this.buildStatsPanel()
     this.updateStatsPanel(0)
@@ -401,6 +408,9 @@ export class GameScene extends Phaser.Scene {
       this.depSystem.update(dt * speed)
       this.enemyManager.update(dt * speed)
       this.combatSystem.update(delta * speed, this.unitSprites, this.enemyManager.getEnemies())
+      this.healingSystem.update(delta, this.unitSprites, (target, amount, source) => {
+        this.showHealNumber(amount, target)
+      })
       this.checkBattleEnd()
     }
 
@@ -689,6 +699,21 @@ export class GameScene extends Phaser.Scene {
     editorBtn.on('pointerdown', () => this.scene.start(this.fromSquad ? 'SquadScene' : 'EditorScene'))
   }
 
+  private showHealNumber(amount: number, target: UnitSprite): void {
+    const pos = this.grid.tileToPixel(target.row, target.col)
+    const text = this.add.text(pos.x, pos.y - 20, `+${amount}`, {
+      fontSize: '13px', color: '#00c853', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    })
+    text.setOrigin(0.5)
+    text.setDepth(20)
+    this.tweens.add({
+      targets: text,
+      alpha: 0, y: pos.y - 50,
+      duration: 800,
+      onComplete: () => text.destroy(),
+    })
+  }
+
   private showDamageNumber(damage: number, enemy: EnemySprite, damageType: string): void {
     const color = damageType === 'thermal' ? '#9c27b0' : '#1a1a2e'
     const label = damageType === 'thermal' ? `~${damage}` : `${damage}`
@@ -728,6 +753,7 @@ export class GameScene extends Phaser.Scene {
     this.grid.fromLevelData(data)
     this.grid.render()
     this.levelData = data
+    this.healingSystem = new HealingSystem(this.grid)
     this.depSystem.reset(data.startingDP, data.dpRegenRate, data.dpCap, data.deploymentLimit)
     this.enemyManager.setWaves(data.waves, data.routes, data.lives)
     this.battleActive = false

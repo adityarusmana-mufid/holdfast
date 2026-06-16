@@ -1,7 +1,6 @@
 import Phaser from 'phaser'
-import { EnemyConfig } from '../types/index'
+import { EnemyConfig, Position } from '../types/index'
 import { Grid, TILE_SIZE } from '../entities/Grid'
-import { Position } from '../shared/utils/GridMath'
 
 let nextEnemyId = 0
 
@@ -17,7 +16,7 @@ export class EnemySprite {
   config: EnemyConfig
   currentHp: number
   currentWaypoint: number
-  waypoints: Position[]
+  path: Position[]
   x: number
   y: number
   blocked: boolean = false
@@ -28,16 +27,16 @@ export class EnemySprite {
 
   private grid: Grid
 
-  constructor(scene: Phaser.Scene, grid: Grid, config: EnemyConfig, waypoints: Position[]) {
+  constructor(scene: Phaser.Scene, grid: Grid, config: EnemyConfig, path: Position[]) {
     this.id = nextEnemyId++
     this.scene = scene
     this.grid = grid
     this.config = config
     this.currentHp = config.hp
-    this.waypoints = waypoints
+    this.path = path
     this.currentWaypoint = 0
 
-    const startPos = grid.tileToPixel(waypoints[0].row, waypoints[0].col)
+    const startPos = grid.tileToPixel(path[0].row, path[0].col)
     this.x = startPos.x
     this.y = startPos.y
 
@@ -54,8 +53,8 @@ export class EnemySprite {
     this.dirIndicator.fillStyle(0xffffff, 0.7)
     this.dirIndicator.fillTriangle(half * 0.5, 0, -half * 0.3, -half * 0.4, -half * 0.3, half * 0.4)
 
-    const initialAngle = waypoints.length > 1
-      ? Math.atan2(waypoints[1].row - waypoints[0].row, waypoints[1].col - waypoints[0].col)
+    const initialAngle = path.length > 1
+      ? Math.atan2(path[1].row - path[0].row, path[1].col - path[0].col)
       : 0
     this.dirIndicator.rotation = initialAngle
 
@@ -94,9 +93,9 @@ export class EnemySprite {
 
   move(delta: number): boolean {
     if (this.blocked || !this.alive) return false
-    if (this.currentWaypoint >= this.waypoints.length - 1) return false
+    if (this.currentWaypoint >= this.path.length - 1) return false
 
-    const target = this.waypoints[this.currentWaypoint + 1]
+    const target = this.path[this.currentWaypoint + 1]
     const targetPos = this.grid.tileToPixel(target.row, target.col)
     const dx = targetPos.x - this.x
     const dy = targetPos.y - this.y
@@ -126,7 +125,7 @@ export class EnemySprite {
   }
 
   isAtObjective(): boolean {
-    return this.currentWaypoint >= this.waypoints.length - 1
+    return this.currentWaypoint >= this.path.length - 1
   }
 
   destroy(): void {

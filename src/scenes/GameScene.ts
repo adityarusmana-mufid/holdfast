@@ -792,7 +792,11 @@ export class GameScene extends Phaser.Scene {
       this.removeUnitSprite(r, c)
     })
     this.depSystem.activeUnits.clear()
+    this.depSystem.deployedUnitIds.clear()
+    this.depSystem.redeployTimers.clear()
+    this.depSystem.deployCostMultiplier.clear()
     this.exitDecisionMode()
+    this.selectedUnitId = null
     this.flashMessage('All units cleared', 0xd32f2f)
     this.rebuildUnitPalette()
   }

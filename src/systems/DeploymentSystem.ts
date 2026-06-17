@@ -125,11 +125,6 @@ export class DeploymentSystem {
     }
   }
 
-  getRefund(unit: UnitConfig): number {
-    const isFullRefund = unit.traits?.some(t => t.traitId === UnitTrait.FullRefundRetreat)
-    return isFullRefund ? unit.dpCost : Math.floor(unit.dpCost / 2)
-  }
-
   getUnitAt(row: number, col: number): DeployedUnit | undefined {
     return this.activeUnits.get(`${row},${col}`)
   }

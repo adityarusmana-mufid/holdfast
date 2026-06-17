@@ -76,6 +76,26 @@ export class EditorScene extends Phaser.Scene {
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       if (pointer.isDown) this.handleClick(pointer.x, pointer.y)
     })
+
+    this.input.keyboard?.on('keydown-E', () => {
+      this.editMode = this.editMode === EditMode.Erase ? EditMode.Paint : EditMode.Erase
+      this.setStatus(this.editMode === EditMode.Erase ? 'Erase mode' : 'Paint mode')
+      this.addEraseBtn.setText(this.editMode === EditMode.Erase ? '[■ Erase]' : '[ Erase ]')
+      this.addEraseBtn.setColor(this.editMode === EditMode.Erase ? COLORS.text.success : COLORS.text.danger)
+    })
+    this.input.keyboard?.on('keydown-S', () => {
+      this.exportLevel()
+    })
+    this.input.keyboard?.on('keydown-W', () => {
+      if (this.selectedRouteIndex < 0) { this.setStatus('Select a route first'); return }
+      this.waypointMode = !this.waypointMode
+      this.setStatus(this.waypointMode ? 'Waypoint mode: click to add/remove' : 'Paint mode')
+    })
+    PALETTE_ITEMS.forEach((_, i) => {
+      this.input.keyboard?.on(`keydown-${['One','Two','Three','Four','Five','Six','Seven'][i]}`, () => {
+        this.selectTileType(PALETTE_ITEMS[i].type)
+      })
+    })
   }
 
   private buildPalette(): void {

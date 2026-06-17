@@ -684,8 +684,8 @@ export class GameScene extends Phaser.Scene {
       infoLabel.setColor(onCooldown ? COLORS.text.danger : COLORS.text.dim)
 
       if (onCooldown) {
-        if (container.length >= 5) {
-          const cdText = container.getAt(4) as Phaser.GameObjects.Text
+        if (container.length >= 6) {
+          const cdText = container.getAt(5) as Phaser.GameObjects.Text
           const remaining = Math.ceil(this.depSystem.getCooldownRemaining(unit.id))
           cdText.setText(`${remaining}s`)
           cdText.setAlpha(1)

@@ -652,6 +652,8 @@ export class GameScene extends Phaser.Scene {
           this.cancelDeployment()
         }
         this.deployState = 'placing'
+        this.decisionMode = true
+        this.cancelFacingBtn.setAlpha(1)
         this.battleActive = true
         this.enemyManager.startBattle()
         this.battleButton.setText('[ SIMULATION ACTIVE ]')
@@ -681,6 +683,7 @@ export class GameScene extends Phaser.Scene {
         this.inspectingUnit = null
       }
       this.deployState = 'placing'
+      this.cancelFacingBtn.setAlpha(1)
       this.decisionMode = true
     }
     this.unitButtons.forEach((btn, i) => {

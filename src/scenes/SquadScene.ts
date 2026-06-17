@@ -164,6 +164,7 @@ export class SquadScene extends Phaser.Scene {
     this.pickerActive = true
     this.pickedUnit = null
     this.pickerContainer.removeAll(true)
+    this.pickerContainer.setVisible(true)
     this.infoContainer.removeAll(true)
     this.infoContainer.setVisible(false)
 

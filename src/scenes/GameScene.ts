@@ -198,7 +198,10 @@ export class GameScene extends Phaser.Scene {
       }
 
       const pos = this.grid.pixelToTile(pointer.x, pointer.y)
-      if (!pos) return
+      if (!pos) {
+        if (this.deployState === 'placing') this.cancelDeployment()
+        return
+      }
 
       if (this.battleEnded) {
         this.flashMessage('SIMULATION TERMINATED', 0xff9100)
@@ -238,6 +241,7 @@ export class GameScene extends Phaser.Scene {
           this.cancelFacingBtn.setAlpha(1)
           this.flashMessage(`DIRECTION // ${config.name}`, config.color)
         } else {
+          this.cancelDeployment()
           this.flashMessage(check.reason ?? 'Cannot deploy', 0xd32f2f)
         }
       }

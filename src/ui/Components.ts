@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { COLORS, FONTS, hex } from './Constants'
+import { COLORS, FONTS, FONT_SIZE, SPACING, hex } from './Constants'
 
 export interface ButtonStyle {
   w?: number
@@ -22,12 +22,13 @@ export function makeButton(
   const bgColor = style.bgColor ?? COLORS.button.bg
   const borderColor = style.borderColor ?? COLORS.button.border
   const textColor = style.textColor ?? COLORS.text.accent
-  const textSize = style.textSize ?? '12px'
+  const textSize = style.textSize ?? FONT_SIZE.xs
+  const radius = SPACING.xs
 
   const bg = scene.add.graphics()
   bg.setPosition(x, y)
   bg.fillStyle(bgColor, 1)
-  bg.fillRoundedRect(0, 0, w, h, 4)
+  bg.fillRoundedRect(0, 0, w, h, radius)
   bg.lineStyle(1, borderColor, 0.8)
   bg.setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains)
   if (bg.input) bg.input.cursor = 'pointer'
@@ -40,19 +41,19 @@ export function makeButton(
   bg.on('pointerover', () => {
     bg.clear()
     bg.fillStyle(COLORS.button.hover, 1)
-    bg.fillRoundedRect(0, 0, w, h, 4)
+    bg.fillRoundedRect(0, 0, w, h, radius)
     bg.lineStyle(1, 0x00a2ff, 1)
   })
   bg.on('pointerout', () => {
     bg.clear()
     bg.fillStyle(bgColor, 1)
-    bg.fillRoundedRect(0, 0, w, h, 4)
+    bg.fillRoundedRect(0, 0, w, h, radius)
     bg.lineStyle(1, borderColor, 0.8)
   })
   bg.on('pointerdown', () => {
     bg.clear()
     bg.fillStyle(COLORS.button.active, 1)
-    bg.fillRoundedRect(0, 0, w, h, 4)
+    bg.fillRoundedRect(0, 0, w, h, radius)
     bg.lineStyle(1, borderColor, 1)
   })
   bg.on('pointerup', () => onClick())
@@ -65,7 +66,7 @@ export function makeLabel(
   x: number, y: number,
   text: string,
   color: string = COLORS.text.secondary,
-  size: string = '12px',
+  size: string = FONT_SIZE.xs,
 ): Phaser.GameObjects.Text {
   return scene.add.text(x, y, text, {
     fontSize: size, color, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
@@ -85,7 +86,7 @@ export function makeEditableValue(
   config: EditableValueConfig,
 ): Phaser.GameObjects.Text {
   const text = scene.add.text(x, y, `${config.label}: ${config.value}`, {
-    fontSize: '12px', color: config.color ?? COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    fontSize: FONT_SIZE.xs, color: config.color ?? COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
   })
   text.setInteractive({ cursor: 'pointer' })
   text.on('pointerover', () => text.setColor(COLORS.text.accent))
@@ -131,7 +132,7 @@ export function makeCycleLabel(
   onChange: (newIndex: number) => void,
 ): Phaser.GameObjects.Text {
   const txt = scene.add.text(x, y, displayFn(items[currentIndex]), {
-    fontSize: '12px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    fontSize: FONT_SIZE.xs, color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
   })
   txt.setInteractive({ cursor: 'pointer' })
   txt.on('pointerdown', () => {
@@ -148,7 +149,7 @@ export function makeDelLabel(
   onClick: () => void,
 ): Phaser.GameObjects.Text {
   const txt = scene.add.text(x, y, '[del]', {
-    fontSize: '11px', color: COLORS.text.danger, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    fontSize: FONT_SIZE.xs, color: COLORS.text.danger, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
   })
   txt.setInteractive({ cursor: 'pointer' })
   txt.on('pointerdown', onClick)
@@ -162,7 +163,7 @@ export function makeAddLabel(
   onClick: () => void,
 ): Phaser.GameObjects.Text {
   const txt = scene.add.text(x, y, label, {
-    fontSize: '11px', color: COLORS.text.success, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    fontSize: FONT_SIZE.xs, color: COLORS.text.success, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
   })
   txt.setInteractive({ cursor: 'pointer' })
   txt.on('pointerdown', onClick)

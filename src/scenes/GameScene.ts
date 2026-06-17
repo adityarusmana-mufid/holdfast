@@ -10,7 +10,7 @@ import { CombatSystem } from '../systems/CombatSystem'
 import { HealingSystem } from '../systems/HealingSystem'
 import { UNIT_CONFIGS } from '../config/units'
 import { importLevelFromFile } from '../editor/LevelSerializer'
-import { COLORS } from '../ui/Constants'
+import { COLORS, FONT_SIZE } from '../ui/Constants'
 
 export class GameScene extends Phaser.Scene {
   private grid!: Grid
@@ -570,26 +570,30 @@ export class GameScene extends Phaser.Scene {
   }
 
   private buildHUD(): void {
-    this.dpText = this.add.text(200, 10, '', {
-      fontSize: '15px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    const W = this.scale.width
+    const col1 = Math.round(W * 0.12)
+    const col2 = Math.round(W * 0.32)
+
+    this.dpText = this.add.text(col1, 10, '', {
+      fontSize: FONT_SIZE.lg, color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
-    this.limitText = this.add.text(200, 30, '', {
-      fontSize: '12px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    this.limitText = this.add.text(col1, 32, '', {
+      fontSize: FONT_SIZE.sm, color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
-    this.livesText = this.add.text(400, 10, '', {
-      fontSize: '15px', color: COLORS.text.danger, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    this.livesText = this.add.text(col2, 10, '', {
+      fontSize: FONT_SIZE.lg, color: COLORS.text.danger, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
-    this.waveText = this.add.text(400, 30, '', {
-      fontSize: '12px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    this.waveText = this.add.text(col2, 32, '', {
+      fontSize: FONT_SIZE.sm, color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
-    this.statusText = this.add.text(200, 50, '', {
-      fontSize: '12px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    this.statusText = this.add.text(col1, 54, '', {
+      fontSize: FONT_SIZE.sm, color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
 
     if (this.levelData) {
-      this.add.text(580, 10, this.levelData.name, {
-        fontSize: '14px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-      })
+      this.add.text(W - 20, 10, this.levelData.name, {
+        fontSize: FONT_SIZE.base, color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      }).setOrigin(1, 0)
     }
   }
 

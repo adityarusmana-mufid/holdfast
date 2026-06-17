@@ -7,6 +7,9 @@ export class DeploymentSystem {
   dpCap: number
   deploymentLimit: number
   activeUnits: Map<string, DeployedUnit>
+  deployedUnitIds: Set<string>
+  redeployTimers: Map<string, number>
+  deployCostMultiplier: Map<string, number>
   private grid: Grid
   private dpAccumulator: number = 0
 
@@ -17,6 +20,27 @@ export class DeploymentSystem {
     this.dpCap = dpCap
     this.deploymentLimit = deploymentLimit
     this.activeUnits = new Map()
+    this.deployedUnitIds = new Set()
+    this.redeployTimers = new Map()
+    this.deployCostMultiplier = new Map()
+  }
+
+  getCurrentCost(unit: UnitConfig): number {
+    const base = unit.dpCost
+    const mult = this.deployCostMultiplier.get(unit.id) ?? 1.0
+    return Math.floor(base * mult)
+  }
+
+  isDeployed(unitId: string): boolean {
+    return this.deployedUnitIds.has(unitId)
+  }
+
+  isOnCooldown(unitId: string): boolean {
+    return (this.redeployTimers.get(unitId) ?? 0) > 0
+  }
+
+  getCooldownRemaining(unitId: string): number {
+    return this.redeployTimers.get(unitId) ?? 0
   }
 
   canDeploy(unit: UnitConfig, row: number, col: number): { ok: boolean; reason?: string } {
@@ -27,7 +51,8 @@ export class DeploymentSystem {
 
     if (this.activeUnits.size >= this.deploymentLimit) return { ok: false, reason: 'Deployment limit reached' }
 
-    if (this.currentDP < unit.dpCost) return { ok: false, reason: `Need ${unit.dpCost} DP, have ${this.currentDP}` }
+    const cost = this.getCurrentCost(unit)
+    if (this.currentDP < cost) return { ok: false, reason: `Need ${cost} DP, have ${this.currentDP}` }
 
     if (unit.type === 'ground') {
       if (tile.type !== TileType.Ground) {
@@ -46,17 +71,20 @@ export class DeploymentSystem {
     const check = this.canDeploy(unit, row, col)
     if (!check.ok) return null
 
-    this.currentDP -= unit.dpCost
+    const cost = this.getCurrentCost(unit)
+    this.currentDP -= cost
     const deployed: DeployedUnit = {
       config: unit,
       row,
       col,
       currentHp: unit.hp,
+      dpCostPaid: cost,
       lastAttackTime: 0,
       blocking: [],
       facing,
     }
     this.activeUnits.set(`${row},${col}`, deployed)
+    this.deployedUnitIds.add(unit.id)
     return deployed
   }
 
@@ -66,14 +94,40 @@ export class DeploymentSystem {
     if (!unit) return 0
 
     const isFullRefund = unit.config.traits?.some(t => t.traitId === UnitTrait.FullRefundRetreat)
-    const refund = isFullRefund ? unit.config.dpCost : Math.floor(unit.config.dpCost / 2)
+    const refund = isFullRefund ? unit.dpCostPaid : Math.floor(unit.dpCostPaid / 2)
     this.currentDP = Math.min(this.currentDP + refund, this.dpCap)
+
+    const unitId = unit.config.id
     this.activeUnits.delete(key)
+    this.deployedUnitIds.delete(unitId)
+
+    const currentMult = this.deployCostMultiplier.get(unitId) ?? 1.0
+    let nextMult: number
+    if (currentMult < 1.5) {
+      nextMult = 1.5
+    } else {
+      nextMult = Math.min(2.0, currentMult * 2)
+    }
+    this.deployCostMultiplier.set(unitId, nextMult)
+    this.redeployTimers.set(unitId, unit.config.redeployTime)
+
     return refund
   }
 
+  updateTimers(dt: number): void {
+    for (const [unitId, remaining] of this.redeployTimers) {
+      const newTime = remaining - dt
+      if (newTime <= 0) {
+        this.redeployTimers.delete(unitId)
+      } else {
+        this.redeployTimers.set(unitId, newTime)
+      }
+    }
+  }
+
   getRefund(unit: UnitConfig): number {
-    return Math.floor(unit.dpCost / 2)
+    const isFullRefund = unit.traits?.some(t => t.traitId === UnitTrait.FullRefundRetreat)
+    return isFullRefund ? unit.dpCost : Math.floor(unit.dpCost / 2)
   }
 
   getUnitAt(row: number, col: number): DeployedUnit | undefined {
@@ -95,6 +149,7 @@ export class DeploymentSystem {
       this.dpAccumulator -= gained
       this.currentDP = Math.min(this.currentDP + gained, this.dpCap)
     }
+    this.updateTimers(delta)
   }
 
   reset(startingDP: number, dpRegenRate: number, dpCap: number, deploymentLimit: number): void {
@@ -103,6 +158,9 @@ export class DeploymentSystem {
     this.dpCap = dpCap
     this.deploymentLimit = deploymentLimit
     this.activeUnits.clear()
+    this.deployedUnitIds.clear()
+    this.redeployTimers.clear()
+    this.deployCostMultiplier.clear()
     this.dpAccumulator = 0
   }
 }

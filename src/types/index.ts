@@ -150,6 +150,7 @@ export interface DeployedUnit {
   row: number
   col: number
   currentHp: number
+  dpCostPaid: number
   lastAttackTime: number
   blocking: number[]
   facing: Direction

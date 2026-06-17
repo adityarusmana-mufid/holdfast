@@ -22,8 +22,9 @@ export class GameScene extends Phaser.Scene {
   private paletteScrollY: number = 0
   private paletteContainer!: Phaser.GameObjects.Container
   private paletteActionsContainer!: Phaser.GameObjects.Container
-  private selectedUnitIndex: number = 0
-  private unitButtons: Phaser.GameObjects.Container[] = []
+  private selectedUnitId: string | null = null
+  private unitButtons: { container: Phaser.GameObjects.Container; unitId: string }[] = []
+  private paletteBg!: Phaser.GameObjects.Graphics
   private dpText!: Phaser.GameObjects.Text
   private limitText!: Phaser.GameObjects.Text
   private livesText!: Phaser.GameObjects.Text
@@ -76,7 +77,7 @@ export class GameScene extends Phaser.Scene {
     this.drawBgGradient()
     this.unitSprites = []
     this.unitButtons = []
-    this.selectedUnitIndex = 0
+    this.selectedUnitId = null
     this.battleActive = false
     this.battleEnded = false
     this.deployState = 'idle'
@@ -137,7 +138,7 @@ export class GameScene extends Phaser.Scene {
     this.healingSystem = new HealingSystem(this.grid)
 
     this.buildStatsPanel()
-    this.updateStatsPanel(0)
+    this.updateStatsPanel(null)
     this.buildUnitPalette()
     this.buildHUD()
     this.buildBattleButton()
@@ -155,6 +156,11 @@ export class GameScene extends Phaser.Scene {
     this.cancelDeployIndicator.setAlpha(0)
 
     this.setupInput()
+  }
+
+  private getSelectedUnit(): UnitConfig | null {
+    if (this.selectedUnitId === null) return null
+    return this.unitConfigs.find(c => c.id === this.selectedUnitId) ?? null
   }
 
   private setupInput(): void {
@@ -198,10 +204,7 @@ export class GameScene extends Phaser.Scene {
       }
 
       const pos = this.grid.pixelToTile(pointer.x, pointer.y)
-      if (!pos) {
-        if (this.deployState === 'placing') this.cancelDeployment()
-        return
-      }
+      if (!pos) return
 
       if (this.battleEnded) {
         this.flashMessage('SIMULATION TERMINATED', 0xff9100)
@@ -224,22 +227,24 @@ export class GameScene extends Phaser.Scene {
       }
 
       if (this.deployState === 'placing') {
+        if (this.selectedUnitId === null) return
+        const selected = this.getSelectedUnit()
+        if (!selected) return
         const occupiedUnit = this.depSystem.getUnitAt(pos.row, pos.col)
         if (occupiedUnit) {
           this.enterInspectMode(pos)
           return
         }
-        const config = this.unitConfigs[this.selectedUnitIndex]
-        const check = this.depSystem.canDeploy(config, pos.row, pos.col)
+        const check = this.depSystem.canDeploy(selected, pos.row, pos.col)
         if (check.ok) {
           this.pendingTile = pos
           this.pendingFacing = computeFacingTowardGoal(pos, this.getGoalPositions())
           this.deployState = 'facing'
-          this.showRangePreview(config, pos, this.pendingFacing)
+          this.showRangePreview(selected, pos, this.pendingFacing)
           this.showFacingArrow(pos, this.pendingFacing)
           this.hoverIndicator.setAlpha(0)
           this.cancelFacingBtn.setAlpha(1)
-          this.flashMessage(`DIRECTION // ${config.name}`, config.color)
+          this.flashMessage(`DIRECTION // ${selected.name}`, selected.color)
         } else {
           this.cancelDeployment()
           this.flashMessage(check.reason ?? 'Cannot deploy', 0xd32f2f)
@@ -266,8 +271,9 @@ export class GameScene extends Phaser.Scene {
     this.hoverIndicator.setAlpha(0)
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       if (this.deployState === 'facing') {
-        if (!this.pendingTile) return
-        const unitConfig = this.unitConfigs[this.selectedUnitIndex]
+        if (!this.pendingTile || this.selectedUnitId === null) return
+        const selected = this.getSelectedUnit()
+        if (!selected) return
         const center = this.grid.tileToPixel(this.pendingTile.row, this.pendingTile.col)
         const dx = pointer.x - center.x
         const dy = pointer.y - center.y
@@ -281,7 +287,7 @@ export class GameScene extends Phaser.Scene {
           const facing = this.computeFacingFromPointer(pointer)
           if (facing !== this.pendingFacing) {
             this.pendingFacing = facing
-            this.showRangePreview(unitConfig, this.pendingTile, facing)
+            this.showRangePreview(selected, this.pendingTile, facing)
             this.showFacingArrow(this.pendingTile, facing)
           }
         }
@@ -293,9 +299,10 @@ export class GameScene extends Phaser.Scene {
         return
       }
       const pos = this.grid.pixelToTile(pointer.x, pointer.y)
-      if (!pos) { this.hoverIndicator.setAlpha(0); return }
-      const config = this.unitConfigs[this.selectedUnitIndex]
-      const check = this.depSystem.canDeploy(config, pos.row, pos.col)
+      if (!pos || this.selectedUnitId === null) { this.hoverIndicator.setAlpha(0); return }
+      const selected = this.getSelectedUnit()
+      if (!selected) { this.hoverIndicator.setAlpha(0); return }
+      const check = this.depSystem.canDeploy(selected, pos.row, pos.col)
       const px = this.grid.tileToPixel(pos.row, pos.col)
       this.hoverIndicator.clear()
       this.hoverIndicator.fillStyle(check.ok ? 0x00c853 : 0xd32f2f, 0.25)
@@ -399,13 +406,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   private confirmDeployment(): void {
-    if (!this.pendingTile) return
-    const config = this.unitConfigs[this.selectedUnitIndex]
-    const deployed = this.depSystem.deployUnit(config, this.pendingTile.row, this.pendingTile.col, this.pendingFacing)
+    if (!this.pendingTile || this.selectedUnitId === null) return
+    const selected = this.getSelectedUnit()
+    if (!selected) return
+    const deployed = this.depSystem.deployUnit(selected, this.pendingTile.row, this.pendingTile.col, this.pendingFacing)
     if (deployed) {
-      const sprite = new UnitSprite(this, this.grid, config, this.pendingTile.row, this.pendingTile.col, config.hp, this.pendingFacing)
+      const sprite = new UnitSprite(this, this.grid, selected, this.pendingTile.row, this.pendingTile.col, selected.hp, this.pendingFacing)
       this.unitSprites.push(sprite)
-      this.flashMessage(`DEPLOY // ${config.name}  -${config.dpCost} DP`, config.color)
+      const cost = this.depSystem.getCurrentCost(selected)
+      this.flashMessage(`DEPLOY // ${selected.name}  -${cost} DP`, selected.color)
+      this.rebuildUnitPalette()
     }
     this.clearRangePreview()
     this.cancelFacingBtn.setAlpha(0)
@@ -433,7 +443,7 @@ export class GameScene extends Phaser.Scene {
     this.inspectingUnit = unit
     this.decisionMode = true
     this.updateStatsPanel(unit.config, unit)
-    const refund = Math.floor(unit.config.dpCost / 2)
+    const refund = this.depSystem.getRefund(unit.config)
     this.inspectRetreatBtn.setText(`RETREAT  [+${refund} DP]`)
     this.inspectRetreatBtn.setAlpha(1)
     this.inspectCloseBtn.setAlpha(1)
@@ -447,7 +457,7 @@ export class GameScene extends Phaser.Scene {
       this.inspectingUnit = null
     }
     this.decisionMode = false
-    this.updateStatsPanel(this.selectedUnitIndex)
+    this.updateStatsPanel(this.getSelectedUnit())
   }
 
   private retreatInspectedUnit(): void {
@@ -459,6 +469,7 @@ export class GameScene extends Phaser.Scene {
       this.flashMessage(`RETREAT // ${config.name}  +${refund} DP`, 0x00c853)
     }
     this.exitDecisionMode()
+    this.rebuildUnitPalette()
   }
 
   update(_time: number, delta: number): void {
@@ -476,6 +487,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.updateHUD()
+    this.updateButtonVisuals()
   }
 
   private buildStatsPanel(): void {
@@ -495,12 +507,8 @@ export class GameScene extends Phaser.Scene {
     this.statsPanel = this.add.container(0, 0, texts)
   }
 
-  private updateStatsPanel(indexOrConfig: number | UnitConfig, deployed?: DeployedUnit): void {
-    const unit = typeof indexOrConfig === 'number' ? this.unitConfigs[indexOrConfig] : indexOrConfig
-    if (!unit) {
-      this.statsTexts.forEach(t => t.setText(''))
-      return
-    }
+  private updateStatsPanel(unit: UnitConfig | null, deployed?: DeployedUnit): void {
+    if (!unit) { this.statsTexts.forEach(t => t.setText('')); return }
     const dmIcon = unit.damageType === 'thermal' ? '~' : unit.damageType === 'true' ? '!!' : '>'
     const typeLabel = unit.type === 'ground' ? 'GND' : 'RNG'
     this.statsTexts[0].setText(`${unit.subtypeLabel} (${typeLabel})`)
@@ -529,12 +537,8 @@ export class GameScene extends Phaser.Scene {
 
     this.paletteContainer = this.add.container(0, 0)
     this.unitButtons = []
-    this.unitConfigs.forEach((unit, i) => {
-      const y = baseY + i * slotH
-      const btn = this.makeUnitButton(px, y, btnW, btnH, unit, i)
-      this.unitButtons.push(btn)
-      this.paletteContainer.add(btn)
-    })
+    this.paletteScrollY = 0
+    this.rebuildUnitPalette()
 
     const listEnd = baseY + this.unitConfigs.length * slotH
     const actionY = Math.min(listEnd + gap, this.scale.height - 100)
@@ -582,11 +586,42 @@ export class GameScene extends Phaser.Scene {
     this.paletteActionsContainer.add(editorBtn)
   }
 
-  private makeUnitButton(px: number, y: number, btnW: number, btnH: number, unit: UnitConfig, index: number): Phaser.GameObjects.Container {
+  private rebuildUnitPalette(): void {
+    const px = 10
+    const baseY = 70
+    const btnW = 140
+    const btnH = 34
+    const gap = 2
+    const slotH = btnH + gap
+
+    this.paletteContainer.removeAll(true)
+    this.unitButtons = []
+
+    const paletteEntries = this.unitConfigs
+      .filter(c => !this.depSystem.isDeployed(c.id))
+      .sort((a, b) => this.depSystem.getCurrentCost(a) - this.depSystem.getCurrentCost(b))
+
+    paletteEntries.forEach((unit, i) => {
+      const y = baseY + i * slotH
+      const btn = this.makeUnitButton(px, y, btnW, btnH, unit)
+      this.unitButtons.push(btn)
+      this.paletteContainer.add(btn.container)
+    })
+  }
+
+  private makeUnitButton(px: number, y: number, btnW: number, btnH: number, unit: UnitConfig): { container: Phaser.GameObjects.Container; unitId: string } {
+    const cost = this.depSystem.getCurrentCost(unit)
+    const canAfford = this.depSystem.currentDP >= cost
+    const onCooldown = this.depSystem.isOnCooldown(unit.id)
+    const isSelected = this.selectedUnitId === unit.id
+
     const bg = this.add.graphics()
     bg.fillStyle(0xffffff, 1)
     bg.fillRoundedRect(0, 0, btnW, btnH, 4)
-    bg.lineStyle(index === this.selectedUnitIndex ? 2 : 1, index === this.selectedUnitIndex ? 0x00a2ff : 0xcfd8dc, 1)
+    bg.lineStyle(isSelected ? 2 : 1, isSelected ? 0x00a2ff : 0xcfd8dc, 1)
+    if (!canAfford && !onCooldown) {
+      bg.setAlpha(0.5)
+    }
 
     const icon = this.add.graphics()
     if (unit.type === 'ground') {
@@ -601,15 +636,66 @@ export class GameScene extends Phaser.Scene {
       fontSize: '11px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
     const dmIcon = unit.damageType === 'thermal' ? '~' : unit.damageType === 'true' ? '!!' : '>'
-    const infoLabel = this.add.text(22, 20, `DP ${unit.dpCost} | ${dmIcon}${unit.atk} | ${unit.name}`, {
-      fontSize: '9px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    const infoLabel = this.add.text(22, 20, `DP ${cost} | ${dmIcon}${unit.atk} | ${unit.name}`, {
+      fontSize: '9px', color: onCooldown ? COLORS.text.danger : COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
 
-    const container = this.add.container(px, y, [bg, icon, nameLabel, infoLabel])
+    const children: Phaser.GameObjects.GameObject[] = [bg, icon, nameLabel, infoLabel]
+
+    if (onCooldown) {
+      const cooldownOverlay = this.add.graphics()
+      cooldownOverlay.fillStyle(0xd32f2f, 0.15)
+      cooldownOverlay.fillRoundedRect(0, 0, btnW, btnH, 4)
+      const remaining = Math.ceil(this.depSystem.getCooldownRemaining(unit.id))
+      const cdText = this.add.text(btnW - 4, btnH / 2, `${remaining}s`, {
+        fontSize: '10px', color: '#d32f2f', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+      })
+      cdText.setOrigin(1, 0.5)
+      children.push(cooldownOverlay, cdText)
+    }
+
+    const container = this.add.container(px, y, children)
     container.setSize(btnW, btnH)
     container.setInteractive(new Phaser.Geom.Rectangle(0, 0, btnW, btnH), Phaser.Geom.Rectangle.Contains); if (container.input) container.input.cursor = 'pointer'
-    container.on('pointerdown', () => this.selectUnit(index))
-    return container
+    container.on('pointerdown', () => this.selectUnit(unit.id))
+    return { container, unitId: unit.id }
+  }
+
+  private updateButtonVisuals(): void {
+    for (const { container, unitId } of this.unitButtons) {
+      const unit = this.unitConfigs.find(c => c.id === unitId)
+      if (!unit) continue
+      const cost = this.depSystem.getCurrentCost(unit)
+      const canAfford = this.depSystem.currentDP >= cost
+      const onCooldown = this.depSystem.isOnCooldown(unit.id)
+      const isSelected = this.selectedUnitId === unitId
+
+      const bg = container.getAt(0) as Phaser.GameObjects.Graphics
+      bg.clear()
+      bg.fillStyle(0xffffff, 1)
+      bg.fillRoundedRect(0, 0, 140, 34, 4)
+      bg.lineStyle(isSelected ? 2 : 1, isSelected ? 0x00a2ff : 0xcfd8dc, 1)
+      bg.setAlpha(!canAfford && !onCooldown ? 0.5 : 1)
+
+      const infoLabel = container.getAt(3) as Phaser.GameObjects.Text
+      const dmIcon = unit.damageType === 'thermal' ? '~' : unit.damageType === 'true' ? '!!' : '>'
+      infoLabel.setText(`DP ${cost} | ${dmIcon}${unit.atk} | ${unit.name}`)
+      infoLabel.setColor(onCooldown ? COLORS.text.danger : COLORS.text.dim)
+
+      if (onCooldown) {
+        if (container.length >= 5) {
+          const cdText = container.getAt(4) as Phaser.GameObjects.Text
+          const remaining = Math.ceil(this.depSystem.getCooldownRemaining(unit.id))
+          cdText.setText(`${remaining}s`)
+          cdText.setAlpha(1)
+        }
+      } else {
+        for (let i = 4; i < container.length; i++) {
+          const obj = container.getAt(i) as Phaser.GameObjects.Graphics | Phaser.GameObjects.Text
+          obj.setAlpha(0)
+        }
+      }
+    }
   }
 
   private buildHUD(): void {
@@ -652,7 +738,6 @@ export class GameScene extends Phaser.Scene {
           this.cancelDeployment()
         }
         this.deployState = 'placing'
-        this.decisionMode = true
         this.cancelFacingBtn.setAlpha(1)
         this.battleActive = true
         this.enemyManager.startBattle()
@@ -670,9 +755,12 @@ export class GameScene extends Phaser.Scene {
     this.resultText.setDepth(50)
   }
 
-  private selectUnit(index: number): void {
-    this.selectedUnitIndex = index
-    this.updateStatsPanel(index)
+  private selectUnit(unitId: string): void {
+    const unit = this.unitConfigs.find(c => c.id === unitId)
+    if (!unit) return
+
+    this.selectedUnitId = unitId
+    this.updateStatsPanel(unit)
     if (this.battleActive && !this.battleEnded) {
       if (this.deployState === 'facing') {
         this.cancelDeployment()
@@ -686,14 +774,7 @@ export class GameScene extends Phaser.Scene {
       this.cancelFacingBtn.setAlpha(1)
       this.decisionMode = true
     }
-    this.unitButtons.forEach((btn, i) => {
-      const bg = btn.getAt(0) as Phaser.GameObjects.Graphics
-      bg.clear()
-      const unit = this.unitConfigs[i]
-      bg.fillStyle(0xffffff, 1)
-      bg.fillRoundedRect(0, 0, 140, 34, 4)
-      bg.lineStyle(i === index ? 2 : 1, i === index ? 0x00a2ff : 0xcfd8dc, 1)
-    })
+    this.updateButtonVisuals()
   }
 
   private removeUnitSprite(row: number, col: number): void {
@@ -712,6 +793,7 @@ export class GameScene extends Phaser.Scene {
     this.depSystem.activeUnits.clear()
     this.exitDecisionMode()
     this.flashMessage('All units cleared', 0xd32f2f)
+    this.rebuildUnitPalette()
   }
 
   private updateHUD(): void {
@@ -847,6 +929,7 @@ export class GameScene extends Phaser.Scene {
     this.battleEnded = false
     this.deployState = 'idle'
     this.pendingTile = null
+    this.selectedUnitId = null
     this.exitDecisionMode()
     this.inspectRetreatBtn.setAlpha(0)
     this.inspectCloseBtn.setAlpha(0)
@@ -855,8 +938,13 @@ export class GameScene extends Phaser.Scene {
     this.battleButton.setText('[ START SIMULATION ]')
     this.battleButton.setStyle({ color: COLORS.text.accent })
     this.paletteScrollY = 0
-    if (this.paletteContainer) this.paletteContainer.setY(0)
-    this.updateStatsPanel(this.selectedUnitIndex)
+    if (this.paletteContainer) {
+      this.paletteContainer.removeAll(true)
+      this.unitButtons = []
+      this.paletteContainer.setY(0)
+    }
+    this.rebuildUnitPalette()
+    this.updateStatsPanel(null)
     this.updateHUD()
   }
 

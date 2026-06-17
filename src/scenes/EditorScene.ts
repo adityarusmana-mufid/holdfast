@@ -20,7 +20,7 @@ const PALETTE_ITEMS: { type: TileType; label: string; color: number }[] = [
 ]
 
 const PANEL_W = 200
-const PANEL_X = 1024 - PANEL_W - 6
+const PANEL_X = 1280 - PANEL_W - 6
 
 export class EditorScene extends Phaser.Scene {
   private grid!: Grid

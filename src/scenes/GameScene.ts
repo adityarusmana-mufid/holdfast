@@ -594,7 +594,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private buildBattleButton(): void {
-    this.battleButton = this.add.text(512, this.scale.height - 24, '[ START SIMULATION ]', {
+    this.battleButton =       this.add.text(this.scale.width / 2, this.scale.height - 24, '[ START SIMULATION ]', {
       fontSize: '15px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
     this.battleButton.setOrigin(0.5)
@@ -613,7 +613,7 @@ export class GameScene extends Phaser.Scene {
       }
     })
 
-    this.resultText = this.add.text(512, this.scale.height / 2 - 40, '', {
+    this.resultText = this.add.text(this.scale.width / 2, this.scale.height / 2 - 40, '', {
       fontSize: '32px', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
     this.resultText.setOrigin(0.5)
@@ -717,7 +717,7 @@ export class GameScene extends Phaser.Scene {
       ease: 'Sine.easeInOut',
     })
 
-    const restartBtn = this.add.text(512, this.scale.height / 2 + 10, '[ Restart Simulation ]', {
+    const restartBtn = this.add.text(this.scale.width / 2, this.scale.height / 2 + 10, '[ Restart Simulation ]', {
       fontSize: '14px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
     restartBtn.setOrigin(0.5)
@@ -727,7 +727,7 @@ export class GameScene extends Phaser.Scene {
       if (this.levelData) this.loadLevel(this.levelData)
     })
 
-    const editorBtn = this.add.text(512, this.scale.height / 2 + 36, '[ Back to Editor ]', {
+    const editorBtn = this.add.text(this.scale.width / 2, this.scale.height / 2 + 36, '[ Back to Editor ]', {
       fontSize: '14px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
     editorBtn.setOrigin(0.5)
@@ -769,7 +769,7 @@ export class GameScene extends Phaser.Scene {
 
   private flashMessage(msg: string, color: number): void {
     const hex = '#' + color.toString(16).padStart(6, '0')
-    const text = this.add.text(512, this.scale.height - 50, msg, {
+    const text = this.add.text(this.scale.width / 2, this.scale.height - 50, msg, {
       fontSize: '14px', color: hex, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
     text.setOrigin(0.5)

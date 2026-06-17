@@ -6,8 +6,8 @@ import { SquadScene } from './scenes/SquadScene'
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: 1024,
-  height: 768,
+  width: 1280,
+  height: 720,
   parent: document.body,
   backgroundColor: '#f4f6f8',
   scale: {

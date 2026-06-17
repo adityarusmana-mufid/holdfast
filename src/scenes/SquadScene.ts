@@ -52,8 +52,8 @@ export class SquadScene extends Phaser.Scene {
   }
 
   create(): void {
-    const W = 1024
-    const H = 768
+    const W = 1280
+    const H = 720
 
     this.add.text(W / 2, 20, 'SQUAD SELECTION', {
       ...FONTS.h2, color: COLORS.text.primary,
@@ -170,15 +170,15 @@ export class SquadScene extends Phaser.Scene {
 
     const overlay = this.add.graphics()
     overlay.fillStyle(0x000000, 0.4)
-    overlay.fillRect(0, 0, 1024, 768)
-    overlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, 1024, 768), Phaser.Geom.Rectangle.Contains)
+    overlay.fillRect(0, 0, 1280, 720)
+    overlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, 1280, 720), Phaser.Geom.Rectangle.Contains)
     overlay.on('pointerdown', () => {
       if (!this.pickedUnit) this.hidePicker()
     })
     this.pickerContainer.add(overlay)
 
-    const panelX = 220
-    const panelY = 380
+    const panelX = (1280 - 790) / 2
+    const panelY = 340
     const panelW = 790
     const panelH = 380
 
@@ -279,6 +279,7 @@ export class SquadScene extends Phaser.Scene {
     this.confirmBtn.strokeRoundedRect(0, 0, 130, 22, 4)
     this.confirmBtn.setInteractive(new Phaser.Geom.Rectangle(0, 0, 130, 22), Phaser.Geom.Rectangle.Contains)
     if (this.confirmBtn.input) this.confirmBtn.input.cursor = 'pointer'
+    this.confirmBtn.setDepth(30)
     this.confirmBtn.on('pointerup', () => this.confirmPick())
 
     this.showUnitInfo(unit)

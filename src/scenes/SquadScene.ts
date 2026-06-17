@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { UnitConfig, UnitTrait } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
-import { COLORS, FONTS, hex } from '../ui/Constants'
+import { COLORS, FONTS, FONT_SIZE, SPACING, hex } from '../ui/Constants'
 import { makeButton } from '../ui/Components'
 import { TEST_LEVEL } from '../levels/testLevel'
 
@@ -45,7 +45,11 @@ export class SquadScene extends Phaser.Scene {
   private selectedSlotIndex: number = -1
   private pickedUnit: UnitConfig | null = null
   private confirmBtn: Phaser.GameObjects.Graphics | undefined
+  private confirmFixedX: number = 0
+  private confirmFixedY: number = 0
   private infoContainer!: Phaser.GameObjects.Container
+  private cardScrollY: number = 0
+  private cardScrollMax: number = 0
 
   constructor() {
     super({ key: 'SquadScene' })
@@ -162,6 +166,7 @@ export class SquadScene extends Phaser.Scene {
   private showPicker(): void {
     this.pickerActive = true
     this.pickedUnit = null
+    this.cardScrollY = 0
     if (this.confirmBtn) { this.confirmBtn.destroy(); this.confirmBtn = undefined }
     this.pickerContainer.removeAll(true)
     this.pickerContainer.setVisible(true)
@@ -177,10 +182,15 @@ export class SquadScene extends Phaser.Scene {
     })
     this.pickerContainer.add(overlay)
 
-    const panelX = (1280 - 790) / 2
-    const panelY = 340
+    const panelX = Math.round((1280 - 790) / 2)
+    const panelY = 280
     const panelW = 790
-    const panelH = 380
+    const panelH = 400
+    const titleH = 28
+    const confirmH = 36
+    const cardAreaTop = panelY + titleH + SPACING.sm
+    const cardAreaBottom = panelY + panelH - confirmH - SPACING.sm
+    const cardAreaH = cardAreaBottom - cardAreaTop
 
     const panel = this.add.graphics()
     panel.fillStyle(COLORS.panel.bg, 1)
@@ -189,7 +199,7 @@ export class SquadScene extends Phaser.Scene {
     panel.strokeRoundedRect(panelX, panelY, panelW, panelH, 8)
     this.pickerContainer.add(panel)
 
-    const title = this.add.text(panelX + 10, panelY + 8, 'Select Unit (click a card)', {
+    const title = this.add.text(panelX + SPACING.xl, panelY + SPACING.sm, 'Select Unit (click a card)', {
       ...FONTS.body, color: COLORS.text.secondary,
     })
     this.pickerContainer.add(title)
@@ -198,60 +208,84 @@ export class SquadScene extends Phaser.Scene {
     const cardW = 120
     const cardH = 88
     const cardGap = 6
-    const startX2 = panelX + 10
-    const startY2 = panelY + 30
+    const startX2 = panelX + SPACING.xl
     const cols = 6
 
-    const cardContainers: { bg: Phaser.GameObjects.Graphics; elements: Phaser.GameObjects.GameObject[]; unit: UnitConfig; cx: number; cy: number }[] = []
+    const cardContainers: { bg: Phaser.GameObjects.Graphics; elements: Phaser.GameObjects.GameObject[]; unit: UnitConfig; localCx: number; localCy: number }[] = []
+
+    const cardScrollContainer = this.add.container(0, 0)
+    this.pickerContainer.add(cardScrollContainer)
+
+    const rows = Math.ceil(available.length / cols)
+    const totalCardH = rows * (cardH + cardGap) - cardGap
+    this.cardScrollMax = Math.max(0, totalCardH - cardAreaH)
 
     available.forEach((unit, i) => {
       const col = i % cols
       const row = Math.floor(i / cols)
-      const cx = startX2 + col * (cardW + cardGap)
-      const cy = startY2 + row * (cardH + cardGap)
+      const lx = col * (cardW + cardGap)
+      const ly = row * (cardH + cardGap)
 
       const bg = this.add.graphics()
       bg.fillStyle(0xffffff, 1)
-      bg.fillRoundedRect(cx, cy, cardW, cardH, 4)
+      bg.fillRoundedRect(lx, ly, cardW, cardH, 4)
       bg.lineStyle(1, unit.color, 0.5)
-      bg.strokeRoundedRect(cx, cy, cardW, cardH, 4)
-      bg.setInteractive(new Phaser.Geom.Rectangle(cx, cy, cardW, cardH), Phaser.Geom.Rectangle.Contains)
+      bg.strokeRoundedRect(lx, ly, cardW, cardH, 4)
+      bg.setInteractive(new Phaser.Geom.Rectangle(lx, ly, cardW, cardH), Phaser.Geom.Rectangle.Contains)
       if (bg.input) bg.input.cursor = 'pointer'
-      this.pickerContainer.add(bg)
+      cardScrollContainer.add(bg)
 
-      const label = this.add.text(cx + cardW / 2, cy + 12, unit.subtypeLabel, {
+      const label = this.add.text(lx + cardW / 2, ly + 12, unit.subtypeLabel, {
         ...FONTS.bodyBold, color: COLORS.text.primary, align: 'center',
       }).setOrigin(0.5, 0)
-      this.pickerContainer.add(label)
+      cardScrollContainer.add(label)
 
-      const arch = this.add.text(cx + cardW / 2, cy + 28, unit.archetype.toUpperCase(), {
+      const arch = this.add.text(lx + cardW / 2, ly + 28, unit.archetype.toUpperCase(), {
         fontSize: '9px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5, 0)
-      this.pickerContainer.add(arch)
+      cardScrollContainer.add(arch)
 
-      const stats = this.add.text(cx + cardW / 2, cy + 44, `${unit.hp}HP ${unit.atk}ATK`, {
+      const stats = this.add.text(lx + cardW / 2, ly + 44, `${unit.hp}HP ${unit.atk}ATK`, {
         fontSize: '9px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5, 0)
-      this.pickerContainer.add(stats)
+      cardScrollContainer.add(stats)
 
-      const dpLine = this.add.text(cx + cardW / 2, cy + 58, `${unit.dpCost}DP`, {
+      const dpLine = this.add.text(lx + cardW / 2, ly + 58, `${unit.dpCost}DP`, {
         fontSize: '9px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5, 0)
-      this.pickerContainer.add(dpLine)
+      cardScrollContainer.add(dpLine)
 
       const el: Phaser.GameObjects.GameObject[] = [bg, label, arch, stats, dpLine]
-      cardContainers.push({ bg, elements: el, unit, cx, cy })
+      cardContainers.push({ bg, elements: el, unit, localCx: lx, localCy: ly })
 
       bg.on('pointerdown', () => {
         this.selectPickedUnit(unit, cardContainers, cardW, cardH)
       })
     })
 
+    cardScrollContainer.setPosition(startX2 + cardW / 2, cardAreaTop)
+
+    const maskShape = this.make.graphics()
+    maskShape.fillStyle(0xffffff)
+    maskShape.fillRect(0, 0, panelW - SPACING.xl * 2, cardAreaH)
+    const mask = maskShape.createGeometryMask()
+    cardScrollContainer.setMask(mask)
+    this.pickerContainer.add(maskShape)
+    maskShape.setVisible(false)
+
+    this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
+      if (!this.pickerActive) return
+      this.cardScrollY = Phaser.Math.Clamp(this.cardScrollY - dy * 0.5, -this.cardScrollMax, 0)
+      cardScrollContainer.y = cardAreaTop + this.cardScrollY
+    })
+
+    this.confirmFixedX = panelX + panelW / 2
+    this.confirmFixedY = panelY + panelH - 26
   }
 
   private selectPickedUnit(
     unit: UnitConfig,
-    cardContainers: { bg: Phaser.GameObjects.Graphics; cx: number; cy: number; unit: UnitConfig }[],
+    cardContainers: { bg: Phaser.GameObjects.Graphics; localCx: number; localCy: number; unit: UnitConfig }[],
     cardW: number, cardH: number,
   ): void {
     this.pickedUnit = unit
@@ -260,19 +294,14 @@ export class SquadScene extends Phaser.Scene {
       cc.bg.clear()
       const isSelected = cc.unit.id === unit.id
       cc.bg.fillStyle(0xffffff, 1)
-      cc.bg.fillRoundedRect(cc.cx, cc.cy, cardW, cardH, 4)
+      cc.bg.fillRoundedRect(cc.localCx, cc.localCy, cardW, cardH, 4)
       cc.bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x00a2ff : cc.unit.color, isSelected ? 1 : 0.5)
-      cc.bg.strokeRoundedRect(cc.cx, cc.cy, cardW, cardH, 4)
+      cc.bg.strokeRoundedRect(cc.localCx, cc.localCy, cardW, cardH, 4)
     }
 
-    const current = cardContainers.find(c => c.unit.id === unit.id)
-    if (!current) return
-
     if (this.confirmBtn) { this.confirmBtn.destroy(); this.confirmBtn = undefined }
-    const btnX = current.cx
-    const btnY = current.cy + cardH + 6
     this.confirmBtn = this.add.graphics()
-    this.confirmBtn.setPosition(btnX, btnY)
+    this.confirmBtn.setPosition(this.confirmFixedX - 65, this.confirmFixedY - 11)
     this.confirmBtn.fillStyle(0x00c853, 0.15)
     this.confirmBtn.fillRoundedRect(0, 0, 130, 22, 4)
     this.confirmBtn.lineStyle(1, 0x00c853, 0.6)
@@ -369,6 +398,8 @@ export class SquadScene extends Phaser.Scene {
     this.infoContainer.removeAll(true)
     this.infoContainer.setVisible(false)
     if (this.confirmBtn) { this.confirmBtn.destroy(); this.confirmBtn = undefined }
+    this.cardScrollY = 0
+    this.cardScrollMax = 0
   }
 
   private autoFill(): void {

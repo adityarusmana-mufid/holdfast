@@ -443,7 +443,8 @@ export class GameScene extends Phaser.Scene {
     this.inspectingUnit = unit
     this.decisionMode = true
     this.updateStatsPanel(unit.config, unit)
-    const refund = this.depSystem.getRefund(unit.config)
+    const isFullRefund = unit.config.traits?.some(t => t.traitId === UnitTrait.FullRefundRetreat)
+    const refund = isFullRefund ? unit.dpCostPaid : Math.floor(unit.dpCostPaid / 2)
     this.inspectRetreatBtn.setText(`RETREAT  [+${refund} DP]`)
     this.inspectRetreatBtn.setAlpha(1)
     this.inspectCloseBtn.setAlpha(1)

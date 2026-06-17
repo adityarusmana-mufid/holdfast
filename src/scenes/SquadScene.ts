@@ -44,8 +44,7 @@ export class SquadScene extends Phaser.Scene {
   private pickerActive: boolean = false
   private selectedSlotIndex: number = -1
   private pickedUnit: UnitConfig | null = null
-  private confirmBtn!: Phaser.GameObjects.Graphics
-  private confirmTxt!: Phaser.GameObjects.Text
+  private confirmBtn: Phaser.GameObjects.Graphics | undefined
   private infoContainer!: Phaser.GameObjects.Container
 
   constructor() {
@@ -163,6 +162,7 @@ export class SquadScene extends Phaser.Scene {
   private showPicker(): void {
     this.pickerActive = true
     this.pickedUnit = null
+    if (this.confirmBtn) { this.confirmBtn.destroy(); this.confirmBtn = undefined }
     this.pickerContainer.removeAll(true)
     this.pickerContainer.setVisible(true)
     this.infoContainer.removeAll(true)
@@ -247,16 +247,6 @@ export class SquadScene extends Phaser.Scene {
       })
     })
 
-    this.confirmTxt = this.add.text(panelX + panelW - 10, panelY + 8, '', {
-      ...FONTS.bodyBold, color: COLORS.text.success, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-    })
-    this.confirmTxt.setOrigin(1, 0)
-    this.confirmTxt.setAlpha(0)
-    this.pickerContainer.add(this.confirmTxt)
-
-    this.confirmBtn = this.add.graphics()
-    this.confirmBtn.setAlpha(0)
-    this.pickerContainer.add(this.confirmBtn)
   }
 
   private selectPickedUnit(
@@ -278,21 +268,18 @@ export class SquadScene extends Phaser.Scene {
     const current = cardContainers.find(c => c.unit.id === unit.id)
     if (!current) return
 
-    this.confirmTxt.setText(`[ Confirm - ${unit.subtypeLabel} ]`)
-    this.confirmTxt.setAlpha(1)
-
-    this.confirmBtn.clear()
-    this.confirmBtn.setAlpha(1)
+    if (this.confirmBtn) { this.confirmBtn.destroy(); this.confirmBtn = undefined }
     const btnX = current.cx
     const btnY = current.cy + cardH + 6
+    this.confirmBtn = this.add.graphics()
+    this.confirmBtn.setPosition(btnX, btnY)
     this.confirmBtn.fillStyle(0x00c853, 0.15)
-    this.confirmBtn.fillRoundedRect(btnX, btnY, 130, 22, 4)
+    this.confirmBtn.fillRoundedRect(0, 0, 130, 22, 4)
     this.confirmBtn.lineStyle(1, 0x00c853, 0.6)
-    this.confirmBtn.strokeRoundedRect(btnX, btnY, 130, 22, 4)
-    this.confirmBtn.setInteractive(new Phaser.Geom.Rectangle(btnX, btnY, 130, 22), Phaser.Geom.Rectangle.Contains)
+    this.confirmBtn.strokeRoundedRect(0, 0, 130, 22, 4)
+    this.confirmBtn.setInteractive(new Phaser.Geom.Rectangle(0, 0, 130, 22), Phaser.Geom.Rectangle.Contains)
     if (this.confirmBtn.input) this.confirmBtn.input.cursor = 'pointer'
-    this.confirmBtn.removeAllListeners('pointerdown')
-    this.confirmBtn.on('pointerdown', () => this.confirmPick())
+    this.confirmBtn.on('pointerup', () => this.confirmPick())
 
     this.showUnitInfo(unit)
   }
@@ -380,6 +367,7 @@ export class SquadScene extends Phaser.Scene {
     this.pickerContainer.setVisible(false)
     this.infoContainer.removeAll(true)
     this.infoContainer.setVisible(false)
+    if (this.confirmBtn) { this.confirmBtn.destroy(); this.confirmBtn = undefined }
   }
 
   private autoFill(): void {

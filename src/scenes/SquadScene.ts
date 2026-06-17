@@ -266,6 +266,7 @@ export class SquadScene extends Phaser.Scene {
     cardScrollContainer.setPosition(startX2 + cardW / 2, cardAreaTop)
 
     const maskShape = this.make.graphics()
+    maskShape.setPosition(startX2, cardAreaTop)
     maskShape.fillStyle(0xffffff)
     maskShape.fillRect(0, 0, panelW - SPACING.xl * 2, cardAreaH)
     const mask = maskShape.createGeometryMask()
@@ -273,8 +274,9 @@ export class SquadScene extends Phaser.Scene {
     this.pickerContainer.add(maskShape)
     maskShape.setVisible(false)
 
-    this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
+    this.input.on('wheel', (pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
       if (!this.pickerActive) return
+      if (pointer.x < panelX || pointer.x > panelX + panelW || pointer.y < cardAreaTop || pointer.y > cardAreaBottom) return
       this.cardScrollY = Phaser.Math.Clamp(this.cardScrollY - dy * 0.5, -this.cardScrollMax, 0)
       cardScrollContainer.y = cardAreaTop + this.cardScrollY
     })

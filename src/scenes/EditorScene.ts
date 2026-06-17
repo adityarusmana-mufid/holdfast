@@ -326,7 +326,7 @@ export class EditorScene extends Phaser.Scene {
   }
 
   private buildStatusBar(): void {
-    this.statusText = makeLabel(this, GRID_OFFSET_X, this.scale.height - 20, 'Ready', COLORS.text.dim)
+    this.statusText = makeLabel(this, GRID_OFFSET_X, this.scale.height - 20, 'Ready  •  E=erase  S=export  W=waypoint 1-6=palette', COLORS.text.dim)
   }
 
   private selectTileType(type: TileType): void {
@@ -647,6 +647,7 @@ function injectEditorStyles(): void {
 .route-item:hover { background: #2a2a4e; }
 .route-item.selected { background: #2a3a5e; }
 .route-swatch { width: 16px; height: 16px; border-radius: 3px; margin-right: 8px; display: inline-block; }
+.ef-scroll { overflow-y: auto; max-height: 320px; }
 `
   document.head.appendChild(s)
 }
@@ -821,9 +822,10 @@ class WavePanel {
     }
 
     const suffix = this.expanded ? ' [hide]' : ` [${this.waves.length}] [show]`
+    const scrollWrap = this.expanded ? `<div class="ef-scroll">${content}</div>` : content
     const html = `<div class="editor-panel" style="width:${this.w - 20}px">
       <div class="ef-header" data-action="toggle-expand">WAVES${suffix}</div>
-      ${content}
+      ${scrollWrap}
     </div>`
 
     this.domEl = makeDomPanel(this.scene, this.x, this.y, html)

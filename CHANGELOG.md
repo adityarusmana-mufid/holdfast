@@ -1,3 +1,29 @@
+## [2026-06-18] Phase 9 — Whole-Grid Perspective Foreshortening
+- Grid renders as a single perspective plane (PERSPECTIVE_FACTOR = 0.08)
+- Horizontal lines stay straight, vertical lines converge toward top
+- Each tile is a proper trapezoid, tiles seamlessly with neighbors
+- Grid lines, borders, shadow strips, decorations follow trapezoid grid
+- Click detection (pixelToTile) reverse-transforms through perspective
+- Files: `src/entities/Grid.ts`
+
+## [2026-06-18] Phase 8 — Flat Elevation Visuals + Scene Flow
+- Tile colors standardized (Ranged=#d4d8dc, Ground=#b0b8c4, Floor=#5a5a5a, Wall=#1a1a1a)
+- Shadow strip on elevated tiles, hidden on continuous elevated platforms
+- Orange border on Ranged tiles (width=2); Spawn/Goal: X corners + triangle
+- RepairNode: green cross icon, ArmorGrid: blue shield icon
+- Grid supports custom offsetX/offsetY; Editor grid centered between panels
+- Ghost grid overlay at depth -5 in GameScene
+- Scene flow: Boot → ChapterSelect → LevelSelect → SquadScene → GameScene → ResultScene
+- Editor gated behind ?dev=true URL parameter
+- Combat depth: kinetic/thermal damage (same both directions), enemy attacks, unit death (no DP refund)
+- Repair Node (30 HP/s), Armor Grid (+100 DEF), Editor palette (8 items)
+- Stats panel: live HP update, RES%, deploy cooldown .toFixed(2)
+- Auto-fill curated 12-unit squad; card simplification (DP + icon + name)
+- Defeat detection, star calculation (1-3), result screen transition
+- Files: AGENTS.md, CHANGELOG.md, src/entities/Grid.ts, src/shared/utils/GridMath.ts, src/scenes/*, src/config/*, src/systems/*, src/types/index.ts, src/ui/Constants.ts
+- New scenes: ChapterSelectScene.ts, LevelSelectScene.ts, ResultScene.ts
+- Branch: feat/flat-elevation-visual (merged to main)
+
 ## [2026-06-17] Phase 7 — Combat Depth (Enemy Attacks + Terrain Effects)
 - Enemy attack system: blocked ground enemies attack blockers every `attackInterval` seconds
 - Aerial enemy (drone) attacks: targets nearest ranged unit within 3 tiles

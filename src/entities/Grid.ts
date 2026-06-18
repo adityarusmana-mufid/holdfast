@@ -5,7 +5,7 @@ import { tileColor, tileBorderColor, tileLabel, tileTextColor, ROUTE_COLORS } fr
 export const TILE_SIZE = 64
 export const GRID_OFFSET_X = 148
 export const GRID_OFFSET_Y = 128
-const PERSPECTIVE_FACTOR = 0.08
+const ROW_INSET = 6
 
 function migrateTileTypeStatic(type: string): TileType {
   switch (type) {
@@ -71,18 +71,12 @@ export class Grid {
     if (tile) tile.type = type
   }
 
-  private get topInset(): number {
-    return this.cols * TILE_SIZE * PERSPECTIVE_FACTOR / 2
-  }
-
   private rowLeftX(row: number): number {
-    const t = row / this.rows
-    return Phaser.Math.Linear(this.offsetX + this.topInset, this.offsetX, t)
+    return this.offsetX + ROW_INSET * (this.rows - row)
   }
 
   private rowRightX(row: number): number {
-    const t = row / this.rows
-    return Phaser.Math.Linear(this.offsetX + this.cols * TILE_SIZE - this.topInset, this.offsetX + this.cols * TILE_SIZE, t)
+    return this.offsetX + this.cols * TILE_SIZE - ROW_INSET * (this.rows - row)
   }
 
   private tileLeftX(row: number, col: number): number {

@@ -1,10 +1,12 @@
 ## [2026-06-18] Phase 9 — Whole-Grid Perspective Foreshortening
-- Grid renders as a single perspective plane (PERSPECTIVE_FACTOR = 0.08)
+- Grid renders as a single perspective plane (ROW_INSET = 6)
 - Horizontal lines stay straight, vertical lines converge toward top
 - Each tile is a proper trapezoid, tiles seamlessly with neighbors
+- Row-based inset: consistent ~5.4° side angle across all grid sizes (3-row, 8-row, 10-row)
 - Grid lines, borders, shadow strips, decorations follow trapezoid grid
 - Click detection (pixelToTile) reverse-transforms through perspective
-- Files: `src/entities/Grid.ts`
+- GameScene grid centered between palette and screen edge (dynamic offset calculation)
+- Files: `src/entities/Grid.ts`, `src/scenes/GameScene.ts`
 
 ## [2026-06-18] Phase 8 — Flat Elevation Visuals + Scene Flow
 - Tile colors standardized (Ranged=#d4d8dc, Ground=#b0b8c4, Floor=#5a5a5a, Wall=#1a1a1a)

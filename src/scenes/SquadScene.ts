@@ -1,9 +1,8 @@
 import Phaser from 'phaser'
-import { UnitConfig, UnitTrait } from '../types/index'
+import { UnitConfig, UnitTrait, LevelData } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONTS, FONT_SIZE, SPACING, hex } from '../ui/Constants'
 import { makeButton } from '../ui/Components'
-import { TEST_LEVEL } from '../levels/testLevel'
 
 const SLOT_SIZE = 100
 const SLOT_GAP = 12
@@ -51,8 +50,18 @@ export class SquadScene extends Phaser.Scene {
   private cardScrollY: number = 0
   private cardScrollMax: number = 0
 
+  private levelId: string = ''
+  private chapterId: string = ''
+  private levelData: LevelData | null = null
+
   constructor() {
     super({ key: 'SquadScene' })
+  }
+
+  init(data: { levelId: string; chapterId: string; levelData: LevelData }): void {
+    this.levelId = data.levelId
+    this.chapterId = data.chapterId
+    this.levelData = data.levelData
   }
 
   create(): void {
@@ -101,14 +110,20 @@ export class SquadScene extends Phaser.Scene {
     this.infoContainer.setDepth(25)
     this.infoContainer.setVisible(false)
 
-    makeButton(this, 20, H - 48, 'Editor', () => {
-      this.scene.start('EditorScene')
+    makeButton(this, 20, H - 48, '< Back', () => {
+      this.scene.start('LevelSelectScene', { chapterId: this.chapterId })
     }, { w: 100, h: 30 })
 
     makeButton(this, W - 160, H - 48, 'Start Mission', () => {
       const squad = this.slots.filter((s): s is UnitConfig => s !== null)
       if (squad.length === 0) return
-      this.scene.start('GameScene', { level: TEST_LEVEL, squad })
+      if (!this.levelData) return
+      this.scene.start('GameScene', {
+        level: this.levelData,
+        squad,
+        chapterId: this.chapterId,
+        levelId: this.levelId,
+      })
     }, { w: 140, h: 30 })
   }
 
@@ -344,7 +359,7 @@ export class SquadScene extends Phaser.Scene {
     const statsLines = [
       `HP: ${unit.hp}`,
       `ATK: ${dmIcon}${unit.atk}`,
-      `DEF: ${unit.def}  |  INS: ${unit.insulation}`,
+      `DEF: ${unit.def}  |  RES: ${unit.res}%`,
       `BLK: ${unit.blockCount}  |  DP: ${unit.dpCost}`,
       `Interval: ${unit.attackInterval.toFixed(2)}s`,
       unit.canBeHealed === false ? 'Cannot be healed' : 'Can be healed',
@@ -405,11 +420,24 @@ export class SquadScene extends Phaser.Scene {
   }
 
   private autoFill(): void {
-    const available = [...UNIT_CONFIGS]
-    const count = Math.min(12, available.length)
-    for (let i = 0; i < count; i++) {
-      this.slots[i] = available[i]
-      this.drawSlot(this.slotContainers[i], available[i])
+    const picks = [
+      'pioneer',
+      'charger',
+      'protector',
+      'fighter',
+      'swordmaster',
+      'medic_st',
+      'incantation_medic',
+      'core_caster',
+      'sniper',
+      'deadeye',
+      'decel_binder',
+      'bard_supporter',
+    ]
+    for (let i = 0; i < 12; i++) {
+      const unit = UNIT_CONFIGS.find(u => u.id === picks[i]) ?? null
+      this.slots[i] = unit
+      this.drawSlot(this.slotContainers[i], unit)
     }
     this.updateSquadLabel()
   }

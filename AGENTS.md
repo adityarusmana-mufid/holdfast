@@ -94,3 +94,27 @@ Arknights game mechanic references documented in `.opencode/explore/2026-06-12-d
 
 ## Coverage Threshold
 - Minimum 80% line coverage enforced in CI
+
+## Vision / Screenshot Analysis
+
+| Approach | Model | Cost | Use Case |
+|----------|-------|------|----------|
+| `@vision` subagent | combo-ngirit (budget) | 9router tokens (1×) | One-off pixel analysis |
+| `@vision` override | combo-qwen | 9router tokens (2-3×) | Needs more detail |
+| `vision_describe` MCP | Gemini API | **Free** (1500/day) | Frequent analysis |
+
+**Screenshot capture:** `scripts/screenshot.mjs` (Playwright, captures game at localhost:3000)
+
+Full guide: `.opencode/vision-setup.md`
+
+### Token Economy
+- The subagent auto-reports estimated output tokens: `~{N} output tokens used`
+- Default to **MCP** (free) over `@vision` when possible
+- Override model with: `@vision (use combo-qwen) Read ...`
+
+### Quick Workflow
+```bash
+node scripts/screenshot.mjs                    # capture
+@vision Read /tmp/opencode/game-screenshot.png # analyze (budget)
+vision_describe("/tmp/opencode/game-screenshot.png")  # analyze (free)
+```

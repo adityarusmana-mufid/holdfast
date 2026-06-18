@@ -7,24 +7,28 @@ export const ROUTE_COLORS = [
 
 export function tileColor(type: TileType): number {
   switch (type) {
-    case TileType.Ground: return 0x3a3a3a
-    case TileType.Floor: return 0x2a2a2a
-    case TileType.Ranged: return 0x4a4a3a
+    case TileType.Ground: return 0xb0b8c4
+    case TileType.Floor: return 0x5a5a5a
+    case TileType.Ranged: return 0xd4d8dc
     case TileType.Wall: return 0x1a1a1a
-    case TileType.Spawn: return 0x4a1a1a
-    case TileType.Goal: return 0x1a1a4a
-    default: return 0x3a3a3a
+    case TileType.Spawn: return 0xcc4444
+    case TileType.Goal: return 0x4444cc
+    case TileType.RepairNode: return 0xb0b8c4
+    case TileType.ArmorGrid: return 0xb0b8c4
+    default: return 0xb0b8c4
   }
 }
 
 export function tileBorderColor(type: TileType): number {
   switch (type) {
     case TileType.Ground: return 0x555555
-    case TileType.Floor: return 0x444444
-    case TileType.Ranged: return 0x666655
+    case TileType.Floor: return 0x7a7a7a
+    case TileType.Ranged: return 0xffa000
     case TileType.Wall: return 0x333333
-    case TileType.Spawn: return 0x883333
-    case TileType.Goal: return 0x333388
+    case TileType.Spawn: return 0xff6666
+    case TileType.Goal: return 0x6666ff
+    case TileType.RepairNode: return 0x44cc55
+    case TileType.ArmorGrid: return 0x4488cc
     default: return 0x555555
   }
 }
@@ -33,28 +37,23 @@ export function tileTextColor(type: TileType): string {
   switch (type) {
     case TileType.Spawn: return '#ff6666'
     case TileType.Goal: return '#6666ff'
+    case TileType.RepairNode: return '#44cc55'
+    case TileType.ArmorGrid: return '#4488cc'
     default: return '#888888'
   }
 }
 
-export function tileLabel(type: TileType): string {
-  switch (type) {
-    case TileType.Ground: return ''
-    case TileType.Floor: return '//'
-    case TileType.Ranged: return '⬆'
-    case TileType.Wall: return '▤'
-    case TileType.Spawn: return 'S'
-    case TileType.Goal: return 'G'
-    default: return ''
-  }
+export function tileLabel(_type: TileType): string {
+  return ''
 }
 
 export function isDeployable(type: TileType): boolean {
-  return type === TileType.Ground || type === TileType.Ranged
+  return type === TileType.Ground || type === TileType.Ranged || type === TileType.RepairNode || type === TileType.ArmorGrid
 }
 
 export function isWalkable(type: TileType): boolean {
-  return type === TileType.Floor || type === TileType.Spawn || type === TileType.Goal
+  return type === TileType.Floor || type === TileType.Spawn || type === TileType.Goal ||
+    type === TileType.RepairNode || type === TileType.ArmorGrid
 }
 
 export function validateRoutePath(route: Route): boolean {

@@ -1,0 +1,10 @@
+# Next Task
+
+**Bug:** Clicking empty squad slots does not enter unit selection (auto-fill works).
+
+**File:** `.opencode/issues/2026-06-16-empty-slot-click-not-working.md`
+
+**Priority:** High — blocks squad customization flow.
+**Status:** Pending.
+
+Start here when resuming work.

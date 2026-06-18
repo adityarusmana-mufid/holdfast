@@ -1,13 +1,15 @@
 import { Grid } from '../entities/Grid'
 import { EnemySprite } from '../entities/Enemy'
 import { UnitSprite } from '../entities/Unit'
-import { Position, UnitTrait } from '../types/index'
+import { Position, UnitTrait, TileType, DamageType } from '../types/index'
 import { positionsInRange } from '../shared/utils/GridMath'
 
 export interface CombatEvents {
   onEnemyKilled: (enemy: EnemySprite, killer: UnitSprite | null) => void
   onDamageDealt: (damage: number, enemy: EnemySprite, damageType: string) => void
   onHealApplied?: (target: UnitSprite, amount: number, source: UnitSprite) => void
+  onUnitDamageDealt?: (damage: number, unit: UnitSprite, damageType: string) => void
+  onUnitDeath?: (unit: UnitSprite, killer: EnemySprite) => void
 }
 
 interface AttackParams {
@@ -16,9 +18,12 @@ interface AttackParams {
   useAoE: boolean
 }
 
+const DRONE_ATTACK_RANGE = 3
+
 export class CombatSystem {
   private grid: Grid
   private events: CombatEvents
+  private enemyAttackTimers: Map<number, number> = new Map()
 
   constructor(grid: Grid, events: CombatEvents) {
     this.grid = grid
@@ -26,10 +31,11 @@ export class CombatSystem {
   }
 
   update(delta: number, units: UnitSprite[], enemies: EnemySprite[]): void {
+    const dt = delta / 1000
+
     for (const unit of units) {
       if (!unit.isAlive()) continue
 
-      const dt = delta / 1000
       unit.lastAttackTime += dt
 
       if (unit.lastAttackTime < unit.config.attackInterval) continue
@@ -73,6 +79,64 @@ export class CombatSystem {
         }
       }
     }
+
+    for (const enemy of enemies) {
+      if (!enemy.alive) continue
+
+      const acc = this.enemyAttackTimers.get(enemy.id) ?? 0
+      const newAcc = acc + dt
+      if (newAcc < enemy.config.attackInterval) {
+        this.enemyAttackTimers.set(enemy.id, newAcc)
+        continue
+      }
+      this.enemyAttackTimers.set(enemy.id, newAcc - enemy.config.attackInterval)
+
+      let target: UnitSprite | null = null
+      if (enemy.config.isAerial) {
+        target = this.findNearestRangedUnit(enemy, units)
+      } else if (enemy.blocked && enemy.blockerUnitKey) {
+        const [r, c] = enemy.blockerUnitKey.split(',').map(Number)
+        target = units.find(u => u.row === r && u.col === c && u.isAlive()) ?? null
+      }
+
+      if (!target) continue
+
+      const def = this.getUnitEffectiveDef(target)
+      const damage = this.calcDamage(enemy.config.atk, def, target.config.res, enemy.config.damageType)
+      target.takeDamage(damage)
+
+      if (damage > 0 && this.events.onUnitDamageDealt) {
+        this.events.onUnitDamageDealt(damage, target, enemy.config.damageType)
+      }
+
+      if (!target.isAlive() && this.events.onUnitDeath) {
+        this.events.onUnitDeath(target, enemy)
+      }
+    }
+  }
+
+  private getUnitEffectiveDef(unit: UnitSprite): number {
+    const tile = this.grid.getTile(unit.row, unit.col)
+    if (tile && tile.type === TileType.ArmorGrid) {
+      return unit.config.def + 100
+    }
+    return unit.config.def
+  }
+
+  private findNearestRangedUnit(enemy: EnemySprite, units: UnitSprite[]): UnitSprite | null {
+    let best: UnitSprite | null = null
+    let bestDist = Infinity
+    const eTile = enemy.getCurrentTile()
+    if (!eTile) return null
+    for (const u of units) {
+      if (!u.isAlive() || u.config.type !== 'ranged') continue
+      const dist = Math.abs(u.row - eTile.row) + Math.abs(u.col - eTile.col)
+      if (dist <= DRONE_ATTACK_RANGE && dist < bestDist) {
+        bestDist = dist
+        best = u
+      }
+    }
+    return best
   }
 
   private isBlocking(unit: UnitSprite, enemies: EnemySprite[]): boolean {
@@ -316,13 +380,16 @@ export class CombatSystem {
   private calculateDamage(unit: UnitSprite, target: EnemySprite, atkOverride?: number): number {
     const atk = atkOverride ?? unit.config.atk
     if (unit.config.damageType === 'true') return atk
-    let def: number
     if (unit.config.damageType === 'kinetic') {
-      def = target.config.armor
-    } else {
-      def = target.config.insulation
+      return Math.max(Math.floor(atk * 0.05), atk - target.config.armor)
     }
-    return Math.max(Math.floor(atk * 0.05), atk - def)
+    return Math.max(Math.floor(atk * 0.05), Math.floor(atk * (1 - target.config.res / 100)))
+  }
+
+  private calcDamage(atk: number, def: number, res: number, type: DamageType): number {
+    if (type === 'true') return atk
+    if (type === 'kinetic') return Math.max(Math.floor(atk * 0.05), atk - def)
+    return Math.max(Math.floor(atk * 0.05), Math.floor(atk * (1 - res / 100)))
   }
 
   private hasTrait(unit: UnitSprite, traitId: UnitTrait): boolean {

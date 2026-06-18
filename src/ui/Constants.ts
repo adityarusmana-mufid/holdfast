@@ -17,6 +17,7 @@ export const FONTS = {
   h4: { fontSize: FONT_SIZE.sm, fontFamily: FONT_FAMILY, fontStyle: 'bold' },
   h3: { fontSize: FONT_SIZE.lg, fontFamily: FONT_FAMILY, fontStyle: 'bold' },
   h2: { fontSize: FONT_SIZE.xl, fontFamily: FONT_FAMILY, fontStyle: 'bold' },
+  h1: { fontSize: FONT_SIZE['3xl'], fontFamily: FONT_FAMILY, fontStyle: 'bold' },
 }
 
 export const SPACING = {

@@ -1,11 +1,14 @@
 import { Grid } from '../entities/Grid'
 import { UnitSprite } from '../entities/Unit'
-import { UnitTrait, Position } from '../types/index'
+import { UnitTrait, Position, TileType } from '../types/index'
 import { positionsInRange } from '../shared/utils/GridMath'
+
+const REPAIR_NODE_HEAL_RATE = 30
 
 export class HealingSystem {
   private grid: Grid
   private healAccumulators: Map<string, number> = new Map()
+  private repairNodeAccumulators: Map<string, number> = new Map()
 
   constructor(grid: Grid) {
     this.grid = grid
@@ -22,6 +25,28 @@ export class HealingSystem {
       if (this.hasTrait(unit, UnitTrait.AoEHoT)) {
         this.tickAoEHoT(unit, units, delta, onHeal)
       }
+
+      this.tickRepairNode(unit, delta, onHeal)
+    }
+  }
+
+  private tickRepairNode(unit: UnitSprite, delta: number, onHeal: (target: UnitSprite, amount: number, source: UnitSprite) => void): void {
+    const tile = this.grid.getTile(unit.row, unit.col)
+    if (!tile || tile.type !== TileType.RepairNode) return
+
+    const key = `rn_${unit.row}_${unit.col}`
+    const dt = delta / 1000
+    const acc = (this.repairNodeAccumulators.get(key) ?? 0) + dt
+
+    if (acc < 1) {
+      this.repairNodeAccumulators.set(key, acc)
+      return
+    }
+    this.repairNodeAccumulators.set(key, acc - 1)
+
+    const healed = unit.heal(REPAIR_NODE_HEAL_RATE)
+    if (healed > 0) {
+      onHeal(unit, healed, unit)
     }
   }
 

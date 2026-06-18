@@ -22,17 +22,21 @@ export class Grid {
   private tileGraphics: Phaser.GameObjects.Graphics
   private labelTexts: Phaser.GameObjects.Text[]
   private gridLines: Phaser.GameObjects.Graphics
+  offsetX: number
+  offsetY: number
 
   cols: number
   rows: number
   tiles: Tile[][]
 
-  constructor(scene: Phaser.Scene, cols: number = 12, rows: number = 8) {
+  constructor(scene: Phaser.Scene, cols: number = 12, rows: number = 8, offsetX: number = GRID_OFFSET_X, offsetY: number = GRID_OFFSET_Y) {
     this.scene = scene
     this.cols = cols
     this.rows = rows
     this.tiles = []
     this.labelTexts = []
+    this.offsetX = offsetX
+    this.offsetY = offsetY
 
     this.tileGraphics = scene.add.graphics()
     this.gridLines = scene.add.graphics()
@@ -68,14 +72,14 @@ export class Grid {
 
   tileToPixel(row: number, col: number): { x: number; y: number } {
     return {
-      x: GRID_OFFSET_X + col * TILE_SIZE + TILE_SIZE / 2,
-      y: GRID_OFFSET_Y + row * TILE_SIZE + TILE_SIZE / 2,
+      x: this.offsetX + col * TILE_SIZE + TILE_SIZE / 2,
+      y: this.offsetY + row * TILE_SIZE + TILE_SIZE / 2,
     }
   }
 
   pixelToTile(x: number, y: number): Position | null {
-    const col = Math.floor((x - GRID_OFFSET_X) / TILE_SIZE)
-    const row = Math.floor((y - GRID_OFFSET_Y) / TILE_SIZE)
+    const col = Math.floor((x - this.offsetX) / TILE_SIZE)
+    const row = Math.floor((y - this.offsetY) / TILE_SIZE)
     if (row < 0 || row >= this.rows || col < 0 || col >= this.cols) return null
     return { row, col }
   }
@@ -165,38 +169,89 @@ export class Grid {
     for (let r = 0; r < this.rows; r++) {
       for (let c = 0; c < this.cols; c++) {
         const tile = this.tiles[r][c]
-        const x = GRID_OFFSET_X + c * TILE_SIZE
-        const y = GRID_OFFSET_Y + r * TILE_SIZE
+        const x = this.offsetX + c * TILE_SIZE
+        const y = this.offsetY + r * TILE_SIZE
 
         this.tileGraphics.fillStyle(tileColor(tile.type), 1)
         this.tileGraphics.fillRect(x + 1, y + 1, TILE_SIZE - 2, TILE_SIZE - 2)
 
-        this.tileGraphics.lineStyle(1, tileBorderColor(tile.type), 0.6)
+        // Shadow strip on elevated tiles — only if nothing elevated below
+        const isElevated = tile.type === TileType.Ranged || tile.type === TileType.Wall
+        if (isElevated) {
+          const below = r + 1 < this.rows ? this.tiles[r + 1]?.[c] : null
+          const belowElevated = below && (below.type === TileType.Ranged || below.type === TileType.Wall)
+          if (!belowElevated) {
+            const shadowColor = tile.type === TileType.Ranged ? 0x8a8e92 : 0x0a0a0a
+            this.tileGraphics.fillStyle(shadowColor, 1)
+            this.tileGraphics.fillRect(x + 2, y + TILE_SIZE - 10, TILE_SIZE - 4, 8)
+          }
+        }
+
+        // Border
+        const borderWidth = tile.type === TileType.Ranged ? 2 : 1
+        const borderAlpha = tile.type === TileType.Ranged ? 0.9 : 0.6
+        this.tileGraphics.lineStyle(borderWidth, tileBorderColor(tile.type), borderAlpha)
         this.tileGraphics.strokeRect(x, y, TILE_SIZE, TILE_SIZE)
 
-        const label = tileLabel(tile.type)
-        if (label) {
-          const text = this.scene.add.text(x + TILE_SIZE / 2, y + TILE_SIZE / 2, label, {
-            fontSize: '18px',
-            color: tileTextColor(tile.type),
-            fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-            fontStyle: 'bold',
-          })
-          text.setOrigin(0.5)
-          text.setAlpha(0.5)
-          this.labelTexts.push(text)
+        // Special tile decorations
+        if (tile.type === TileType.Spawn) {
+          // X lines connecting corners
+          this.tileGraphics.lineStyle(2, 0xff8888, 0.5)
+          this.tileGraphics.lineBetween(x + 4, y + 4, x + TILE_SIZE - 4, y + TILE_SIZE - 4)
+          this.tileGraphics.lineBetween(x + TILE_SIZE - 4, y + 4, x + 4, y + TILE_SIZE - 4)
+          // Triangle with exclamation
+          const cx = x + TILE_SIZE / 2
+          const cy = y + TILE_SIZE / 2
+          this.tileGraphics.fillStyle(0xff6666, 0.9)
+          this.tileGraphics.fillTriangle(cx, cy - 10, cx - 8, cy + 8, cx + 8, cy + 8)
+          this.tileGraphics.fillStyle(0xffffff, 1)
+          this.tileGraphics.fillRect(cx - 2, cy - 4, 4, 8)
+          this.tileGraphics.fillRect(cx - 2, cy + 5, 4, 3)
+        }
+
+        if (tile.type === TileType.Goal) {
+          // X lines connecting corners
+          this.tileGraphics.lineStyle(2, 0x8888ff, 0.5)
+          this.tileGraphics.lineBetween(x + 4, y + 4, x + TILE_SIZE - 4, y + TILE_SIZE - 4)
+          this.tileGraphics.lineBetween(x + TILE_SIZE - 4, y + 4, x + 4, y + TILE_SIZE - 4)
+          // Triangle with exclamation
+          const cx = x + TILE_SIZE / 2
+          const cy = y + TILE_SIZE / 2
+          this.tileGraphics.fillStyle(0x6666ff, 0.9)
+          this.tileGraphics.fillTriangle(cx, cy - 10, cx - 8, cy + 8, cx + 8, cy + 8)
+          this.tileGraphics.fillStyle(0xffffff, 1)
+          this.tileGraphics.fillRect(cx - 2, cy - 4, 4, 8)
+          this.tileGraphics.fillRect(cx - 2, cy + 5, 4, 3)
+        }
+
+        // Repair Node / Armor Grid icons
+        if (tile.type === TileType.RepairNode) {
+          const cx = x + TILE_SIZE / 2
+          const cy = y + TILE_SIZE / 2
+          this.tileGraphics.lineStyle(3, 0x44cc55, 0.8)
+          this.tileGraphics.lineBetween(cx - 8, cy, cx + 8, cy)
+          this.tileGraphics.lineBetween(cx, cy - 8, cx, cy + 8)
+        }
+
+        if (tile.type === TileType.ArmorGrid) {
+          const cx = x + TILE_SIZE / 2
+          const cy = y + TILE_SIZE / 2
+          this.tileGraphics.fillStyle(0x4488cc, 0.8)
+          this.tileGraphics.fillTriangle(cx, cy - 10, cx - 10, cy + 4, cx + 10, cy + 4)
+          this.tileGraphics.lineStyle(2, 0x4488cc, 0.8)
+          this.tileGraphics.strokeTriangle(cx, cy - 10, cx - 10, cy + 4, cx + 10, cy + 4)
         }
       }
     }
 
     this.gridLines.lineStyle(1, 0x333333, 0.3)
     for (let r = 0; r <= this.rows; r++) {
-      const y = GRID_OFFSET_Y + r * TILE_SIZE
-      this.gridLines.lineBetween(GRID_OFFSET_X, y, GRID_OFFSET_X + this.cols * TILE_SIZE, y)
+      const y = this.offsetY + r * TILE_SIZE
+      this.gridLines.lineBetween(this.offsetX, y, this.offsetX + this.cols * TILE_SIZE, y)
     }
     for (let c = 0; c <= this.cols; c++) {
-      const x = GRID_OFFSET_X + c * TILE_SIZE
-      this.gridLines.lineBetween(x, GRID_OFFSET_Y, x, GRID_OFFSET_Y + this.rows * TILE_SIZE)
+      const x = this.offsetX + c * TILE_SIZE
+      this.gridLines.lineBetween(x, this.offsetY, x, this.offsetY + this.rows * TILE_SIZE)
     }
   }
 

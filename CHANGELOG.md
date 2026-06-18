@@ -1,3 +1,20 @@
+## [2026-06-17] Phase 7 — Combat Depth (Enemy Attacks + Terrain Effects)
+- Enemy attack system: blocked ground enemies attack blockers every `attackInterval` seconds
+- Aerial enemy (drone) attacks: targets nearest ranged unit within 3 tiles
+- Damage formula fix: thermal damage uses percentage RES (`ATK × (1 − RES/100)`) instead of flat subtraction
+- Renamed `insulation` → `res` across all configs and systems
+- Added `attackInterval` and `damageType` to `EnemyConfig`
+- Added `TileType.RepairNode` and `TileType.ArmorGrid`
+- Repair Node: 30 HP/s heal for ground units standing on the tile
+- Armor Grid: +100 flat DEF for ground units standing on the tile
+- Unit death: HP=0 from enemy attacks triggers auto-retreat (refund + redeploy cooldown)
+- Editor palette: Repair Node and Armor Grid tile types with keyboard shortcuts (1-8)
+- Level update: Repair Node and Armor Grid placed in level-01.json (tutorial)
+- Stats panel: shows RES% for units
+- New methods: `onUnitDamageDealt`, `onUnitDeath` events, `showUnitDamageNumber` visual feedback
+- Files: `src/types/index.ts`, `src/config/units.ts`, `src/config/enemies.ts`, `src/systems/CombatSystem.ts`, `src/systems/HealingSystem.ts`, `src/systems/DeploymentSystem.ts`, `src/entities/Grid.ts`, `src/shared/utils/GridMath.ts`, `src/scenes/GameScene.ts`, `src/scenes/EditorScene.ts`, `src/scenes/SquadScene.ts`, `levels/level-01.json`
+- Branch: `feat/combat-depth`
+
 ## [2026-06-12] Gameplay Clarification
 - Deployment is real-time (Arknights-style), not pre-wave build phase
 - Units deploy during combat with DP regen ticking continuously

@@ -11,6 +11,8 @@ export enum TileType {
   Wall = 'wall',
   Spawn = 'spawn',
   Goal = 'goal',
+  RepairNode = 'repair_node',
+  ArmorGrid = 'armor_grid',
 }
 
 export interface Position {
@@ -119,7 +121,7 @@ export interface UnitConfig {
   hp: number
   atk: number
   def: number
-  insulation: number
+  res: number
   damageType: DamageType
   attackInterval: number
   rangePattern: number[][]
@@ -139,10 +141,13 @@ export interface EnemyConfig {
   hp: number
   atk: number
   armor: number
-  insulation: number
+  res: number
   speed: number
   color: number
   dpOnKill: number
+  attackInterval: number
+  damageType: DamageType
+  isAerial?: boolean
 }
 
 export interface DeployedUnit {

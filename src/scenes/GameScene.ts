@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { DeployedUnit, Direction, LevelData, UnitConfig, Position, UnitTrait } from '../types/index'
 import { positionsInRange, computeFacingTowardGoal } from '../shared/utils/GridMath'
-import { Grid } from '../entities/Grid'
+import { Grid, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../entities/Grid'
 import { UnitSprite } from '../entities/Unit'
 import { EnemySprite } from '../entities/Enemy'
 import { DeploymentSystem } from '../systems/DeploymentSystem'
@@ -54,15 +54,21 @@ export class GameScene extends Phaser.Scene {
 
   private unitConfigs: UnitConfig[] = UNIT_CONFIGS
   private fromSquad: boolean = false
+  private chapterId: string = ''
+  private levelId: string = ''
+  private startingLives: number = 0
+  private enemiesDefeated: number = 0
 
   constructor() {
     super({ key: 'GameScene' })
   }
 
-  init(data: { level?: LevelData; squad?: UnitConfig[] }): void {
+  init(data: { level?: LevelData; squad?: UnitConfig[]; chapterId?: string; levelId?: string }): void {
     if (data?.level) {
       this.levelData = data.level
     }
+    if (data?.chapterId) this.chapterId = data.chapterId
+    if (data?.levelId) this.levelId = data.levelId
     if (data?.squad) {
       this.unitConfigs = data.squad
       this.fromSquad = true
@@ -92,6 +98,8 @@ export class GameScene extends Phaser.Scene {
     }
     this.grid.render()
 
+    this.drawGridOverlay()
+
     this.depSystem = new DeploymentSystem(
       this.grid,
       this.levelData?.startingDP ?? 10,
@@ -105,10 +113,13 @@ export class GameScene extends Phaser.Scene {
         this.flashMessage(`DESYNC — Enemy reached objective`, 0xd32f2f)
         this.checkBattleEnd()
       },
-      onEnemyKilled: () => {},
+      onEnemyKilled: () => {
+        this.enemiesDefeated++
+      },
     })
     if (this.levelData) {
       this.enemyManager.setWaves(this.levelData.waves, this.levelData.routes, this.levelData.lives)
+      this.startingLives = this.levelData.lives
     }
 
     this.combatSystem = new CombatSystem(this.grid, {
@@ -132,6 +143,15 @@ export class GameScene extends Phaser.Scene {
       },
       onHealApplied: (target: UnitSprite, amount: number, _source: UnitSprite) => {
         this.showHealNumber(amount, target)
+      },
+      onUnitDamageDealt: (damage: number, unit: UnitSprite, damageType: string) => {
+        this.showUnitDamageNumber(damage, unit, damageType)
+      },
+      onUnitDeath: (unit: UnitSprite, _killer: EnemySprite) => {
+        this.depSystem.removeUnit(unit.row, unit.col)
+        this.removeUnitSprite(unit.row, unit.col)
+        this.flashMessage(`UNIT DESTROYED // ${unit.config.name}`, 0xd32f2f)
+        this.rebuildUnitPalette()
       },
     })
 
@@ -227,14 +247,14 @@ export class GameScene extends Phaser.Scene {
       }
 
       if (this.deployState === 'placing') {
-        if (this.selectedUnitId === null) return
-        const selected = this.getSelectedUnit()
-        if (!selected) return
         const occupiedUnit = this.depSystem.getUnitAt(pos.row, pos.col)
         if (occupiedUnit) {
           this.enterInspectMode(pos)
           return
         }
+        if (this.selectedUnitId === null) return
+        const selected = this.getSelectedUnit()
+        if (!selected) return
         const check = this.depSystem.canDeploy(selected, pos.row, pos.col)
         if (check.ok) {
           this.pendingTile = pos
@@ -415,6 +435,7 @@ export class GameScene extends Phaser.Scene {
       this.unitSprites.push(sprite)
       const cost = this.depSystem.getCurrentCost(selected)
       this.flashMessage(`DEPLOY // ${selected.name}  -${cost} DP`, selected.color)
+      this.selectedUnitId = null
       this.rebuildUnitPalette()
     }
     this.clearRangePreview()
@@ -487,6 +508,10 @@ export class GameScene extends Phaser.Scene {
       this.checkBattleEnd()
     }
 
+    if (this.inspectingUnit) {
+      this.updateStatsPanel(this.inspectingUnit.config, this.inspectingUnit)
+    }
+
     this.updateHUD()
     this.updateButtonVisuals()
   }
@@ -512,13 +537,14 @@ export class GameScene extends Phaser.Scene {
     if (!unit) { this.statsTexts.forEach(t => t.setText('')); return }
     const dmIcon = unit.damageType === 'thermal' ? '~' : unit.damageType === 'true' ? '!!' : '>'
     const typeLabel = unit.type === 'ground' ? 'GND' : 'RNG'
+    const resLabel = unit.res > 0 ? `RES:${unit.res}%` : ''
     this.statsTexts[0].setText(`${unit.subtypeLabel} (${typeLabel})`)
     if (deployed) {
       const dirArrow: Record<string, string> = { up: '\u2191', down: '\u2193', left: '\u2190', right: '\u2192' }
       this.statsTexts[1].setText(`HP: ${deployed.currentHp}/${unit.hp}  ${dirArrow[deployed.facing] ?? ''}`)
-      this.statsTexts[2].setText(`ATK:${dmIcon}${unit.atk}  DEF:${unit.def}  BLK:${unit.blockCount}`)
+      this.statsTexts[2].setText(`ATK:${dmIcon}${unit.atk}  DEF:${unit.def}  ${resLabel}  BLK:${unit.blockCount}`)
     } else {
-      this.statsTexts[1].setText(`HP:${unit.hp} ATK:${dmIcon}${unit.atk} DEF:${unit.def}`)
+      this.statsTexts[1].setText(`HP:${unit.hp} ATK:${dmIcon}${unit.atk} DEF:${unit.def} ${resLabel}`)
       this.statsTexts[2].setText(`BLK:${unit.blockCount}  DP:${unit.dpCost}`)
     }
   }
@@ -636,8 +662,7 @@ export class GameScene extends Phaser.Scene {
     const nameLabel = this.add.text(22, 5, unit.subtypeLabel, {
       fontSize: '11px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
-    const dmIcon = unit.damageType === 'thermal' ? '~' : unit.damageType === 'true' ? '!!' : '>'
-    const infoLabel = this.add.text(22, 20, `DP ${cost} | ${dmIcon}${unit.atk} | ${unit.name}`, {
+    const infoLabel = this.add.text(22, 20, `DP ${cost}`, {
       fontSize: '9px', color: onCooldown ? COLORS.text.danger : COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
 
@@ -647,8 +672,8 @@ export class GameScene extends Phaser.Scene {
       const cooldownOverlay = this.add.graphics()
       cooldownOverlay.fillStyle(0xd32f2f, 0.15)
       cooldownOverlay.fillRoundedRect(0, 0, btnW, btnH, 4)
-      const remaining = Math.ceil(this.depSystem.getCooldownRemaining(unit.id))
-      const cdText = this.add.text(btnW - 4, btnH / 2, `${remaining}s`, {
+      const remaining = Math.max(0, this.depSystem.getCooldownRemaining(unit.id))
+      const cdText = this.add.text(btnW - 4, btnH / 2, `${remaining.toFixed(2)}s`, {
         fontSize: '10px', color: '#d32f2f', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
       })
       cdText.setOrigin(1, 0.5)
@@ -679,15 +704,14 @@ export class GameScene extends Phaser.Scene {
       bg.setAlpha(!canAfford && !onCooldown ? 0.5 : 1)
 
       const infoLabel = container.getAt(3) as Phaser.GameObjects.Text
-      const dmIcon = unit.damageType === 'thermal' ? '~' : unit.damageType === 'true' ? '!!' : '>'
-      infoLabel.setText(`DP ${cost} | ${dmIcon}${unit.atk} | ${unit.name}`)
+      infoLabel.setText(`DP ${cost}`)
       infoLabel.setColor(onCooldown ? COLORS.text.danger : COLORS.text.dim)
 
       if (onCooldown) {
         if (container.length >= 6) {
           const cdText = container.getAt(5) as Phaser.GameObjects.Text
-          const remaining = Math.ceil(this.depSystem.getCooldownRemaining(unit.id))
-          cdText.setText(`${remaining}s`)
+          const remaining = Math.max(0, this.depSystem.getCooldownRemaining(unit.id))
+          cdText.setText(`${remaining.toFixed(2)}s`)
           cdText.setAlpha(1)
         }
       } else {
@@ -841,36 +865,59 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showResult(label: string, color: number): void {
-    const hex = '#' + color.toString(16).padStart(6, '0')
-    this.resultText.setText(label)
-    this.resultText.setStyle({ color: hex, fontSize: '26px' })
-    this.resultText.setAlpha(1)
-    this.tweens.add({
-      targets: this.resultText,
-      alpha: 0.8,
-      duration: 1000,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
-    })
+    if (!this.fromSquad) {
+      const hex = '#' + color.toString(16).padStart(6, '0')
+      this.resultText.setText(label)
+      this.resultText.setStyle({ color: hex, fontSize: '26px' })
+      this.resultText.setAlpha(1)
+      this.tweens.add({
+        targets: this.resultText,
+        alpha: 0.8,
+        duration: 1000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      })
+      const restartBtn = this.add.text(this.scale.width / 2, this.scale.height / 2 + 10, '[ Restart Simulation ]', {
+        fontSize: '14px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      })
+      restartBtn.setOrigin(0.5)
+      restartBtn.setDepth(50)
+      restartBtn.setInteractive({ cursor: 'pointer' })
+      restartBtn.on('pointerdown', () => {
+        if (this.levelData) this.loadLevel(this.levelData)
+      })
+      const editorBtn = this.add.text(this.scale.width / 2, this.scale.height / 2 + 36, '[ Back to Editor ]', {
+        fontSize: '14px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      })
+      editorBtn.setOrigin(0.5)
+      editorBtn.setDepth(50)
+      editorBtn.setInteractive({ cursor: 'pointer' })
+      editorBtn.on('pointerdown', () => this.scene.start(this.fromSquad ? 'SquadScene' : 'EditorScene'))
+      return
+    }
 
-    const restartBtn = this.add.text(this.scale.width / 2, this.scale.height / 2 + 10, '[ Restart Simulation ]', {
-      fontSize: '14px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-    })
-    restartBtn.setOrigin(0.5)
-    restartBtn.setDepth(50)
-    restartBtn.setInteractive({ cursor: 'pointer' })
-    restartBtn.on('pointerdown', () => {
-      if (this.levelData) this.loadLevel(this.levelData)
-    })
+    const outcome = label.includes('FAIL') || label === 'DESYNC' ? 'defeat' : 'victory'
+    const stars = outcome === 'defeat' ? 0 : this.calculateStars()
 
-    const editorBtn = this.add.text(this.scale.width / 2, this.scale.height / 2 + 36, '[ Back to Editor ]', {
-      fontSize: '14px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    this.time.delayedCall(1500, () => {
+      this.scene.start('ResultScene', {
+        chapterId: this.chapterId,
+        levelId: this.levelId,
+        squad: this.unitConfigs,
+        outcome,
+        stars,
+        livesRemaining: this.enemyManager.getLives(),
+        enemiesDefeated: this.enemiesDefeated,
+      })
     })
-    editorBtn.setOrigin(0.5)
-    editorBtn.setDepth(50)
-    editorBtn.setInteractive({ cursor: 'pointer' })
-    editorBtn.on('pointerdown', () => this.scene.start(this.fromSquad ? 'SquadScene' : 'EditorScene'))
+  }
+
+  private calculateStars(): number {
+    const ratio = this.startingLives > 0 ? this.enemyManager.getLives() / this.startingLives : 0
+    if (this.enemyManager.getLives() >= this.startingLives) return 3
+    if (ratio >= 0.5) return 2
+    return 1
   }
 
   private showHealNumber(amount: number, target: UnitSprite): void {
@@ -883,6 +930,23 @@ export class GameScene extends Phaser.Scene {
     this.tweens.add({
       targets: text,
       alpha: 0, y: pos.y - 50,
+      duration: 800,
+      onComplete: () => text.destroy(),
+    })
+  }
+
+  private showUnitDamageNumber(damage: number, unit: UnitSprite, damageType: string): void {
+    const pos = this.grid.tileToPixel(unit.row, unit.col)
+    const color = damageType === 'thermal' ? '#9c27b0' : '#d32f2f'
+    const label = damageType === 'thermal' ? `~${damage}` : `${damage}`
+    const text = this.add.text(pos.x, pos.y - 16, label, {
+      fontSize: '12px', color, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    })
+    text.setOrigin(0.5)
+    text.setDepth(20)
+    this.tweens.add({
+      targets: text,
+      alpha: 0, y: pos.y - 46,
       duration: 800,
       onComplete: () => text.destroy(),
     })
@@ -965,5 +1029,25 @@ export class GameScene extends Phaser.Scene {
       g.fillRect(0, y, w, 1)
     }
     g.setDepth(-100)
+  }
+
+  private drawGridOverlay(): void {
+    const g = this.add.graphics()
+    g.lineStyle(1, 0xf0f0f0, 0.3)
+    const rows = this.grid.rows
+    const cols = this.grid.cols
+    for (let c = 0; c <= cols; c++) {
+      const x = GRID_OFFSET_X + c * TILE_SIZE
+      g.moveTo(x, GRID_OFFSET_Y)
+      g.lineTo(x, GRID_OFFSET_Y + rows * TILE_SIZE)
+      g.strokePath()
+    }
+    for (let r = 0; r <= rows; r++) {
+      const y = GRID_OFFSET_Y + r * TILE_SIZE
+      g.moveTo(GRID_OFFSET_X, y)
+      g.lineTo(GRID_OFFSET_X + cols * TILE_SIZE, y)
+      g.strokePath()
+    }
+    g.setDepth(-5)
   }
 }

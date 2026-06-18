@@ -17,6 +17,8 @@ const PALETTE_ITEMS: { type: TileType; label: string; color: number }[] = [
   { type: TileType.Wall, label: 'Wall', color: 0x1a1a1a },
   { type: TileType.Spawn, label: 'Spawn', color: 0x4a1a1a },
   { type: TileType.Goal, label: 'Goal', color: 0x1a1a4a },
+  { type: TileType.RepairNode, label: 'Repair Node', color: 0x2a4a3a },
+  { type: TileType.ArmorGrid, label: 'Armor Grid', color: 0x2a3a4a },
 ]
 
 const PANEL_W = 200
@@ -49,11 +51,14 @@ export class EditorScene extends Phaser.Scene {
     this.cameras.main.fadeIn(200, 0, 0, 0)
     drawBgGradient(this)
 
-    this.add.text(GRID_OFFSET_X, 6, 'HOLDFAST // LEVEL EDITOR', {
+    const paletteRightEdge = 10 + 140 + 10
+    const gap = PANEL_X - paletteRightEdge - 12 * TILE_SIZE
+    const editorOffsetX = paletteRightEdge + Math.floor(gap / 2)
+    this.grid = new Grid(this, 12, 8, editorOffsetX, 100)
+
+    this.add.text(this.grid.offsetX, 6, 'HOLDFAST // LEVEL EDITOR', {
       ...FONTS.small, color: COLORS.text.accent,
     })
-
-    this.grid = new Grid(this, 12, 8)
     this.grid.render()
 
     this.routes = []
@@ -92,9 +97,12 @@ export class EditorScene extends Phaser.Scene {
       this.setStatus(this.waypointMode ? 'Waypoint mode: click to add/remove' : 'Paint mode')
     })
     PALETTE_ITEMS.forEach((_, i) => {
-      this.input.keyboard?.on(`keydown-${['One','Two','Three','Four','Five','Six','Seven'][i]}`, () => {
-        this.selectTileType(PALETTE_ITEMS[i].type)
-      })
+      const keys = ['One','Two','Three','Four','Five','Six','Seven','Eight']
+      if (i < keys.length) {
+        this.input.keyboard?.on(`keydown-${keys[i]}`, () => {
+          this.selectTileType(PALETTE_ITEMS[i].type)
+        })
+      }
     })
   }
 
@@ -290,10 +298,12 @@ export class EditorScene extends Phaser.Scene {
     for (let i = 1; i < path.length; i++) {
       const prev = path[i - 1]
       const curr = path[i]
-      const x0 = prev.col * TILE_SIZE + TILE_SIZE / 2 + GRID_OFFSET_X
-      const y0 = prev.row * TILE_SIZE + TILE_SIZE / 2 + GRID_OFFSET_Y
-      const x1 = curr.col * TILE_SIZE + TILE_SIZE / 2 + GRID_OFFSET_X
-      const y1 = curr.row * TILE_SIZE + TILE_SIZE / 2 + GRID_OFFSET_Y
+      const ox = this.grid.offsetX
+      const oy = this.grid.offsetY
+      const x0 = prev.col * TILE_SIZE + TILE_SIZE / 2 + ox
+      const y0 = prev.row * TILE_SIZE + TILE_SIZE / 2 + oy
+      const x1 = curr.col * TILE_SIZE + TILE_SIZE / 2 + ox
+      const y1 = curr.row * TILE_SIZE + TILE_SIZE / 2 + oy
 
       this.routePreviewGraphics.lineStyle(3, route.color, 0.7)
       this.routePreviewGraphics.beginPath()
@@ -326,7 +336,7 @@ export class EditorScene extends Phaser.Scene {
   }
 
   private buildStatusBar(): void {
-    this.statusText = makeLabel(this, GRID_OFFSET_X, this.scale.height - 20, 'Ready  •  E=erase  S=export  W=waypoint 1-6=palette', COLORS.text.dim)
+    this.statusText = makeLabel(this, this.grid.offsetX, this.scale.height - 20, 'Ready  •  E=erase  S=export  W=waypoint  1-8=palette', COLORS.text.dim)
   }
 
   private selectTileType(type: TileType): void {

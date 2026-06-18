@@ -51,11 +51,13 @@ export class DeploymentSystem {
 
     if (this.activeUnits.size >= this.deploymentLimit) return { ok: false, reason: 'Deployment limit reached' }
 
+    if (this.isOnCooldown(unit.id)) return { ok: false, reason: 'Unit on redeploy cooldown' }
+
     const cost = this.getCurrentCost(unit)
     if (this.currentDP < cost) return { ok: false, reason: `Need ${cost} DP, have ${this.currentDP}` }
 
     if (unit.type === 'ground') {
-      if (tile.type !== TileType.Ground) {
+      if (tile.type !== TileType.Ground && tile.type !== TileType.RepairNode && tile.type !== TileType.ArmorGrid) {
         return { ok: false, reason: 'Ground units need ground tiles' }
       }
     } else {
@@ -85,6 +87,7 @@ export class DeploymentSystem {
     }
     this.activeUnits.set(`${row},${col}`, deployed)
     this.deployedUnitIds.add(unit.id)
+    this.redeployTimers.delete(unit.id)
     return deployed
   }
 
@@ -96,6 +99,15 @@ export class DeploymentSystem {
     const isFullRefund = unit.config.traits?.some(t => t.traitId === UnitTrait.FullRefundRetreat)
     const refund = isFullRefund ? unit.dpCostPaid : Math.floor(unit.dpCostPaid / 2)
     this.currentDP = Math.min(this.currentDP + refund, this.dpCap)
+
+    this.removeUnit(row, col)
+    return refund
+  }
+
+  removeUnit(row: number, col: number): void {
+    const key = `${row},${col}`
+    const unit = this.activeUnits.get(key)
+    if (!unit) return
 
     const unitId = unit.config.id
     this.activeUnits.delete(key)
@@ -110,8 +122,6 @@ export class DeploymentSystem {
     }
     this.deployCostMultiplier.set(unitId, nextMult)
     this.redeployTimers.set(unitId, unit.config.redeployTime)
-
-    return refund
   }
 
   updateTimers(dt: number): void {

@@ -1,8 +1,11 @@
 import Phaser from 'phaser'
 import { BootScene } from './scenes/BootScene'
+import { ChapterSelectScene } from './scenes/ChapterSelectScene'
+import { LevelSelectScene } from './scenes/LevelSelectScene'
+import { SquadScene } from './scenes/SquadScene'
 import { EditorScene } from './scenes/EditorScene'
 import { GameScene } from './scenes/GameScene'
-import { SquadScene } from './scenes/SquadScene'
+import { ResultScene } from './scenes/ResultScene'
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -15,7 +18,7 @@ const config: Phaser.Types.Core.GameConfig = {
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   dom: { createContainer: true },
-  scene: [BootScene, SquadScene, EditorScene, GameScene],
+  scene: [BootScene, ChapterSelectScene, LevelSelectScene, SquadScene, EditorScene, GameScene, ResultScene],
 }
 
 new Phaser.Game(config)

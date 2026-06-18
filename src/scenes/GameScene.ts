@@ -92,7 +92,13 @@ export class GameScene extends Phaser.Scene {
     this.decisionMode = false
     this.inspectingUnit = null
 
-    this.grid = new Grid(this, this.levelData?.cols ?? 12, this.levelData?.rows ?? 3)
+    const cols = this.levelData?.cols ?? 12
+    const rows = this.levelData?.rows ?? 3
+    const leftArea = 160
+    const gridW = cols * TILE_SIZE
+    const availW = this.scale.width - leftArea
+    const gridOX = leftArea + Math.floor((availW - gridW) / 2)
+    this.grid = new Grid(this, cols, rows, gridOX, GRID_OFFSET_Y)
     if (this.levelData) {
       this.grid.fromLevelData(this.levelData)
     }
@@ -1034,18 +1040,17 @@ export class GameScene extends Phaser.Scene {
   private drawGridOverlay(): void {
     const g = this.add.graphics()
     g.lineStyle(1, 0xf0f0f0, 0.3)
-    const rows = this.grid.rows
-    const cols = this.grid.cols
+    const { rows, cols, offsetX, offsetY } = this.grid
     for (let c = 0; c <= cols; c++) {
-      const x = GRID_OFFSET_X + c * TILE_SIZE
-      g.moveTo(x, GRID_OFFSET_Y)
-      g.lineTo(x, GRID_OFFSET_Y + rows * TILE_SIZE)
+      const x = offsetX + c * TILE_SIZE
+      g.moveTo(x, offsetY)
+      g.lineTo(x, offsetY + rows * TILE_SIZE)
       g.strokePath()
     }
     for (let r = 0; r <= rows; r++) {
-      const y = GRID_OFFSET_Y + r * TILE_SIZE
-      g.moveTo(GRID_OFFSET_X, y)
-      g.lineTo(GRID_OFFSET_X + cols * TILE_SIZE, y)
+      const y = offsetY + r * TILE_SIZE
+      g.moveTo(offsetX, y)
+      g.lineTo(offsetX + cols * TILE_SIZE, y)
       g.strokePath()
     }
     g.setDepth(-5)

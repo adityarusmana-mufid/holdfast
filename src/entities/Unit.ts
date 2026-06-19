@@ -39,7 +39,7 @@ export class UnitSprite {
     this.hpBar = scene.add.graphics()
     this.drawHp(size)
 
-    this.label = scene.add.text(0, half + 6, `${config.name}`, {
+    this.label = scene.add.text(0, half + 6, `${config.subtypeLabel}`, {
       fontSize: '10px',
       color: '#4a4a5a',
       fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',

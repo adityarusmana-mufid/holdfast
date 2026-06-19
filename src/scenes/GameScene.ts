@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { DeployedUnit, Direction, LevelData, UnitConfig, Position, UnitTrait } from '../types/index'
+import { DeployedUnit, Direction, LevelData, UnitConfig, Position, UnitTrait, EnemyConfig, Route, Wave } from '../types/index'
 import { positionsInRange, computeFacingTowardGoal } from '../shared/utils/GridMath'
 import { Grid, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../entities/Grid'
 import { UnitSprite } from '../entities/Unit'
@@ -59,6 +59,15 @@ export class GameScene extends Phaser.Scene {
   private startingLives: number = 0
   private enemiesDefeated: number = 0
 
+  private isPaused: boolean = false
+  private pauseOverlay!: Phaser.GameObjects.Graphics
+  private pauseText!: Phaser.GameObjects.Text
+  private pauseButton!: Phaser.GameObjects.Text
+  private wavePreviewLine!: Phaser.GameObjects.Graphics
+  private encounteredTypes: Set<string> = new Set()
+  private activeToasts: Phaser.GameObjects.Container[] = []
+  private wavePreviewTween: Phaser.Tweens.Tween | null = null
+
   constructor() {
     super({ key: 'GameScene' })
   }
@@ -94,11 +103,7 @@ export class GameScene extends Phaser.Scene {
 
     const cols = this.levelData?.cols ?? 12
     const rows = this.levelData?.rows ?? 3
-    const leftArea = 160
-    const gridW = cols * TILE_SIZE
-    const availW = this.scale.width - leftArea
-    const gridOX = leftArea + Math.floor((availW - gridW) / 2)
-    this.grid = new Grid(this, cols, rows, gridOX, GRID_OFFSET_Y)
+    this.grid = new Grid(this, cols, rows, this.computeGridOffsetX(cols), GRID_OFFSET_Y)
     if (this.levelData) {
       this.grid.fromLevelData(this.levelData)
     }
@@ -119,9 +124,8 @@ export class GameScene extends Phaser.Scene {
         this.flashMessage(`DESYNC — Enemy reached objective`, 0xd32f2f)
         this.checkBattleEnd()
       },
-      onEnemyKilled: () => {
-        this.enemiesDefeated++
-      },
+      onEnemySpawned: (config) => this.showEnemyToast(config),
+      onWavePrelude: (route) => this.showWavePreview(route),
     })
     if (this.levelData) {
       this.enemyManager.setWaves(this.levelData.waves, this.levelData.routes, this.levelData.lives)
@@ -130,6 +134,7 @@ export class GameScene extends Phaser.Scene {
 
     this.combatSystem = new CombatSystem(this.grid, {
       onEnemyKilled: (enemy: EnemySprite, killer: UnitSprite | null) => {
+        this.enemyManager.markEnemyDealtWith()
         this.depSystem.addDP(enemy.config.dpOnKill)
         if (killer?.config.traits?.some(t => t.traitId === UnitTrait.DPOnKill)) {
           const dpTrait = killer.config.traits.find(t => t.traitId === UnitTrait.DPOnKill)
@@ -182,6 +187,50 @@ export class GameScene extends Phaser.Scene {
     this.cancelDeployIndicator.setAlpha(0)
 
     this.setupInput()
+
+    this.pauseOverlay = this.add.graphics()
+    this.pauseOverlay.setDepth(40)
+    this.pauseOverlay.setAlpha(0)
+
+    this.pauseText = this.add.text(this.scale.width / 2, this.scale.height / 2, 'PAUSED', {
+      fontSize: '48px', color: '#ffffff', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    })
+    this.pauseText.setOrigin(0.5)
+    this.pauseText.setDepth(45)
+    this.pauseText.setAlpha(0)
+
+    this.wavePreviewLine = this.add.graphics()
+    this.wavePreviewLine.setDepth(6)
+    this.wavePreviewLine.setAlpha(0)
+
+    this.buildPauseButton()
+  }
+
+  private buildPauseButton(): void {
+    this.pauseButton = this.add.text(this.scale.width - 55, 10, '[ II ]', {
+      fontSize: FONT_SIZE.lg, color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    })
+    this.pauseButton.setInteractive({ cursor: 'pointer' })
+    this.pauseButton.on('pointerdown', () => {
+      if (!this.battleActive || this.battleEnded) return
+      this.togglePause()
+    })
+  }
+
+  private togglePause(): void {
+    this.isPaused = !this.isPaused
+    if (this.isPaused) {
+      this.pauseOverlay.clear()
+      this.pauseOverlay.fillStyle(0x000000, 0.55)
+      this.pauseOverlay.fillRect(0, 0, this.scale.width, this.scale.height)
+      this.pauseOverlay.setAlpha(1)
+      this.pauseText.setAlpha(1)
+      this.pauseButton.setColor(COLORS.text.accent)
+    } else {
+      this.pauseOverlay.setAlpha(0)
+      this.pauseText.setAlpha(0)
+      this.pauseButton.setColor(COLORS.text.dim)
+    }
   }
 
   private getSelectedUnit(): UnitConfig | null {
@@ -225,7 +274,7 @@ export class GameScene extends Phaser.Scene {
     this.inspectCloseBtn.on('pointerdown', () => this.exitDecisionMode())
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (this.deployState === 'facing') {
+      if (this.deployState === 'facing' || this.isPaused) {
         return
       }
 
@@ -329,12 +378,18 @@ export class GameScene extends Phaser.Scene {
       const selected = this.getSelectedUnit()
       if (!selected) { this.hoverIndicator.setAlpha(0); return }
       const check = this.depSystem.canDeploy(selected, pos.row, pos.col)
-      const px = this.grid.tileToPixel(pos.row, pos.col)
+      const { tL, tR, bR, bL } = this.grid.getTileCorners(pos.row, pos.col)
       this.hoverIndicator.clear()
       this.hoverIndicator.fillStyle(check.ok ? 0x00c853 : 0xd32f2f, 0.25)
-      this.hoverIndicator.fillRect(px.x - 32, px.y - 32, 64, 64)
+      this.hoverIndicator.fillPoints([tL, tR, bR, bL], true)
       this.hoverIndicator.lineStyle(2, check.ok ? 0x00c853 : 0xd32f2f, 0.6)
-      this.hoverIndicator.strokeRect(px.x - 32, px.y - 32, 64, 64)
+      this.hoverIndicator.beginPath()
+      this.hoverIndicator.moveTo(tL.x, tL.y)
+      this.hoverIndicator.lineTo(tR.x, tR.y)
+      this.hoverIndicator.lineTo(bR.x, bR.y)
+      this.hoverIndicator.lineTo(bL.x, bL.y)
+      this.hoverIndicator.closePath()
+      this.hoverIndicator.strokePath()
       this.hoverIndicator.setAlpha(1)
     })
 
@@ -373,13 +428,18 @@ export class GameScene extends Phaser.Scene {
     const tiles = positionsInRange(pos, config.rangePattern, this.grid.rows, this.grid.cols, facing)
     this.rangePreview.clear()
     this.rangePreview.setAlpha(1)
-    const half = 32
     for (const t of tiles) {
-      const px = this.grid.tileToPixel(t.row, t.col)
+      const { tL, tR, bR, bL } = this.grid.getTileCorners(t.row, t.col)
       this.rangePreview.fillStyle(0x00a2ff, 0.2)
-      this.rangePreview.fillRect(px.x - half, px.y - half, 64, 64)
+      this.rangePreview.fillPoints([tL, tR, bR, bL], true)
       this.rangePreview.lineStyle(2, 0x00a2ff, 0.6)
-      this.rangePreview.strokeRect(px.x - half, px.y - half, 64, 64)
+      this.rangePreview.beginPath()
+      this.rangePreview.moveTo(tL.x, tL.y)
+      this.rangePreview.lineTo(tR.x, tR.y)
+      this.rangePreview.lineTo(bR.x, bR.y)
+      this.rangePreview.lineTo(bL.x, bL.y)
+      this.rangePreview.closePath()
+      this.rangePreview.strokePath()
     }
   }
 
@@ -503,7 +563,7 @@ export class GameScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     const dt = delta / 1000
 
-    if (this.battleActive && !this.battleEnded) {
+    if (this.battleActive && !this.battleEnded && !this.isPaused) {
       const speed = this.decisionMode ? 0.5 : 1
       this.depSystem.update(dt * speed)
       this.enemyManager.update(dt * speed)
@@ -792,7 +852,7 @@ export class GameScene extends Phaser.Scene {
 
     this.selectedUnitId = unitId
     this.updateStatsPanel(unit)
-    if (this.battleActive && !this.battleEnded) {
+    if (this.battleActive && !this.battleEnded && !this.isPaused) {
       if (this.deployState === 'facing') {
         this.cancelDeployment()
       }
@@ -835,7 +895,7 @@ export class GameScene extends Phaser.Scene {
     this.dpText.setText(`DP: ${Math.floor(this.depSystem.currentDP)}/${this.depSystem.dpCap}`)
     this.limitText.setText(`Units: ${this.depSystem.activeUnits.size}/${this.depSystem.deploymentLimit}`)
     this.livesText.setText(`Lives: ${this.enemyManager.getLives()}`)
-    this.waveText.setText(`Hostiles: ${this.enemyManager.getEnemies().length}`)
+    this.waveText.setText(`Hostiles: ${this.enemyManager.getDealtWith()}/${this.enemyManager.getTotalEnemyCount()}`)
     if (this.battleEnded) {
       this.statusText.setText(this.enemyManager.hasWon() ? 'SYNC COMPLETE // VICTORY' : 'DESYNC // DEFEAT')
     } else if (this.battleActive) {
@@ -919,6 +979,125 @@ export class GameScene extends Phaser.Scene {
     })
   }
 
+  private positionAlongPath(dist: number, points: { x: number; y: number }[], cumDists: number[]): { x: number; y: number } {
+    let segIdx = cumDists.length - 2
+    for (let i = 0; i < cumDists.length - 1; i++) {
+      if (dist >= cumDists[i] && dist <= cumDists[i + 1]) { segIdx = i; break }
+    }
+    const segT = (dist - cumDists[segIdx]) / (cumDists[segIdx + 1] - cumDists[segIdx])
+    return {
+      x: Phaser.Math.Linear(points[segIdx].x, points[segIdx + 1].x, segT),
+      y: Phaser.Math.Linear(points[segIdx].y, points[segIdx + 1].y, segT),
+    }
+  }
+
+  private showWavePreview(route: Route): void {
+    this.wavePreviewLine.clear()
+    this.wavePreviewLine.setAlpha(1)
+    const waypoints = [route.spawn, ...route.waypoints, route.goal]
+    const points = waypoints.map(wp => this.grid.tileToPixel(wp.row, wp.col))
+    let totalDist = 0
+    const cumDists: number[] = [0]
+    for (let i = 0; i < points.length - 1; i++) {
+      const dx = points[i + 1].x - points[i].x
+      const dy = points[i + 1].y - points[i].y
+      totalDist += Math.sqrt(dx * dx + dy * dy)
+      cumDists.push(totalDist)
+    }
+    if (totalDist === 0) return
+    const duration = Math.max(1000, totalDist * 0.8)
+    const trailSpacing = 7
+
+    this.wavePreviewTween = this.tweens.addCounter({
+      from: 0, to: 1, duration, ease: 'Linear',
+      onUpdate: (tween) => {
+        const t = tween.getValue() ?? 0
+        const headDist = t * totalDist
+        this.wavePreviewLine.clear()
+        for (let ti = 0; ti < 14; ti++) {
+          const d = Math.max(0, headDist - ti * trailSpacing)
+          const pos = this.positionAlongPath(d, points, cumDists)
+          const frac = 1 - ti / 14
+          const radius = 2 + frac * 3
+          const alpha = 0.1 + frac * 0.7
+          this.wavePreviewLine.fillStyle(0xffffff, alpha * 0.8)
+          this.wavePreviewLine.fillCircle(pos.x, pos.y, radius + 4)
+          this.wavePreviewLine.fillStyle(0xffee58, alpha * 0.4)
+          this.wavePreviewLine.fillCircle(pos.x, pos.y, radius + 2)
+          this.wavePreviewLine.fillStyle(0xffffff, alpha)
+          this.wavePreviewLine.fillCircle(pos.x, pos.y, radius)
+        }
+      },
+      onComplete: () => this.clearWavePreview(),
+    })
+  }
+
+  private clearWavePreview(): void {
+    if (this.wavePreviewTween) { this.wavePreviewTween.stop(); this.wavePreviewTween = null }
+    this.wavePreviewLine.clear()
+    this.wavePreviewLine.setAlpha(0)
+  }
+
+  private showEnemyToast(config: EnemyConfig): void {
+    if (this.encounteredTypes.has(config.id)) return
+    this.encounteredTypes.add(config.id)
+
+    const W = 280
+    const pad = 10
+    const iconSize = 28
+
+    const bg = this.add.graphics()
+    bg.fillStyle(0x1a1a2e, 0.85)
+    bg.fillRoundedRect(0, 0, W, 72, 6)
+
+    const icon = this.add.graphics()
+    icon.fillStyle(config.color, 1)
+    icon.fillCircle(pad + iconSize / 2, pad + iconSize / 2 + 2, iconSize / 2)
+    icon.fillStyle(0xffffff, 0.3)
+    icon.fillCircle(pad + iconSize / 2, pad + iconSize / 2 + 2, iconSize / 4)
+
+    const nameText = this.add.text(pad + iconSize + pad, pad, config.name, {
+      fontSize: '14px', color: '#ffffff', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    })
+
+    const desc = config.description ?? 'No intelligence available.'
+    const descText = this.add.text(pad + iconSize + pad, pad + 18, desc, {
+      fontSize: '11px', color: '#b0b8c4', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', wordWrap: { width: W - pad - iconSize - pad - pad },
+    })
+
+    const container = this.add.container(10, 10, [bg, icon, nameText, descText])
+    container.setDepth(45)
+
+    this.activeToasts.push(container)
+    this.repositionToasts()
+
+    this.time.delayedCall(5000, () => {
+      this.tweens.add({
+        targets: container,
+        alpha: 0,
+        duration: 300,
+        onComplete: () => {
+          container.destroy()
+          const idx = this.activeToasts.indexOf(container)
+          if (idx !== -1) this.activeToasts.splice(idx, 1)
+          this.repositionToasts()
+        },
+      })
+    })
+  }
+
+  private repositionToasts(): void {
+    for (let i = 0; i < this.activeToasts.length; i++) {
+      this.activeToasts[i].setY(10 + i * 78)
+    }
+  }
+
+  private clearEnemyToasts(): void {
+    for (const t of this.activeToasts) t.destroy()
+    this.activeToasts = []
+    this.encounteredTypes.clear()
+  }
+
   private calculateStars(): number {
     const ratio = this.startingLives > 0 ? this.enemyManager.getLives() / this.startingLives : 0
     if (this.enemyManager.getLives() >= this.startingLives) return 3
@@ -988,12 +1167,21 @@ export class GameScene extends Phaser.Scene {
     })
   }
 
+  private computeGridOffsetX(cols: number): number {
+    const leftArea = 160
+    const gridW = cols * TILE_SIZE
+    const availW = this.scale.width - leftArea
+    return leftArea + Math.floor((availW - gridW) / 2)
+  }
+
   private loadLevel(data: LevelData): void {
     this.unitSprites.forEach(s => s.destroy())
     this.unitSprites = []
     this.enemyManager.cleanup()
+    this.clearEnemyToasts()
+    this.clearWavePreview()
     this.grid.destroy()
-    this.grid = new Grid(this, data.cols, data.rows)
+    this.grid = new Grid(this, data.cols, data.rows, this.computeGridOffsetX(data.cols), GRID_OFFSET_Y)
     this.grid.fromLevelData(data)
     this.grid.render()
     this.levelData = data

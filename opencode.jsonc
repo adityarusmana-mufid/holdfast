@@ -1,0 +1,8 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anomalyco/opencode/main/schema/opencode.json",
+  "skills": {
+    "include": [
+      ".opencode/skills/designing-holdfast-levels/SKILL.md"
+    ]
+  }
+}

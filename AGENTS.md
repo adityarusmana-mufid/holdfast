@@ -87,6 +87,9 @@ Holdfast 1 is self-contained — no accounts, no collection, no base. Just 3 cha
 - **itch.io AI disclosure** — code is AI-written, must tag "Code" on publish. Art is procedural, not AI-generated.
 - **No persistent/account storage** in Holdfast 1 — all progress is session-only or save-file.
 
+## Skills (project-specific)
+- `designing-holdfast-levels` — Use when creating or editing level JSONs. Covers Arknights-inspired structure, tile placement, enemy escalation, wave pacing, validation. Saved in `.opencode/skills/designing-holdfast-levels/`.
+
 ## Reference Sources
 Arknights game mechanic references documented in `.opencode/explore/2026-06-12-design-decisions.md`:
 - Primary: `https://arknights.wiki.gg/` (official fansite wiki)

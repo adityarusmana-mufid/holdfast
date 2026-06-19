@@ -1,80 +1,56 @@
-# Holdfast Checklist
+# Holdfast — Implementation Checklist
 
-**Total items:** 20 across 5 phases
-**Last updated:** 2026-06-12
+Last updated: 2026-06-18
 
-> ⚠️ **After every phase, run verification gate:**
-> ```
-# npm run lint, typecheck, test, build (once commands exist)
-> ```
+## Phase Status
 
----
+| Phase | Status | Branch | Merged |
+|-------|--------|--------|--------|
+| Scene flow + Combat depth | ✅ Done | `main` | ✅ |
+| Flat elevation visuals | ✅ Done | `feat/flat-elevation-visual` | ✅ |
+| Perspective grid rendering | ✅ Done | `feat/perspective-tiles` | ✅ |
+| Gameplay systems doc'd | ✅ Done | `main` | ✅ |
 
-## Phase 0 — Documentation & Design ✅
+## Next Steps (Implementation)
+- [ ] Add defeat condition when all units dead (not just lives)
+- [ ] Add death animation for units
+- [ ] Plan 2.5D axonometric scene (coordinate mapping, depth sorting, tile sprites)
+- [ ] Research Ursus faction enemies for harder Chapter 2+ balance
+- [ ] Design enemy mechanics (e.g., Wraith ignores block, Defense Crusher shreds DEF, etc.)
 
-- [x] 0.1 Create project documentation structure
-- [x] 0.2 Brainstorm game mechanics and requirements
-- [x] 0.3 Propose technology stack options
-- [x] 0.4 Present design for user approval
-- [x] 0.5 Write design specification document
-- [x] 0.6 Create implementation plan
+## Fixed Bugs
 
----
+### ✅ 1. Elevation tile color connectivity (Visual)
+- **Fixed in:** `src/entities/Grid.ts` — `render()` method
+- **Fix:** Elevated tiles (Ranged, Wall) now check if the tile directly below (r+1, c) is also elevated. If so, they adopt the fill color of the tile below, creating continuous color across elevated platforms.
 
-## Phase 1 — Grid & Editor ✅
+### ✅ 2. Restart simulation shifts grid left (Visual/Logic)
+- **Fixed in:** `src/scenes/GameScene.ts`
+- **Fix:** Extracted `computeGridOffsetX(cols)` method that calculates the centered offset. Both `create()` and `loadLevel()` use it, ensuring consistent grid positioning.
 
-- [x] 1.1 Scaffold Phaser 3 + Vite + TypeScript project
-- [x] 1.2 Implement grid rendering (tiles, borders, colors)
-- [x] 1.3 Build level editor scene with tile palette
-- [x] 1.4 Implement tile painting (click to set tile type)
-- [x] 1.5 Add spawn/objective marker placement
-- [x] 1.6 Route auto-generation from painted route tiles
-- [x] 1.7 JSON export/import for levels
-- [x] 1.8 Add level config fields to editor (startingDP, dpRegenRate, dpCap, deploymentLimit)
+### ✅ 3. Range preview ignores perspective (Visual)
+- **Fixed in:** `src/entities/Grid.ts` + `src/scenes/GameScene.ts`
+- **Fix:** Added `Grid.getTileCorners(row, col)` public method returning trapezoid corner points. `showRangePreview()` and hover indicator now draw trapezoid outlines using `fillPoints` + `strokePath` instead of flat rects.
 
----
+### ✅ 4. Spawn/Goal as 3D wireframe cubes (Visual)
+- **Fixed in:** `src/entities/Grid.ts` — `render()` method
+- **Fix:** Replaced X-corner-lines + triangle/exclamation with a perspective-aware wireframe cube. Top face is a smaller trapezoid offset 18px upward with 6px inset. Vertical edges connect bottom (tile) corners to top face corners. Includes subtle fill for depth.
 
-## Phase 2 — Unit Deployment ✅
+## Known Bugs (Remaining)
 
-- [x] 2.1 Unit config data structure (dpCost, blockCount, hp, attack, rangePattern)
-- [x] 2.2 Unit placement system (click valid tile → deploy)
-- [x] 2.3 Deployment validation (tile type, one-unit-per-tile)
-- [x] 2.4 DP system — auto-generation at 1/sec, starting DP per level, cap
-- [x] 2.5 Unit DP costs — deducted on deploy, checked before allow
-- [x] 2.6 Deployment limit enforcement (max active units)
-- [x] 2.7 Unit retreat — remove unit, refund half DP cost, start redeploy timer
-- [x] 2.8 Unit rendering (colored shapes for v1)
+### 5. Deployment click `dist < 12` cancels instead of confirming (UX)
+- **File:** `src/scenes/GameScene.ts` (line ~287)
+- **What:** During facing confirmation, clicking near the tile center (< 12px) cancels deployment instead of confirming.
+- **Expected:** TBD — user decision needed.
 
----
+### 6. (Fixed) No enemies spawn — missing `routeIndex` in level JSONs
+- All waves were missing `routeIndex`. `startNextWave()` looked up `routes[undefined]`, got `undefined`, errored, and skipped through all waves with zero spawns. Old completion code (`enemies.length === 0`) masked this. Fixed by adding `routeIndex: 0` to all waves + fallback in `jsonToLevelData()`.
 
-## Phase 3 — Enemy Movement ✅
-
-- [x] 3.1 Enemy spawning system (wave-based, configurable entries per wave)
-- [x] 3.2 Enemy config data structure (hp, attack, speed, def, color, dpOnKill)
-- [x] 3.3 Waypoint following along route tiles (interpolated pixel movement)
-- [x] 3.4 Block count collision — enemies stopped by ground units, queued on unit
-- [x] 3.5 Walk-past — enemies bypass unit if block limit exceeded
-- [x] 3.6 Objective collision detection (enemy reaches goal = lose 1 life)
-- [x] 3.7 Enemy rendering (colored circles for v1, HP bars)
-
----
-
-## Phase 4 — Combat
-
-- [ ] 4.1 Unit auto-attack logic (attack interval, target blocked enemies first)
-- [ ] 4.2 Range calculation (cross/square/diamond/melee patterns)
-- [ ] 4.3 Block interaction — ground units fight blocked enemies; ranged units attack in range
-- [ ] 4.4 Damage and HP system (physical damage, DEF reduction)
-- [ ] 4.5 Enemy death handling (remove from grid, free block slot)
-
----
-
-## Phase 5 — Game Loop
-
-- [ ] 5.1 Wave spawning system (configurable waves per level)
-- [ ] 5.2 Win/lose conditions
-- [ ] 5.3 Game state management (prep → battle → result)
-- [ ] 5.4 Basic UI (Life Points, DP counter, deployment limit, wave info)
-- [ ] 5.5 End screen (victory/defeat)
-- [ ] 5.6 Level loading from JSON
-- [ ] 5.7 Verify: playable end-to-end with one level
+## Completed (recent)
+- ✅ Phase 12f (UX features): Pause button + overlay + deploy-on-unpause flow. Wave preview dotted line during prelude countdown. Enemy intro toasts (icon + name + description, 5s auto-dismiss, stacking).
+- ✅ Phase 12e (5 levels): Chapter 1 expanded to 5 levels (1-1 through 1-5), all validated.
+- ✅ Phase 12d (routeIndex fix): Added `routeIndex: 0` to all waves + fallback in `jsonToLevelData()`.
+- ✅ Phase 12c (level expansion): level-04, level-05 created. Enemy rebalance + Caster enemy added.
+- ✅ Phase 12b (level validation): `validateLevelData()` runtime checker. level-02 and level-03 created.
+- ✅ Phase 12a (completion model): Pre-count total enemies, track dealt-with counter, `isAllWavesComplete()` checks `enemiesDealtWith >= totalEnemyCount`.
+- ✅ Enemy rebalance (2026-06-18): All enemies rebalanced against Arknights Reunion reference data. Added Caster (thermal damage) enemy. Wave 3 pressure with casters.

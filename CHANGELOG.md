@@ -1,3 +1,62 @@
+## [2026-06-18] Phase 12f — 3 Arknights-Inspired UX Features
+- **Pause + Deploy Flow**: `[ II ]` button pauses all game time (DP, movement, combat, healing). Dark overlay + "PAUSED" text. Select a unit while paused, unpause to enter decision mode (50% speed) and deploy immediately. Mirrors Arknights pause-deploy meta.
+- **Wave Path Preview**: Animated dotted caterpillar line along route waypoints (red/orange dots) shown during wave `preludeDuration` countdown. Previously unused `preludeDuration` field now drives the preview window. Line auto-clears when wave starts spawning.
+- **Enemy Introduction Toasts**: Top-left stacked cards with enemy color icon + name + description. Fires on first encounter per enemy type per session. 5-second auto-dismiss with fade, stacking for simultaneous reveals.
+- Data: Added `description?: string` to `EnemyConfig` type; 5 descriptions written for all enemy types.
+- Files: `src/types/index.ts`, `src/config/enemies.ts`, `src/systems/EnemyManager.ts`, `src/scenes/GameScene.ts`
+
+## [2026-06-18] Phase 12e — Chapter 1 Level Expansion (5 Levels)
+- Expanded Chapter 1 from 3 to 5 levels
+- Added 1-4 "Junction" (10×6): zigzag route, elevated mid-point, repair_node, 28 enemies in 5 waves
+- Added 1-5 "Stronghold" (10×8): full serpentine, elevated section, repair_node + armor_grid, tight DP (18), 34 enemies in 6 waves, 2-Tank + 2-Caster finale
+- Created `designing-holdfast-levels` project skill (`.opencode/skills/`) with Arknights-inspired level design guidelines, grid/tile/wave references
+- Skill registered in `opencode.jsonc` and referenced in `AGENTS.md`
+- Files: `levels/level-04.json`, `levels/level-05.json`, `.opencode/skills/designing-holdfast-levels/SKILL.md`, `opencode.jsonc`, `src/config/chapters.ts`, `AGENTS.md`
+
+## [2026-06-18] Phase 12d — `routeIndex` Bug (No Enemies Spawning)
+- Root cause: all level JSONs were missing `routeIndex` in wave objects. `startNextWave()` called `routes[undefined]`, got `undefined`, errored, skipped through all waves without spawning any enemies. Old completion code (`enemies.length === 0`) returned `true` immediately since array was empty — level appeared to "auto-complete."
+- Fix: added `"routeIndex": 0` to all wave objects in `level-01.json`, `level-02.json`, `level-03.json`
+- Safety net: `jsonToLevelData()` now maps waves with `w.routeIndex ?? 0` fallback
+- Level validation updated to check for missing/invalid `routeIndex`
+- Files: `levels/level-01.json`, `levels/level-02.json`, `levels/level-03.json`, `src/config/chapters.ts`, `src/shared/utils/LevelValidation.ts`
+
+## [2026-06-18] Phase 12c — Completion Model Fix + Level Validation
+- Fixed `isAllWavesComplete()` bug: was counting down (`enemies.length === 0`) which triggered victory when escaped enemies (reached goal) were cleaned from the array. Now pre-counts total enemies across all waves and tracks a dealt-with counter (incremented on kill OR escape). Victory requires all enemies dealt with AND lives > 0.
+- HUD now shows counter format: `Hostiles: 12/35` (dealtWith/total)
+- Added `LevelValidation.ts` with `validateLevelData()` — checks tile grid, waypoint connectivity, wave configs, enemy types. Called in `jsonToLevelData()` at module load time.
+- Validated + fixed all 3 levels: diagonal waypoint jumps in level-03 (Breach Point) fixed (3 broken connections), `spawnInterval: 0` → `1` across all levels
+- Files: `src/systems/EnemyManager.ts`, `src/scenes/GameScene.ts`, `src/shared/utils/LevelValidation.ts`, `src/config/chapters.ts`, `levels/level-01.json`, `levels/level-02.json`, `levels/level-03.json`
+
+## [2026-06-18] Phase 12b — Chapter 1 Level Expansion
+- Created level-02.json "Crossroads": L-shaped route (6×8), elevates one tile at the corner, introduces drones + casters, 5 waves, repair_node at corner
+- Created level-03.json "Breach Point": Winding serpentine route (8×8), elevated section with armor_grid, full enemy mix, 5 waves with 2 heavy tanks finale
+- Updated chapters.ts: 1-1 → level-01, 1-2 → level-02, 1-3 → level-03
+- Files: `levels/level-02.json`, `levels/level-03.json`, `src/config/chapters.ts`
+
+## [2026-06-18] Phase 12 — Enemy Stat Rebalance (Arknights Reference)
+- Rebalanced all 4 enemies using Arknights Reunion early-game stats as reference
+- Scout Car: 800→2200 HP, 100→280 ATK, 2.0s interval (threatens squishies, can't dent tanks)
+- APC: 2000→3000 HP, 200→350 ATK, 2.5s interval (moderate threat)
+- Tank: 5000→8000 HP, 400→600 ATK, DEF 300→400 (elite threat, needs casters)
+- Drone: 500→1500 HP, 150→200 ATK, 1.5s interval (aerial, targets ranged)
+- Added Caster enemy: 2500 HP, 250 thermal ATK, 3.5s interval (bypasses DEF, pressures tanks)
+- Updated level-01.json waves with caster in wave 3, increased counts
+- Starting DP bumped to 25 for initial deployment flexibility
+- Files: `src/config/enemies.ts`, `levels/level-01.json`, `.opencode/plans/CHECKLIST.md`
+
+## [2026-06-18] Phase 11 — Bugfixes (Restart Shift, Perspective Range Preview, etc.)
+- Fixed restart grid shift: extracted `computeGridOffsetX()` so `loadLevel()` uses same centering as `create()`
+- Fixed elevation color connectivity: elevated tiles adopt fill color of tile below for platform continuity
+- Fixed range preview/hover indicator: now draws trapezoid outlines via `Grid.getTileCorners()`
+- Fixed spawn/goal: replaced X+triangle with perspective-aware 3D wireframe cubes (top face + vertical edges)
+- Files: `src/scenes/GameScene.ts`, `src/entities/Grid.ts`, `.opencode/plans/CHECKLIST.md`
+
+## [2026-06-18] Phase 10 — Gameplay System Documentation
+- Wrote 5 missing gameplay system specs: deployment system, unit roster + traits, enemy system, combat mechanics, screen UI layout
+- Created bug tracking checklist (`.opencode/plans/CHECKLIST.md`) with 4 new bugs + existing issue
+- All 7 gameplay areas now documented (2 existing + 5 new)
+- Files: `docs/superpowers/specs/2026-06-18-deployment-system.md`, `docs/superpowers/specs/2026-06-18-unit-roster-and-traits.md`, `docs/superpowers/specs/2026-06-18-enemy-system.md`, `docs/superpowers/specs/2026-06-18-combat-mechanics.md`, `docs/superpowers/specs/2026-06-18-screen-ui-layout.md`, `.opencode/plans/CHECKLIST.md`
+
 ## [2026-06-18] Phase 9 — Whole-Grid Perspective Foreshortening
 - Grid renders as a single perspective plane (ROW_INSET = 6)
 - Horizontal lines stay straight, vertical lines converge toward top

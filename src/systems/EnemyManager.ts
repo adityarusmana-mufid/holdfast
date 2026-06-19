@@ -7,7 +7,8 @@ import { ENEMY_CONFIGS } from '../config/enemies'
 
 export interface EnemyManagerEvents {
   onEnemyReachedObjective: (config: EnemyConfig) => void
-  onEnemyKilled: (config: EnemyConfig, pos: Position) => void
+  onEnemySpawned: (config: EnemyConfig) => void
+  onWavePrelude: (route: Route, wave: Wave) => void
 }
 
 export class EnemyManager {
@@ -28,6 +29,10 @@ export class EnemyManager {
   private allWavesComplete: boolean = false
   private battleStarted: boolean = false
   private lives: number = 3
+  private totalEnemyCount: number = 0
+  private enemiesDealtWith: number = 0
+  private preludeActive: boolean = false
+  private preludeTimer: number = 0
 
   constructor(scene: Phaser.Scene, grid: Grid, depSystem: DeploymentSystem, events: EnemyManagerEvents) {
     this.scene = scene
@@ -43,6 +48,9 @@ export class EnemyManager {
     this.lives = lives
     this.allWavesComplete = false
     this.battleStarted = false
+    this.enemiesDealtWith = 0
+    this.totalEnemyCount = waves.reduce((sum, w) =>
+      sum + w.entries.reduce((s, e) => s + e.count, 0), 0)
   }
 
   startBattle(): void {
@@ -65,10 +73,13 @@ export class EnemyManager {
       return
     }
     this.currentRoute = route
-    this.waveActive = true
+    this.preludeActive = true
+    this.preludeTimer = wave.preludeDuration ?? 0
+    this.waveActive = false
     this.waveEntryIndex = 0
     this.waveSpawnIndex = 0
     this.waveSpawnTimer = 0
+    this.events.onWavePrelude(route, wave)
   }
 
   private spawnEnemy(config: EnemyConfig): void {
@@ -78,12 +89,21 @@ export class EnemyManager {
     if (path.length < 2) return
     const enemy = new EnemySprite(this.scene, this.grid, config, path)
     this.enemies.push(enemy)
+    this.events.onEnemySpawned(config)
   }
 
   update(delta: number): void {
     if (!this.battleStarted) return
 
-    if (!this.allWavesComplete) {
+    if (this.preludeActive) {
+      this.preludeTimer -= delta
+      if (this.preludeTimer <= 0) {
+        this.preludeActive = false
+        this.waveActive = true
+      }
+    }
+
+    if (!this.allWavesComplete && !this.preludeActive) {
       this.updateWaveSpawn(delta)
     }
 
@@ -182,9 +202,14 @@ export class EnemyManager {
       if (enemy.isAtObjective()) {
         this.lives--
         enemy.alive = false
+        this.enemiesDealtWith++
         this.events.onEnemyReachedObjective(enemy.config)
       }
     }
+  }
+
+  markEnemyDealtWith(): void {
+    this.enemiesDealtWith++
   }
 
   private updateVisualStacking(): void {
@@ -252,7 +277,7 @@ export class EnemyManager {
   }
 
   isAllWavesComplete(): boolean {
-    return this.allWavesComplete && this.enemies.length === 0
+    return this.allWavesComplete && (this.totalEnemyCount === 0 || this.enemiesDealtWith >= this.totalEnemyCount)
   }
 
   isBattleOver(): boolean {
@@ -262,6 +287,10 @@ export class EnemyManager {
   hasWon(): boolean {
     return this.isAllWavesComplete() && this.lives > 0
   }
+
+  getDealtWith(): number { return this.enemiesDealtWith }
+
+  getTotalEnemyCount(): number { return this.totalEnemyCount }
 
   cleanup(): void {
     for (const e of this.enemies) e.destroy()

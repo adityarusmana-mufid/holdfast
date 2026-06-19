@@ -62,26 +62,37 @@
   ],
   "waves": [
     {
+      "routeIndex": 0,
       "entries": [
+        { "enemyType": "soldier", "count": 5, "spawnInterval": 2.5 }
+      ],
+      "preludeDuration": 6
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "trooper", "count": 3, "spawnInterval": 3 }
+      ],
+      "preludeDuration": 6
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "caster", "count": 2, "spawnInterval": 4 },
         { "enemyType": "soldier", "count": 3, "spawnInterval": 2 }
       ],
       "preludeDuration": 8
     },
     {
+      "routeIndex": 0,
       "entries": [
-        { "enemyType": "trooper", "count": 2, "spawnInterval": 3 }
-      ],
-      "preludeDuration": 6
-    },
-    {
-      "entries": [
-        { "enemyType": "heavy", "count": 1, "spawnInterval": 0 },
+        { "enemyType": "heavy", "count": 1, "spawnInterval": 1 },
         { "enemyType": "trooper", "count": 2, "spawnInterval": 3 }
       ],
       "preludeDuration": 8
     }
   ],
-  "startingDP": 20,
+  "startingDP": 25,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,

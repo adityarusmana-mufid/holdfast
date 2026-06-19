@@ -1,0 +1,153 @@
+{
+  "name": "Breach Point",
+  "cols": 8,
+  "rows": 8,
+  "tiles": [
+    [
+      { "row": 0, "col": 0, "type": "spawn" },
+      { "row": 0, "col": 1, "type": "route" },
+      { "row": 0, "col": 2, "type": "route" },
+      { "row": 0, "col": 3, "type": "floor" },
+      { "row": 0, "col": 4, "type": "floor" },
+      { "row": 0, "col": 5, "type": "floor" },
+      { "row": 0, "col": 6, "type": "floor" },
+      { "row": 0, "col": 7, "type": "floor" }
+    ],
+    [
+      { "row": 1, "col": 0, "type": "floor" },
+      { "row": 1, "col": 1, "type": "route" },
+      { "row": 1, "col": 2, "type": "route" },
+      { "row": 1, "col": 3, "type": "floor" },
+      { "row": 1, "col": 4, "type": "floor" },
+      { "row": 1, "col": 5, "type": "deploy_ranged" },
+      { "row": 1, "col": 6, "type": "deploy_ranged" },
+      { "row": 1, "col": 7, "type": "floor" }
+    ],
+    [
+      { "row": 2, "col": 0, "type": "floor" },
+      { "row": 2, "col": 1, "type": "route" },
+      { "row": 2, "col": 2, "type": "elevated" },
+      { "row": 2, "col": 3, "type": "elevated" },
+      { "row": 2, "col": 4, "type": "elevated" },
+      { "row": 2, "col": 5, "type": "elevated" },
+      { "row": 2, "col": 6, "type": "armor_grid" },
+      { "row": 2, "col": 7, "type": "floor" }
+    ],
+    [
+      { "row": 3, "col": 0, "type": "floor" },
+      { "row": 3, "col": 1, "type": "route" },
+      { "row": 3, "col": 2, "type": "floor" },
+      { "row": 3, "col": 3, "type": "floor" },
+      { "row": 3, "col": 4, "type": "floor" },
+      { "row": 3, "col": 5, "type": "deploy_ranged" },
+      { "row": 3, "col": 6, "type": "deploy_ranged" },
+      { "row": 3, "col": 7, "type": "floor" }
+    ],
+    [
+      { "row": 4, "col": 0, "type": "floor" },
+      { "row": 4, "col": 1, "type": "route" },
+      { "row": 4, "col": 2, "type": "floor" },
+      { "row": 4, "col": 3, "type": "floor" },
+      { "row": 4, "col": 4, "type": "floor" },
+      { "row": 4, "col": 5, "type": "repair_node" },
+      { "row": 4, "col": 6, "type": "floor" },
+      { "row": 4, "col": 7, "type": "floor" }
+    ],
+    [
+      { "row": 5, "col": 0, "type": "floor" },
+      { "row": 5, "col": 1, "type": "route" },
+      { "row": 5, "col": 2, "type": "route" },
+      { "row": 5, "col": 3, "type": "route" },
+      { "row": 5, "col": 4, "type": "route" },
+      { "row": 5, "col": 5, "type": "route" },
+      { "row": 5, "col": 6, "type": "route" },
+      { "row": 5, "col": 7, "type": "floor" }
+    ],
+    [
+      { "row": 6, "col": 0, "type": "floor" },
+      { "row": 6, "col": 1, "type": "floor" },
+      { "row": 6, "col": 2, "type": "floor" },
+      { "row": 6, "col": 3, "type": "floor" },
+      { "row": 6, "col": 4, "type": "floor" },
+      { "row": 6, "col": 5, "type": "route" },
+      { "row": 6, "col": 6, "type": "route" },
+      { "row": 6, "col": 7, "type": "floor" }
+    ],
+    [
+      { "row": 7, "col": 0, "type": "floor" },
+      { "row": 7, "col": 1, "type": "floor" },
+      { "row": 7, "col": 2, "type": "floor" },
+      { "row": 7, "col": 3, "type": "floor" },
+      { "row": 7, "col": 4, "type": "deploy_ranged" },
+      { "row": 7, "col": 5, "type": "route" },
+      { "row": 7, "col": 6, "type": "goal" },
+      { "row": 7, "col": 7, "type": "floor" }
+    ]
+  ],
+  "waypoints": [
+    { "row": 0, "col": 0 },
+    { "row": 0, "col": 1 },
+    { "row": 0, "col": 2 },
+    { "row": 1, "col": 2 },
+    { "row": 2, "col": 2 },
+    { "row": 2, "col": 1 },
+    { "row": 3, "col": 1 },
+    { "row": 4, "col": 1 },
+    { "row": 5, "col": 1 },
+    { "row": 5, "col": 2 },
+    { "row": 5, "col": 3 },
+    { "row": 5, "col": 4 },
+    { "row": 5, "col": 5 },
+    { "row": 5, "col": 6 },
+    { "row": 6, "col": 6 },
+    { "row": 7, "col": 6 }
+  ],
+  "waves": [
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "soldier", "count": 4, "spawnInterval": 2 },
+        { "enemyType": "drone", "count": 1, "spawnInterval": 4 }
+      ],
+      "preludeDuration": 6
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "trooper", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "caster", "count": 1, "spawnInterval": 5 }
+      ],
+      "preludeDuration": 6
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "drone", "count": 4, "spawnInterval": 2 },
+        { "enemyType": "soldier", "count": 3, "spawnInterval": 2.5 }
+      ],
+      "preludeDuration": 8
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "caster", "count": 3, "spawnInterval": 3.5 },
+        { "enemyType": "trooper", "count": 2, "spawnInterval": 3 }
+      ],
+      "preludeDuration": 8
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "heavy", "count": 2, "spawnInterval": 8 },
+        { "enemyType": "caster", "count": 1, "spawnInterval": 5 },
+        { "enemyType": "drone", "count": 2, "spawnInterval": 3 }
+      ],
+      "preludeDuration": 10
+    }
+  ],
+  "startingDP": 20,
+  "dpRegenRate": 1,
+  "dpCap": 99,
+  "deploymentLimit": 8,
+  "lives": 15
+}

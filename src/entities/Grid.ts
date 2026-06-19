@@ -98,6 +98,17 @@ export class Grid {
     }
   }
 
+  getTileCorners(row: number, col: number): { tL: { x: number; y: number }; tR: { x: number; y: number }; bR: { x: number; y: number }; bL: { x: number; y: number } } {
+    const y0 = this.offsetY + row * TILE_SIZE
+    const y1 = this.offsetY + (row + 1) * TILE_SIZE
+    return {
+      tL: { x: this.tileLeftX(row, col) + 1, y: y0 + 1 },
+      tR: { x: this.tileRightX(row, col) - 1, y: y0 + 1 },
+      bR: { x: this.tileRightX(row + 1, col) - 1, y: y1 - 1 },
+      bL: { x: this.tileLeftX(row + 1, col) + 1, y: y1 - 1 },
+    }
+  }
+
   tileToPixel(row: number, col: number): { x: number; y: number } {
     return this.getTileCenter(row, col)
   }
@@ -207,12 +218,20 @@ export class Grid {
         const bR = { x: this.tileRightX(r + 1, c) - 1, y: y1 - 1 }
         const bL = { x: this.tileLeftX(r + 1, c) + 1, y: y1 - 1 }
 
-        // Tile body fill
-        this.tileGraphics.fillStyle(tileColor(tile.type), 1)
+        // Tile body fill — elevated tiles adopt color of tile below for platform continuity
+        const isElevated = tile.type === TileType.Ranged || tile.type === TileType.Wall
+        let tileFillColor = tileColor(tile.type)
+        if (isElevated) {
+          const below = r + 1 < this.rows ? this.tiles[r + 1]?.[c] : null
+          const belowElevated = below && (below.type === TileType.Ranged || below.type === TileType.Wall)
+          if (belowElevated) {
+            tileFillColor = tileColor(below.type)
+          }
+        }
+        this.tileGraphics.fillStyle(tileFillColor, 1)
         this.tileGraphics.fillPoints([tL, tR, bR, bL], true)
 
         // Shadow strip on elevated tiles — only if nothing elevated below
-        const isElevated = tile.type === TileType.Ranged || tile.type === TileType.Wall
         if (isElevated) {
           const below = r + 1 < this.rows ? this.tiles[r + 1]?.[c] : null
           const belowElevated = below && (below.type === TileType.Ranged || below.type === TileType.Wall)
@@ -237,31 +256,53 @@ export class Grid {
         this.tileGraphics.closePath()
         this.tileGraphics.strokePath()
 
-        // Special tile decorations
-        if (tile.type === TileType.Spawn) {
-          this.tileGraphics.lineStyle(2, 0xff8888, 0.5)
-          this.tileGraphics.lineBetween(tL.x + 1, tL.y, bR.x - 1, bR.y)
-          this.tileGraphics.lineBetween(tR.x - 1, tR.y, bL.x + 1, bL.y)
-          const cx = Phaser.Math.Linear(tL.x, tR.x, 0.5)
-          const cy = (y0 + y1) / 2
-          this.tileGraphics.fillStyle(0xff6666, 0.9)
-          this.tileGraphics.fillTriangle(cx, cy - 10, cx - 8, cy + 8, cx + 8, cy + 8)
-          this.tileGraphics.fillStyle(0xffffff, 1)
-          this.tileGraphics.fillRect(cx - 2, cy - 4, 4, 8)
-          this.tileGraphics.fillRect(cx - 2, cy + 5, 4, 3)
-        }
+        // 3D wireframe cube for spawn/goal
+        if (tile.type === TileType.Spawn || tile.type === TileType.Goal) {
+          const cubeColor = tile.type === TileType.Spawn ? 0xff8888 : 0x8888ff
+          const cubeFill = tile.type === TileType.Spawn ? 0xff6666 : 0x6666ff
+          const cubeH = 18
+          const inset = 6
+          const ctL = { x: tL.x + inset, y: tL.y - cubeH }
+          const ctR = { x: tR.x - inset, y: tR.y - cubeH }
+          const cbR = { x: bR.x - inset, y: bR.y - cubeH }
+          const cbL = { x: bL.x + inset, y: bL.y - cubeH }
 
-        if (tile.type === TileType.Goal) {
-          this.tileGraphics.lineStyle(2, 0x8888ff, 0.5)
-          this.tileGraphics.lineBetween(tL.x + 1, tL.y, bR.x - 1, bR.y)
-          this.tileGraphics.lineBetween(tR.x - 1, tR.y, bL.x + 1, bL.y)
-          const cx = Phaser.Math.Linear(tL.x, tR.x, 0.5)
-          const cy = (y0 + y1) / 2
-          this.tileGraphics.fillStyle(0x6666ff, 0.9)
-          this.tileGraphics.fillTriangle(cx, cy - 10, cx - 8, cy + 8, cx + 8, cy + 8)
+          // Diagonal X across the tile face
+          this.tileGraphics.lineStyle(1, cubeColor, 0.3)
+          this.tileGraphics.lineBetween(tL.x, tL.y, bR.x, bR.y)
+          this.tileGraphics.lineBetween(tR.x, tR.y, bL.x, bL.y)
+
+          // Vertical edges
+          this.tileGraphics.lineStyle(1, cubeColor, 0.4)
+          this.tileGraphics.lineBetween(tL.x, tL.y, ctL.x, ctL.y)
+          this.tileGraphics.lineBetween(tR.x, tR.y, ctR.x, ctR.y)
+          this.tileGraphics.lineBetween(bR.x, bR.y, cbR.x, cbR.y)
+          this.tileGraphics.lineBetween(bL.x, bL.y, cbL.x, cbL.y)
+
+          // Top face fill
+          this.tileGraphics.fillStyle(cubeFill, 0.15)
+          this.tileGraphics.fillPoints([ctL, ctR, cbR, cbL], true)
+
+          // Top face outline
+          this.tileGraphics.lineStyle(2, cubeColor, 0.6)
+          this.tileGraphics.beginPath()
+          this.tileGraphics.moveTo(ctL.x, ctL.y)
+          this.tileGraphics.lineTo(ctR.x, ctR.y)
+          this.tileGraphics.lineTo(cbR.x, cbR.y)
+          this.tileGraphics.lineTo(cbL.x, cbL.y)
+          this.tileGraphics.closePath()
+          this.tileGraphics.strokePath()
+
+          // Exclamation triangle on the top face
+          const cTopX = Phaser.Math.Linear(ctL.x, ctR.x, 0.5)
+          const cBotX = Phaser.Math.Linear(cbL.x, cbR.x, 0.5)
+          const cY = Phaser.Math.Linear(ctL.y, cbL.y, 0.5)
+          const exclamColor = tile.type === TileType.Spawn ? 0xff8888 : 0x8888ff
+          this.tileGraphics.fillStyle(exclamColor, 0.9)
+          this.tileGraphics.fillTriangle(cTopX, cY - 8, cTopX - 7, cY + 7, cTopX + 7, cY + 7)
           this.tileGraphics.fillStyle(0xffffff, 1)
-          this.tileGraphics.fillRect(cx - 2, cy - 4, 4, 8)
-          this.tileGraphics.fillRect(cx - 2, cy + 5, 4, 3)
+          this.tileGraphics.fillRect(cTopX - 2, cY - 3, 4, 7)
+          this.tileGraphics.fillRect(cTopX - 2, cY + 4, 4, 3)
         }
 
         // Repair Node / Armor Grid icons

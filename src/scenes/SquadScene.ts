@@ -123,6 +123,7 @@ export class SquadScene extends Phaser.Scene {
         squad,
         chapterId: this.chapterId,
         levelId: this.levelId,
+        autoStart: true,
       })
     }, { w: 140, h: 30 })
   }

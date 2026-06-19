@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
-import { DeployedUnit, Direction, LevelData, UnitConfig, Position, UnitTrait, EnemyConfig, Route, Wave } from '../types/index'
+import { DeployedUnit, Direction, LevelData, UnitConfig, Position, UnitTrait, EnemyConfig, Route } from '../types/index'
 import { positionsInRange, computeFacingTowardGoal } from '../shared/utils/GridMath'
-import { Grid, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../entities/Grid'
+import { Grid, TILE_SIZE, GRID_OFFSET_Y } from '../entities/Grid'
 import { UnitSprite } from '../entities/Unit'
 import { EnemySprite } from '../entities/Enemy'
 import { DeploymentSystem } from '../systems/DeploymentSystem'
@@ -9,7 +9,6 @@ import { EnemyManager } from '../systems/EnemyManager'
 import { CombatSystem } from '../systems/CombatSystem'
 import { HealingSystem } from '../systems/HealingSystem'
 import { UNIT_CONFIGS } from '../config/units'
-import { importLevelFromFile } from '../editor/LevelSerializer'
 import { COLORS, FONT_SIZE } from '../ui/Constants'
 
 export class GameScene extends Phaser.Scene {
@@ -43,7 +42,6 @@ export class GameScene extends Phaser.Scene {
   private statsTexts!: Phaser.GameObjects.Text[]
   private rangePreview!: Phaser.GameObjects.Graphics
   private facingArrow!: Phaser.GameObjects.Graphics
-  private cancelFacingBtn!: Phaser.GameObjects.Text
   private cancelDeployIndicator!: Phaser.GameObjects.Graphics
 
   private decisionMode: boolean = false
@@ -172,6 +170,7 @@ export class GameScene extends Phaser.Scene {
     this.updateStatsPanel(null)
     this.buildHUD()
     this.buildCardBar()
+    this.buildResultText()
 
     this.rangePreview = this.add.graphics()
     this.rangePreview.setDepth(8)
@@ -230,6 +229,27 @@ export class GameScene extends Phaser.Scene {
       this.pauseOverlay.setAlpha(1)
       this.pauseText.setAlpha(1)
       this.pauseButton.setColor(COLORS.text.accent)
+
+      const cx = this.scale.width / 2
+      const cy = this.scale.height / 2
+
+      const mkBtn = (label: string, color: string, yOff: number, cb: () => void) => {
+        const t = this.add.text(cx, cy + yOff, label, {
+          fontSize: '18px', color, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+        })
+        t.setOrigin(0.5)
+        t.setDepth(50)
+        t.setInteractive({ cursor: 'pointer' })
+        t.on('pointerdown', () => { this.togglePause(); cb() })
+        return t
+      }
+
+      mkBtn('[ Restart Level ]', COLORS.text.accent, 50, () => {
+        if (this.levelData) this.loadLevel(this.levelData)
+      })
+      mkBtn('[ Back to Squad ]', COLORS.text.secondary, 80, () => {
+        this.scene.start(this.fromSquad ? 'SquadScene' : 'EditorScene')
+      })
     } else {
       this.pauseOverlay.setAlpha(0)
       this.pauseText.setAlpha(0)
@@ -784,27 +804,7 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private buildBattleButton(): void {
-    this.battleButton =       this.add.text(this.scale.width / 2, this.scale.height - 24, '[ START SIMULATION ]', {
-      fontSize: '15px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
-    })
-    this.battleButton.setOrigin(0.5)
-    this.battleButton.setInteractive({ cursor: 'pointer' })
-    this.battleButton.on('pointerdown', () => {
-      if (!this.battleActive && !this.battleEnded) {
-        if (this.deployState === 'facing') {
-          this.cancelDeployment()
-        }
-        this.deployState = 'placing'
-        this.cancelFacingBtn.setAlpha(1)
-        this.battleActive = true
-        this.enemyManager.startBattle()
-        this.battleButton.setText('[ SIMULATION ACTIVE ]')
-        this.battleButton.setStyle({ color: COLORS.text.danger })
-        this.flashMessage('SIMULATION INITIALIZED // Deploy units', 0x00c853)
-      }
-    })
-
+  private buildResultText(): void {
     this.resultText = this.add.text(this.scale.width / 2, this.scale.height / 2 - 40, '', {
       fontSize: '32px', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
@@ -816,6 +816,14 @@ export class GameScene extends Phaser.Scene {
   private selectUnit(unitId: string): void {
     const unit = this.unitConfigs.find(c => c.id === unitId)
     if (!unit) return
+
+    if (this.selectedUnitId === unitId && this.deployState !== 'idle') {
+      this.cancelDeployment()
+      this.selectedUnitId = null
+      this.updateStatsPanel(null)
+      this.updateCardVisuals()
+      return
+    }
 
     this.selectedUnitId = unitId
     this.updateStatsPanel(unit)
@@ -829,10 +837,9 @@ export class GameScene extends Phaser.Scene {
         this.inspectingUnit = null
       }
       this.deployState = 'placing'
-      this.cancelFacingBtn.setAlpha(1)
       this.decisionMode = true
     }
-    this.updateButtonVisuals()
+    this.updateCardVisuals()
   }
 
   private removeUnitSprite(row: number, col: number): void {
@@ -855,7 +862,7 @@ export class GameScene extends Phaser.Scene {
     this.exitDecisionMode()
     this.selectedUnitId = null
     this.flashMessage('All units cleared', 0xd32f2f)
-    this.rebuildUnitPalette()
+    this.rebuildCardBar()
   }
 
   private updateHUD(): void {
@@ -866,9 +873,11 @@ export class GameScene extends Phaser.Scene {
     if (this.battleEnded) {
       this.statusText.setText(this.enemyManager.hasWon() ? 'SYNC COMPLETE // VICTORY' : 'DESYNC // DEFEAT')
     } else if (this.battleActive) {
-      this.statusText.setText('Simulation active')
+      this.statusText.setText('[ RUNNING ]')
+    } else if (this.autoStart) {
+      this.statusText.setText('READY // Deploy units to prepare')
     } else {
-      this.statusText.setText('Press START SIMULATION to begin')
+      this.statusText.setText('')
     }
   }
 
@@ -878,8 +887,6 @@ export class GameScene extends Phaser.Scene {
     if (this.enemyManager.getLives() <= 0) {
       this.battleEnded = true
       this.battleActive = false
-      this.battleButton.setText('[ DESYNC ]')
-      this.battleButton.setStyle({ color: COLORS.text.danger })
       this.cameras.main.flash(300, 211, 47, 47)
       this.flashMessage('DESYNCHRONIZATION — All sync lost', 0xd32f2f)
       this.showResult('DESYNC', 0xd32f2f)
@@ -889,8 +896,6 @@ export class GameScene extends Phaser.Scene {
     if (this.enemyManager.isAllWavesComplete()) {
       this.battleEnded = true
       this.battleActive = false
-      this.battleButton.setText('[ SYNC COMPLETE ]')
-      this.battleButton.setStyle({ color: COLORS.text.success })
       this.cameras.main.flash(300, 0, 200, 83)
       this.flashMessage('MEMORY STREAM COMPLETE — 100% synchronized', 0x00c853)
       this.showResult('SYNC COMPLETE', 0x00c853)
@@ -1135,10 +1140,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private computeGridOffsetX(cols: number): number {
-    const leftArea = 160
     const gridW = cols * TILE_SIZE
-    const availW = this.scale.width - leftArea
-    return leftArea + Math.floor((availW - gridW) / 2)
+    const availW = this.scale.width
+    return Math.floor((availW - gridW) / 2)
   }
 
   private loadLevel(data: LevelData): void {
@@ -1165,15 +1169,12 @@ export class GameScene extends Phaser.Scene {
     this.inspectCloseBtn.setAlpha(0)
     this.clearRangePreview()
     this.resultText.setAlpha(0)
-    this.battleButton.setText('[ START SIMULATION ]')
-    this.battleButton.setStyle({ color: COLORS.text.accent })
-    this.paletteScrollY = 0
-    if (this.paletteContainer) {
-      this.paletteContainer.removeAll(true)
-      this.unitButtons = []
-      this.paletteContainer.setY(0)
+    this.cardBarScrollX = 0
+    if (this.cardBarContainer) {
+      this.cardBarContainer.removeAll(true)
+      this.unitCards = []
     }
-    this.rebuildUnitPalette()
+    this.rebuildCardBar()
     this.updateStatsPanel(null)
     this.updateHUD()
   }

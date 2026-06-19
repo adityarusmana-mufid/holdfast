@@ -19,21 +19,20 @@ export class GameScene extends Phaser.Scene {
   private combatSystem!: CombatSystem
   private healingSystem!: HealingSystem
   private unitSprites: UnitSprite[] = []
-  private paletteScrollY: number = 0
-  private paletteContainer!: Phaser.GameObjects.Container
-  private paletteActionsContainer!: Phaser.GameObjects.Container
+  private cardBarScrollX: number = 0
+  private cardBarContainer!: Phaser.GameObjects.Container
   private selectedUnitId: string | null = null
-  private unitButtons: { container: Phaser.GameObjects.Container; unitId: string }[] = []
-  private paletteBg!: Phaser.GameObjects.Graphics
+  private unitCards: { container: Phaser.GameObjects.Container; unitId: string }[] = []
   private dpText!: Phaser.GameObjects.Text
   private limitText!: Phaser.GameObjects.Text
   private livesText!: Phaser.GameObjects.Text
   private waveText!: Phaser.GameObjects.Text
   private statusText!: Phaser.GameObjects.Text
+  private battleStatusText!: Phaser.GameObjects.Text
   private levelData: LevelData | null = null
   private battleActive: boolean = false
   private battleEnded: boolean = false
-  private battleButton!: Phaser.GameObjects.Text
+  private autoStart: boolean = false
   private resultText!: Phaser.GameObjects.Text
   private hoverIndicator!: Phaser.GameObjects.Graphics
 
@@ -72,7 +71,7 @@ export class GameScene extends Phaser.Scene {
     super({ key: 'GameScene' })
   }
 
-  init(data: { level?: LevelData; squad?: UnitConfig[]; chapterId?: string; levelId?: string }): void {
+  init(data: { level?: LevelData; squad?: UnitConfig[]; chapterId?: string; levelId?: string; autoStart?: boolean }): void {
     if (data?.level) {
       this.levelData = data.level
     }
@@ -85,13 +84,14 @@ export class GameScene extends Phaser.Scene {
       this.unitConfigs = UNIT_CONFIGS
       this.fromSquad = false
     }
+    this.autoStart = data?.autoStart ?? false
   }
 
   create(): void {
     this.cameras.main.fadeIn(300, 0, 0, 0)
     this.drawBgGradient()
     this.unitSprites = []
-    this.unitButtons = []
+    this.unitCards = []
     this.selectedUnitId = null
     this.battleActive = false
     this.battleEnded = false
@@ -162,7 +162,7 @@ export class GameScene extends Phaser.Scene {
         this.depSystem.removeUnit(unit.row, unit.col)
         this.removeUnitSprite(unit.row, unit.col)
         this.flashMessage(`UNIT DESTROYED // ${unit.config.name}`, 0xd32f2f)
-        this.rebuildUnitPalette()
+        this.rebuildCardBar()
       },
     })
 
@@ -170,9 +170,8 @@ export class GameScene extends Phaser.Scene {
 
     this.buildStatsPanel()
     this.updateStatsPanel(null)
-    this.buildUnitPalette()
     this.buildHUD()
-    this.buildBattleButton()
+    this.buildCardBar()
 
     this.rangePreview = this.add.graphics()
     this.rangePreview.setDepth(8)
@@ -204,6 +203,11 @@ export class GameScene extends Phaser.Scene {
     this.wavePreviewLine.setAlpha(0)
 
     this.buildPauseButton()
+
+    if (this.autoStart) {
+      this.time.delayedCall(2000, () => this.beginBattle())
+      this.flashMessage('MEMORY STREAM READY // Deploy units', 0x00c853)
+    }
   }
 
   private buildPauseButton(): void {
@@ -233,6 +237,12 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  private beginBattle(): void {
+    this.battleActive = true
+    this.enemyManager.startBattle()
+    this.flashMessage('SIMULATION INITIALIZED // Deploy units', 0x00c853)
+  }
+
   private getSelectedUnit(): UnitConfig | null {
     if (this.selectedUnitId === null) return null
     return this.unitConfigs.find(c => c.id === this.selectedUnitId) ?? null
@@ -241,18 +251,7 @@ export class GameScene extends Phaser.Scene {
   private setupInput(): void {
     this.input.mouse?.disableContextMenu()
 
-    this.cancelFacingBtn = this.add.text(10, this.scale.height - 20, 'CANCEL', {
-      fontSize: '13px',
-      color: COLORS.text.danger,
-      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-      fontStyle: 'bold',
-    })
-    this.cancelFacingBtn.setDepth(50)
-    this.cancelFacingBtn.setAlpha(0)
-    this.cancelFacingBtn.setInteractive({ cursor: 'pointer' })
-    this.cancelFacingBtn.on('pointerdown', () => this.cancelDeployment())
-
-    this.inspectRetreatBtn = this.add.text(10, 70, '', {
+    this.inspectRetreatBtn = this.add.text(10, this.scale.height - 160, '', {
       fontSize: '13px',
       color: COLORS.text.danger,
       fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
@@ -263,7 +262,7 @@ export class GameScene extends Phaser.Scene {
     this.inspectRetreatBtn.setInteractive({ cursor: 'pointer' })
     this.inspectRetreatBtn.on('pointerdown', () => this.retreatInspectedUnit())
 
-    this.inspectCloseBtn = this.add.text(10, 88, '[ CLOSE ]', {
+    this.inspectCloseBtn = this.add.text(10, this.scale.height - 142, '[ CLOSE ]', {
       fontSize: '12px',
       color: COLORS.text.secondary,
       fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
@@ -318,7 +317,6 @@ export class GameScene extends Phaser.Scene {
           this.showRangePreview(selected, pos, this.pendingFacing)
           this.showFacingArrow(pos, this.pendingFacing)
           this.hoverIndicator.setAlpha(0)
-          this.cancelFacingBtn.setAlpha(1)
           this.flashMessage(`DIRECTION // ${selected.name}`, selected.color)
         } else {
           this.cancelDeployment()
@@ -393,12 +391,32 @@ export class GameScene extends Phaser.Scene {
       this.hoverIndicator.setAlpha(1)
     })
 
-    this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
-      if (!this.paletteContainer) return
-      const maxScroll = Math.max(0, this.unitConfigs.length * 36 - (this.scale.height - 180))
-      this.paletteScrollY = Phaser.Math.Clamp(this.paletteScrollY - dy * 0.5, -maxScroll, 0)
-      this.paletteContainer.setY(this.paletteScrollY)
+    this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], dx: number, _dy: number) => {
+      if (!this.cardBarContainer) return
+      const totalW = this.unitConfigs.length * (96 + 6) + 10
+      const maxScroll = Math.max(0, totalW - this.scale.width)
+      this.cardBarScrollX = Phaser.Math.Clamp(this.cardBarScrollX - dx * 0.5, -maxScroll, 0)
+      this.cardBarContainer.setX(this.cardBarScrollX)
     })
+
+    let dragStartX = 0
+    let dragStarted = false
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (pointer.y > this.scale.height - 140) {
+        dragStartX = pointer.x
+        dragStarted = true
+      }
+    })
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (!dragStarted || !this.cardBarContainer) return
+      const dx2 = pointer.x - dragStartX
+      dragStartX = pointer.x
+      const totalW = this.unitConfigs.length * (96 + 6) + 10
+      const maxScroll = Math.max(0, totalW - this.scale.width)
+      this.cardBarScrollX = Phaser.Math.Clamp(this.cardBarScrollX + dx2, -maxScroll, 0)
+      this.cardBarContainer.setX(this.cardBarScrollX)
+    })
+    this.input.on('pointerup', () => { dragStarted = false })
   }
 
   private getGoalPositions(): Position[] {
@@ -502,10 +520,9 @@ export class GameScene extends Phaser.Scene {
       const cost = this.depSystem.getCurrentCost(selected)
       this.flashMessage(`DEPLOY // ${selected.name}  -${cost} DP`, selected.color)
       this.selectedUnitId = null
-      this.rebuildUnitPalette()
+      this.rebuildCardBar()
     }
     this.clearRangePreview()
-    this.cancelFacingBtn.setAlpha(0)
     this.cancelDeployIndicator.setAlpha(0)
     this.pendingTile = null
     this.deployState = 'placing'
@@ -514,7 +531,6 @@ export class GameScene extends Phaser.Scene {
 
   private cancelDeployment(): void {
     this.clearRangePreview()
-    this.cancelFacingBtn.setAlpha(0)
     this.cancelDeployIndicator.setAlpha(0)
     this.pendingTile = null
     this.deployState = 'placing'
@@ -557,7 +573,7 @@ export class GameScene extends Phaser.Scene {
       this.flashMessage(`RETREAT // ${config.name}  +${refund} DP`, 0x00c853)
     }
     this.exitDecisionMode()
-    this.rebuildUnitPalette()
+    this.rebuildCardBar()
   }
 
   update(_time: number, delta: number): void {
@@ -579,16 +595,15 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.updateHUD()
-    this.updateButtonVisuals()
+    this.updateCardVisuals()
   }
 
   private buildStatsPanel(): void {
-    const px = 10
-    const py = 10
+    const py = this.scale.height - 155
     const texts: Phaser.GameObjects.Text[] = []
     const lines = ['', '', '']
     for (let i = 0; i < 3; i++) {
-      const t = this.add.text(px + 6, py + 4 + i * 16, lines[i], {
+      const t = this.add.text(16, py + i * 16, lines[i], {
         fontSize: '12px',
         color: COLORS.text.secondary,
         fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
@@ -615,94 +630,37 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private buildUnitPalette(): void {
-    const px = 10
-    const baseY = 70
-    const btnW = 140
-    const btnH = 34
-    const gap = 2
-    const slotH = btnH + gap
-    const headerH = 16
-
-    this.add.text(px, baseY - headerH, 'UNIT SELECT', {
-      fontSize: '12px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-    })
-
-    this.paletteContainer = this.add.container(0, 0)
-    this.unitButtons = []
-    this.paletteScrollY = 0
-    this.rebuildUnitPalette()
-
-    const listEnd = baseY + this.unitConfigs.length * slotH
-    const actionY = Math.min(listEnd + gap, this.scale.height - 100)
-
-    this.paletteActionsContainer = this.add.container(0, 0)
-    const header = this.add.text(px, actionY - 12, 'ACTIONS', {
-      fontSize: '12px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-    })
-    this.paletteActionsContainer.add(header)
-
-    const actionBtn = (tx: number, text: string, color: string, cb: () => void) => {
-      const t = this.add.text(tx, 0, text, {
-        fontSize: '12px', color, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-      })
-      t.setInteractive({ cursor: 'pointer' })
-      t.on('pointerdown', cb)
-      return t
-    }
-
-    const clearBtn = actionBtn(px, '[Clear All]', COLORS.text.danger, () => this.clearAllUnits())
-    clearBtn.setY(actionY)
-    this.paletteActionsContainer.add(clearBtn)
-
-    const restartBtn = actionBtn(px, '[Restart]', COLORS.text.warning, () => {
-      if (this.levelData) this.loadLevel(this.levelData)
-    })
-    restartBtn.setY(actionY + 20)
-    this.paletteActionsContainer.add(restartBtn)
-
-    const loadBtn = actionBtn(px, '[Load Level]', COLORS.text.accent, async () => {
-      const data = await importLevelFromFile()
-      if (data) this.loadLevel(data)
-    })
-    loadBtn.setY(actionY + 40)
-    this.paletteActionsContainer.add(loadBtn)
-
-    const backLabel = this.fromSquad ? '< Back to Squad Selection' : '< Back to Editor'
-    const editorBtn = this.add.text(px, actionY + 60, backLabel, {
-      fontSize: '11px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-    })
-    editorBtn.setInteractive({ cursor: 'pointer' })
-    editorBtn.on('pointerover', () => editorBtn.setColor(COLORS.text.primary))
-    editorBtn.on('pointerout', () => editorBtn.setColor(COLORS.text.accent))
-    editorBtn.on('pointerdown', () => this.scene.start(this.fromSquad ? 'SquadScene' : 'EditorScene'))
-    this.paletteActionsContainer.add(editorBtn)
+  private buildCardBar(): void {
+    this.cardBarContainer = this.add.container(0, this.scale.height - 140)
+    this.unitCards = []
+    this.cardBarScrollX = 0
+    this.rebuildCardBar()
   }
 
-  private rebuildUnitPalette(): void {
+  private rebuildCardBar(): void {
+    if (!this.cardBarContainer) return
+    this.cardBarContainer.removeAll(true)
+    this.unitCards = []
+
+    const cardW = 96
+    const cardH = 128
+    const gap = 6
     const px = 10
-    const baseY = 70
-    const btnW = 140
-    const btnH = 34
-    const gap = 2
-    const slotH = btnH + gap
+    const py = 6
 
-    this.paletteContainer.removeAll(true)
-    this.unitButtons = []
-
-    const paletteEntries = this.unitConfigs
+    const entries = this.unitConfigs
       .filter(c => !this.depSystem.isDeployed(c.id))
       .sort((a, b) => this.depSystem.getCurrentCost(a) - this.depSystem.getCurrentCost(b))
 
-    paletteEntries.forEach((unit, i) => {
-      const y = baseY + i * slotH
-      const btn = this.makeUnitButton(px, y, btnW, btnH, unit)
-      this.unitButtons.push(btn)
-      this.paletteContainer.add(btn.container)
+    entries.forEach((unit, i) => {
+      const x = px + i * (cardW + gap)
+      const card = this.makeUnitCard(x, py, cardW, cardH, unit)
+      this.unitCards.push(card)
+      this.cardBarContainer.add(card.container)
     })
   }
 
-  private makeUnitButton(px: number, y: number, btnW: number, btnH: number, unit: UnitConfig): { container: Phaser.GameObjects.Container; unitId: string } {
+  private makeUnitCard(cx: number, cy: number, cardW: number, cardH: number, unit: UnitConfig): { container: Phaser.GameObjects.Container; unitId: string } {
     const cost = this.depSystem.getCurrentCost(unit)
     const canAfford = this.depSystem.currentDP >= cost
     const onCooldown = this.depSystem.isOnCooldown(unit.id)
@@ -710,51 +668,60 @@ export class GameScene extends Phaser.Scene {
 
     const bg = this.add.graphics()
     bg.fillStyle(0xffffff, 1)
-    bg.fillRoundedRect(0, 0, btnW, btnH, 4)
-    bg.lineStyle(isSelected ? 2 : 1, isSelected ? 0x00a2ff : 0xcfd8dc, 1)
-    if (!canAfford && !onCooldown) {
-      bg.setAlpha(0.5)
-    }
+    bg.fillRoundedRect(0, 0, cardW, cardH, 6)
+    bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x00a2ff : 0xcfd8dc, 1)
+    bg.setAlpha(!canAfford && !onCooldown ? 0.45 : 1)
 
+    const iconX = cardW / 2
+    const iconY = 44
+    const iconSize = 48
     const icon = this.add.graphics()
     if (unit.type === 'ground') {
       icon.fillStyle(unit.color, 1)
-      icon.fillRoundedRect(6, 6, 12, 12, 3)
+      icon.fillRoundedRect(iconX - iconSize / 2, iconY - iconSize / 2, iconSize, iconSize, 6)
+      icon.fillStyle(0xffffff, 0.2)
+      icon.fillRoundedRect(iconX - iconSize / 4, iconY - iconSize / 4, iconSize / 2, iconSize / 2, 3)
     } else {
       icon.fillStyle(unit.color, 1)
-      icon.fillTriangle(12, 6, 4, 22, 20, 22)
+      icon.fillTriangle(iconX, iconY - iconSize / 2, iconX - iconSize / 2, iconY + iconSize / 2, iconX + iconSize / 2, iconY + iconSize / 2)
+      icon.fillStyle(0xffffff, 0.2)
+      icon.fillTriangle(iconX, iconY - iconSize / 4, iconX - iconSize / 4, iconY + iconSize / 4, iconX + iconSize / 4, iconY + iconSize / 4)
     }
 
-    const nameLabel = this.add.text(22, 5, unit.subtypeLabel, {
-      fontSize: '11px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    const nameLabel = this.add.text(cardW / 2, 78, unit.subtypeLabel, {
+      fontSize: '13px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
-    const infoLabel = this.add.text(22, 20, `DP ${cost}`, {
-      fontSize: '9px', color: onCooldown ? COLORS.text.danger : COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-    })
+    nameLabel.setOrigin(0.5, 0)
 
-    const children: Phaser.GameObjects.GameObject[] = [bg, icon, nameLabel, infoLabel]
+    const dpLabel = this.add.text(cardW / 2, 98, `DP ${cost}`, {
+      fontSize: '12px', color: onCooldown ? COLORS.text.danger : COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    })
+    dpLabel.setOrigin(0.5, 0)
+
+    const children: Phaser.GameObjects.GameObject[] = [bg, icon, nameLabel, dpLabel]
 
     if (onCooldown) {
-      const cooldownOverlay = this.add.graphics()
-      cooldownOverlay.fillStyle(0xd32f2f, 0.15)
-      cooldownOverlay.fillRoundedRect(0, 0, btnW, btnH, 4)
+      const overlay = this.add.graphics()
+      overlay.fillStyle(0xd32f2f, 0.12)
+      overlay.fillRoundedRect(0, 0, cardW, cardH, 6)
       const remaining = Math.max(0, this.depSystem.getCooldownRemaining(unit.id))
-      const cdText = this.add.text(btnW - 4, btnH / 2, `${remaining.toFixed(2)}s`, {
-        fontSize: '10px', color: '#d32f2f', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+      const cdText = this.add.text(cardW / 2, cardH / 2 - 4, `${remaining.toFixed(1)}s`, {
+        fontSize: '13px', color: '#d32f2f', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
       })
-      cdText.setOrigin(1, 0.5)
-      children.push(cooldownOverlay, cdText)
+      cdText.setOrigin(0.5)
+      children.push(overlay, cdText)
     }
 
-    const container = this.add.container(px, y, children)
-    container.setSize(btnW, btnH)
-    container.setInteractive(new Phaser.Geom.Rectangle(0, 0, btnW, btnH), Phaser.Geom.Rectangle.Contains); if (container.input) container.input.cursor = 'pointer'
+    const container = this.add.container(cx, cy, children)
+    container.setSize(cardW, cardH)
+    container.setInteractive(new Phaser.Geom.Rectangle(0, 0, cardW, cardH), Phaser.Geom.Rectangle.Contains)
+    if (container.input) container.input.cursor = 'pointer'
     container.on('pointerdown', () => this.selectUnit(unit.id))
     return { container, unitId: unit.id }
   }
 
-  private updateButtonVisuals(): void {
-    for (const { container, unitId } of this.unitButtons) {
+  private updateCardVisuals(): void {
+    for (const { container, unitId } of this.unitCards) {
       const unit = this.unitConfigs.find(c => c.id === unitId)
       if (!unit) continue
       const cost = this.depSystem.getCurrentCost(unit)
@@ -765,19 +732,19 @@ export class GameScene extends Phaser.Scene {
       const bg = container.getAt(0) as Phaser.GameObjects.Graphics
       bg.clear()
       bg.fillStyle(0xffffff, 1)
-      bg.fillRoundedRect(0, 0, 140, 34, 4)
-      bg.lineStyle(isSelected ? 2 : 1, isSelected ? 0x00a2ff : 0xcfd8dc, 1)
-      bg.setAlpha(!canAfford && !onCooldown ? 0.5 : 1)
+      bg.fillRoundedRect(0, 0, 96, 128, 6)
+      bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x00a2ff : 0xcfd8dc, 1)
+      bg.setAlpha(!canAfford && !onCooldown ? 0.45 : 1)
 
-      const infoLabel = container.getAt(3) as Phaser.GameObjects.Text
-      infoLabel.setText(`DP ${cost}`)
-      infoLabel.setColor(onCooldown ? COLORS.text.danger : COLORS.text.dim)
+      const dpLabel = container.getAt(3) as Phaser.GameObjects.Text
+      dpLabel.setText(`DP ${cost}`)
+      dpLabel.setColor(onCooldown ? COLORS.text.danger : COLORS.text.accent)
 
       if (onCooldown) {
         if (container.length >= 6) {
           const cdText = container.getAt(5) as Phaser.GameObjects.Text
           const remaining = Math.max(0, this.depSystem.getCooldownRemaining(unit.id))
-          cdText.setText(`${remaining.toFixed(2)}s`)
+          cdText.setText(`${remaining.toFixed(1)}s`)
           cdText.setAlpha(1)
         }
       } else {

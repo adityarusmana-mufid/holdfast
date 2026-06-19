@@ -204,7 +204,8 @@ export class GameScene extends Phaser.Scene {
     this.buildPauseButton()
 
     if (this.autoStart) {
-      this.time.delayedCall(2000, () => this.beginBattle())
+      this.battleActive = true
+      this.time.delayedCall(2000, () => this.enemyManager.startBattle())
       this.flashMessage('MEMORY STREAM READY // Deploy units', 0x00c853)
     }
   }
@@ -255,12 +256,6 @@ export class GameScene extends Phaser.Scene {
       this.pauseText.setAlpha(0)
       this.pauseButton.setColor(COLORS.text.dim)
     }
-  }
-
-  private beginBattle(): void {
-    this.battleActive = true
-    this.enemyManager.startBattle()
-    this.flashMessage('SIMULATION INITIALIZED // Deploy units', 0x00c853)
   }
 
   private getSelectedUnit(): UnitConfig | null {
@@ -420,15 +415,22 @@ export class GameScene extends Phaser.Scene {
     })
 
     let dragStartX = 0
+    let dragStartWorldX = 0
     let dragStarted = false
+    const dragThreshold = 10
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (pointer.y > this.scale.height - 140) {
         dragStartX = pointer.x
-        dragStarted = true
+        dragStartWorldX = pointer.worldX
+        dragStarted = false
       }
     })
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      if (!dragStarted || !this.cardBarContainer) return
+      if (dragStartWorldX === 0 && dragStartX === 0) return
+      if (!this.cardBarContainer) return
+      const dist = Math.abs(pointer.worldX - dragStartWorldX)
+      if (!dragStarted && dist < dragThreshold) return
+      if (!dragStarted) dragStarted = true
       const dx2 = pointer.x - dragStartX
       dragStartX = pointer.x
       const totalW = this.unitConfigs.length * (96 + 6) + 10
@@ -436,7 +438,7 @@ export class GameScene extends Phaser.Scene {
       this.cardBarScrollX = Phaser.Math.Clamp(this.cardBarScrollX + dx2, -maxScroll, 0)
       this.cardBarContainer.setX(this.cardBarScrollX)
     })
-    this.input.on('pointerup', () => { dragStarted = false })
+    this.input.on('pointerup', () => { dragStartX = 0; dragStartWorldX = 0; dragStarted = false })
   }
 
   private getGoalPositions(): Position[] {
@@ -652,6 +654,7 @@ export class GameScene extends Phaser.Scene {
 
   private buildCardBar(): void {
     this.cardBarContainer = this.add.container(0, this.scale.height - 140)
+    this.cardBarContainer.setDepth(35)
     this.unitCards = []
     this.cardBarScrollX = 0
     this.rebuildCardBar()
@@ -749,9 +752,11 @@ export class GameScene extends Phaser.Scene {
       const onCooldown = this.depSystem.isOnCooldown(unit.id)
       const isSelected = this.selectedUnitId === unitId
 
+      container.y = isSelected ? 2 : 6
+
       const bg = container.getAt(0) as Phaser.GameObjects.Graphics
       bg.clear()
-      bg.fillStyle(0xffffff, 1)
+      bg.fillStyle(isSelected ? 0xe3f2fd : 0xffffff, 1)
       bg.fillRoundedRect(0, 0, 96, 128, 6)
       bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x00a2ff : 0xcfd8dc, 1)
       bg.setAlpha(!canAfford && !onCooldown ? 0.45 : 1)

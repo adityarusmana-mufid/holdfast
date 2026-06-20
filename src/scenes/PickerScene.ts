@@ -43,7 +43,7 @@ export class PickerScene extends Phaser.Scene {
   private cardScrollContainer!: Phaser.GameObjects.Container
   private infoContainer!: Phaser.GameObjects.Container
   private confirmBtn!: Phaser.GameObjects.Graphics
-  private cardContainers: { bg: Phaser.GameObjects.Graphics; unit: UnitConfig }[] = []
+  private cardContainers: { bg: Phaser.GameObjects.Graphics; unit: UnitConfig; lx: number; ly: number }[] = []
 
   constructor() {
     super({ key: 'PickerScene' })
@@ -139,7 +139,7 @@ export class PickerScene extends Phaser.Scene {
       }).setOrigin(0.5, 0)
       this.cardScrollContainer.add(dpLine)
 
-      this.cardContainers.push({ bg, unit })
+      this.cardContainers.push({ bg, unit, lx, ly })
 
       bg.on('pointerdown', () => this.selectCard(unit))
     })
@@ -164,9 +164,9 @@ export class PickerScene extends Phaser.Scene {
       const isSelected = cc.unit.id === unit.id
       cc.bg.clear()
       cc.bg.fillStyle(0xffffff, 1)
-      cc.bg.fillRoundedRect(cc.bg.x, cc.bg.y, CARD_W, CARD_H, 4)
+      cc.bg.fillRoundedRect(cc.lx, cc.ly, CARD_W, CARD_H, 4)
       cc.bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x00a2ff : cc.unit.color, isSelected ? 1 : 0.5)
-      cc.bg.strokeRoundedRect(cc.bg.x, cc.bg.y, CARD_W, CARD_H, 4)
+      cc.bg.strokeRoundedRect(cc.lx, cc.ly, CARD_W, CARD_H, 4)
     }
     this.showInfo(unit)
     this.showConfirm()

@@ -112,32 +112,48 @@ export class PickerScene extends Phaser.Scene {
       const ly = row * (CARD_H + CARD_GAP)
 
       const bg = this.add.graphics()
-      bg.fillStyle(0xffffff, 1)
-      bg.fillRoundedRect(lx, ly, CARD_W, CARD_H, 4)
-      bg.lineStyle(1, unit.color, 0.5)
-      bg.strokeRoundedRect(lx, ly, CARD_W, CARD_H, 4)
+      bg.fillStyle(unit.color, 0.15)
+      bg.fillRoundedRect(lx, ly, CARD_W, CARD_H, 6)
+      bg.lineStyle(2, unit.color, 0.6)
+      bg.strokeRoundedRect(lx, ly, CARD_W, CARD_H, 6)
       bg.setInteractive(new Phaser.Geom.Rectangle(lx, ly, CARD_W, CARD_H), Phaser.Geom.Rectangle.Contains)
       if (bg.input) bg.input.cursor = 'pointer'
       this.cardScrollContainer.add(bg)
 
-      const label = this.add.text(lx + CARD_W / 2, ly + 16, unit.subtypeLabel, {
-        ...FONTS.bodyBold, color: COLORS.text.primary, align: 'center',
-      }).setOrigin(0.5, 0)
+      const iconSize = 48
+      const iconTop = ly + 8
+      const icon = this.add.graphics()
+      if (unit.type === 'ground') {
+        icon.fillStyle(unit.color, 1)
+        icon.fillRoundedRect(lx + CARD_W / 2 - iconSize / 2, iconTop, iconSize, iconSize, 6)
+        icon.fillStyle(0xffffff, 0.2)
+        icon.fillRoundedRect(lx + CARD_W / 2 - iconSize / 4, iconTop + iconSize / 4, iconSize / 2, iconSize / 2, 3)
+      } else {
+        icon.fillStyle(unit.color, 1)
+        icon.fillTriangle(lx + CARD_W / 2, iconTop, lx + CARD_W / 2 - iconSize / 2, iconTop + iconSize, lx + CARD_W / 2 + iconSize / 2, iconTop + iconSize)
+        icon.fillStyle(0xffffff, 0.2)
+        icon.fillTriangle(lx + CARD_W / 2, iconTop + iconSize / 4, lx + CARD_W / 2 - iconSize / 4, iconTop + iconSize * 0.75, lx + CARD_W / 2 + iconSize / 4, iconTop + iconSize * 0.75)
+      }
+      this.cardScrollContainer.add(icon)
+
+      const label = this.add.text(lx + CARD_W / 2, ly + 64, unit.subtypeLabel, {
+        ...FONTS.small, color: COLORS.text.primary, align: 'center', wordWrap: { width: CARD_W - 8 },
+      }).setOrigin(0.5)
       this.cardScrollContainer.add(label)
 
-      const arch = this.add.text(lx + CARD_W / 2, ly + 42, unit.archetype.toUpperCase(), {
-        fontSize: '11px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
-      }).setOrigin(0.5, 0)
+      const arch = this.add.text(lx + CARD_W / 2, ly + 90, unit.archetype.toUpperCase(), {
+        fontSize: '10px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
+      }).setOrigin(0.5)
       this.cardScrollContainer.add(arch)
 
-      const stats = this.add.text(lx + CARD_W / 2, ly + 68, `${unit.hp}HP ${unit.atk}ATK`, {
-        fontSize: '11px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
-      }).setOrigin(0.5, 0)
+      const stats = this.add.text(lx + CARD_W / 2, ly + 116, `${unit.hp}HP ${unit.atk}ATK`, {
+        fontSize: '10px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
+      }).setOrigin(0.5)
       this.cardScrollContainer.add(stats)
 
-      const dpLine = this.add.text(lx + CARD_W / 2, ly + 94, `${unit.dpCost}DP`, {
-        fontSize: '11px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
-      }).setOrigin(0.5, 0)
+      const dpLine = this.add.text(lx + 6, ly + 4, `${unit.dpCost} DP`, {
+        fontSize: '10px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      })
       this.cardScrollContainer.add(dpLine)
 
       this.cardContainers.push({ bg, unit, lx, ly })
@@ -197,10 +213,10 @@ export class PickerScene extends Phaser.Scene {
     for (const cc of this.cardContainers) {
       const isSelected = cc.unit.id === unit.id
       cc.bg.clear()
-      cc.bg.fillStyle(0xffffff, 1)
-      cc.bg.fillRoundedRect(cc.lx, cc.ly, CARD_W, CARD_H, 4)
-      cc.bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x00a2ff : cc.unit.color, isSelected ? 1 : 0.5)
-      cc.bg.strokeRoundedRect(cc.lx, cc.ly, CARD_W, CARD_H, 4)
+      cc.bg.fillStyle(cc.unit.color, 0.15)
+      cc.bg.fillRoundedRect(cc.lx, cc.ly, CARD_W, CARD_H, 6)
+      cc.bg.lineStyle(isSelected ? 3 : 2, isSelected ? 0x00a2ff : cc.unit.color, isSelected ? 1 : 0.6)
+      cc.bg.strokeRoundedRect(cc.lx, cc.ly, CARD_W, CARD_H, 6)
     }
     this.showInfo(unit)
     this.showConfirm()

@@ -61,6 +61,7 @@ export class GameScene extends Phaser.Scene {
   private pauseOverlay!: Phaser.GameObjects.Graphics
   private pauseText!: Phaser.GameObjects.Text
   private pauseButton!: Phaser.GameObjects.Text
+  private pauseButtons: Phaser.GameObjects.Text[] = []
   private wavePreviewLine!: Phaser.GameObjects.Graphics
   private encounteredTypes: Set<string> = new Set()
   private activeToasts: Phaser.GameObjects.Container[] = []
@@ -248,16 +249,19 @@ export class GameScene extends Phaser.Scene {
         return t
       }
 
-      mkBtn('[ Restart Level ]', COLORS.text.accent, 50, () => {
+      const restartBtn = mkBtn('[ Restart Level ]', COLORS.text.accent, 50, () => {
         if (this.levelData) this.loadLevel(this.levelData)
       })
-      mkBtn('[ Back to Squad ]', COLORS.text.secondary, 80, () => {
+      const backBtn = mkBtn('[ Back to Squad ]', COLORS.text.secondary, 80, () => {
         this.scene.start(this.fromSquad ? 'SquadScene' : 'EditorScene')
       })
+      this.pauseButtons = [restartBtn, backBtn]
     } else {
       this.pauseOverlay.setAlpha(0)
       this.pauseText.setAlpha(0)
       this.pauseButton.setColor(COLORS.text.dim)
+      this.pauseButtons?.forEach(b => b.destroy())
+      this.pauseButtons = []
     }
   }
 

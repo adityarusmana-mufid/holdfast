@@ -4,7 +4,8 @@ import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONTS, FONT_SIZE, SPACING, hex } from '../ui/Constants'
 import { makeButton } from '../ui/Components'
 
-const SLOT_SIZE = 100
+const SLOT_W = 85
+const SLOT_H = 120
 const SLOT_GAP = 12
 const COLS = 4
 const ROWS = 3
@@ -74,8 +75,8 @@ export class SquadScene extends Phaser.Scene {
 
     makeButton(this, W - 150, 20, 'Auto Fill', () => this.autoFill(), { w: 110, h: 26, textSize: '11px' })
 
-    const gridW = COLS * SLOT_SIZE + (COLS - 1) * SLOT_GAP
-    const gridH = ROWS * SLOT_SIZE + (ROWS - 1) * SLOT_GAP
+    const gridW = COLS * SLOT_W + (COLS - 1) * SLOT_GAP
+    const gridH = ROWS * SLOT_H + (ROWS - 1) * SLOT_GAP
     const startX = (W - gridW) / 2
     const startY = 60
 
@@ -83,13 +84,13 @@ export class SquadScene extends Phaser.Scene {
     for (let i = 0; i < 12; i++) {
       const col = i % COLS
       const row = Math.floor(i / COLS)
-      const x = startX + col * (SLOT_SIZE + SLOT_GAP) + SLOT_SIZE / 2
-      const y = startY + row * (SLOT_SIZE + SLOT_GAP) + SLOT_SIZE / 2
+      const x = startX + col * (SLOT_W + SLOT_GAP) + SLOT_W / 2
+      const y = startY + row * (SLOT_H + SLOT_GAP) + SLOT_H / 2
 
       const c = this.add.container(x, y)
       this.drawSlot(c, null)
-      c.setSize(SLOT_SIZE, SLOT_SIZE)
-      c.setInteractive(new Phaser.Geom.Rectangle(-SLOT_SIZE / 2, -SLOT_SIZE / 2, SLOT_SIZE, SLOT_SIZE), Phaser.Geom.Rectangle.Contains)
+      c.setSize(SLOT_W, SLOT_H)
+      c.setInteractive(new Phaser.Geom.Rectangle(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H), Phaser.Geom.Rectangle.Contains)
       if (c.input) c.input.cursor = 'pointer'
 
       const idx = i
@@ -134,28 +135,43 @@ export class SquadScene extends Phaser.Scene {
 
     if (unit) {
       bg.fillStyle(unit.color, 0.15)
-      bg.fillRoundedRect(-SLOT_SIZE / 2, -SLOT_SIZE / 2, SLOT_SIZE, SLOT_SIZE, 6)
+      bg.fillRoundedRect(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H, 6)
       bg.lineStyle(2, unit.color, 0.6)
-      bg.strokeRoundedRect(-SLOT_SIZE / 2, -SLOT_SIZE / 2, SLOT_SIZE, SLOT_SIZE, 6)
+      bg.strokeRoundedRect(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H, 6)
 
-      const label = this.add.text(0, -8, unit.subtypeLabel, {
-        ...FONTS.bodyBold, color: COLORS.text.primary, align: 'center',
+      const iconSize = 34
+      const iconTop = -28
+      const icon = this.add.graphics()
+      if (unit.type === 'ground') {
+        icon.fillStyle(unit.color, 1)
+        icon.fillRoundedRect(-iconSize / 2, iconTop, iconSize, iconSize, 5)
+        icon.fillStyle(0xffffff, 0.2)
+        icon.fillRoundedRect(-iconSize / 4, iconTop + iconSize / 4, iconSize / 2, iconSize / 2, 3)
+      } else {
+        icon.fillStyle(unit.color, 1)
+        icon.fillTriangle(0, iconTop, -iconSize / 2, iconTop + iconSize, iconSize / 2, iconTop + iconSize)
+        icon.fillStyle(0xffffff, 0.2)
+        icon.fillTriangle(0, iconTop + iconSize / 4, -iconSize / 4, iconTop + iconSize * 0.75, iconSize / 4, iconTop + iconSize * 0.75)
+      }
+
+      const label = this.add.text(0, 12, unit.subtypeLabel, {
+        ...FONTS.small, color: COLORS.text.primary, align: 'center', wordWrap: { width: SLOT_W - 8 },
       }).setOrigin(0.5)
 
-      const sub = this.add.text(0, 14, unit.archetype.toUpperCase(), {
-        fontSize: '10px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
+      const sub = this.add.text(0, 34, unit.archetype.toUpperCase(), {
+        fontSize: '9px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5)
 
-      const dpText = this.add.text(-SLOT_SIZE / 2 + 6, -SLOT_SIZE / 2 + 4, `${unit.dpCost} DP`, {
+      const dpText = this.add.text(-SLOT_W / 2 + 6, -SLOT_H / 2 + 4, `${unit.dpCost} DP`, {
         fontSize: '9px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       })
 
-      c.add([bg, label, sub, dpText])
+      c.add([bg, icon, label, sub, dpText])
     } else {
       bg.fillStyle(0xe8ecf0, 0.5)
-      bg.fillRoundedRect(-SLOT_SIZE / 2, -SLOT_SIZE / 2, SLOT_SIZE, SLOT_SIZE, 6)
+      bg.fillRoundedRect(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H, 6)
       bg.lineStyle(1, 0xccd0d6, 0.8)
-      bg.strokeRoundedRect(-SLOT_SIZE / 2, -SLOT_SIZE / 2, SLOT_SIZE, SLOT_SIZE, 6)
+      bg.strokeRoundedRect(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H, 6)
 
       const empty = this.add.text(0, 0, '+', {
         fontSize: '28px', color: '#ccd0d6', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',

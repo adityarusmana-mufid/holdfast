@@ -49,9 +49,9 @@ export class ChapterSelectScene extends Phaser.Scene {
 
     const isDev = new URLSearchParams(window.location.search).has('dev')
     if (isDev) {
-      makeButton(this, 20, H - 48, 'Editor', () => {
+      makeButton(this, 20, H - 52, 'Editor', () => {
         this.scene.start('EditorScene')
-      }, { w: 100, h: 30 })
+      }, { w: 100 })
     }
   }
 }

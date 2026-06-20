@@ -71,7 +71,7 @@ export class ResultScene extends Phaser.Scene {
       }).setOrigin(0.5, 0)
     })
 
-    const btnY = H - 80
+    const btnY = H - 100
     const nextLevelId = isVictory ? getNextLevelId(this.levelId) : undefined
 
     makeButton(this, W / 2 - 160, btnY, 'Retry', () => {
@@ -81,7 +81,7 @@ export class ResultScene extends Phaser.Scene {
         chapterId: this.chapterId,
         levelId: this.levelId,
       })
-    }, { w: 140, h: 34 })
+    }, { w: 140, h: 44 })
 
     if (isVictory && nextLevelId && getLevelData(nextLevelId)) {
       makeButton(this, W / 2 + 20, btnY, 'Next Level', () => {
@@ -90,17 +90,17 @@ export class ResultScene extends Phaser.Scene {
           chapterId: this.chapterId,
           levelData: getLevelData(nextLevelId) as LevelData,
         })
-      }, { w: 140, h: 34 })
+      }, { w: 140, h: 44 })
     }
 
     if (isVictory && !nextLevelId) {
-      this.add.text(W / 2, btnY + 40, '— Chapter Complete —', {
+      this.add.text(W / 2, btnY + 44, '— Chapter Complete —', {
         ...FONTS.h3, color: '#00c853',
       }).setOrigin(0.5, 0)
     }
 
-    makeButton(this, W / 2 - 70, btnY + 60, 'Back to Levels', () => {
+    makeButton(this, W / 2 - 70, btnY + 55, 'Back to Levels', () => {
       this.scene.start('LevelSelectScene', { chapterId: this.chapterId })
-    }, { w: 140, h: 30 })
+    })
   }
 }

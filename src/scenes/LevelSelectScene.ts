@@ -56,8 +56,8 @@ export class LevelSelectScene extends Phaser.Scene {
       })
     })
 
-    makeButton(this, 20, H - 48, '< Back', () => {
+    makeButton(this, 20, H - 52, '< Back', () => {
       this.scene.start('ChapterSelectScene')
-    }, { w: 100, h: 30 })
+    }, { w: 100 })
   }
 }

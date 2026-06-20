@@ -18,7 +18,7 @@ export function makeButton(
   style: ButtonStyle = {},
 ): Phaser.GameObjects.Graphics {
   const w = style.w ?? 140
-  const h = style.h ?? 30
+  const h = style.h ?? 44
   const bgColor = style.bgColor ?? COLORS.button.bg
   const borderColor = style.borderColor ?? COLORS.button.border
   const textColor = style.textColor ?? COLORS.text.accent
@@ -43,12 +43,14 @@ export function makeButton(
     bg.fillStyle(COLORS.button.hover, 1)
     bg.fillRoundedRect(0, 0, w, h, radius)
     bg.lineStyle(1, 0x00a2ff, 1)
+    txt.setColor('#ffffff')
   })
   bg.on('pointerout', () => {
     bg.clear()
     bg.fillStyle(bgColor, 1)
     bg.fillRoundedRect(0, 0, w, h, radius)
     bg.lineStyle(1, borderColor, 0.8)
+    txt.setColor(textColor)
   })
   bg.on('pointerdown', () => {
     bg.clear()

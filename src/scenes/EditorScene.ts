@@ -137,11 +137,11 @@ export class EditorScene extends Phaser.Scene {
 
     makeLabel(this, px, y, 'GRID', COLORS.text.secondary, '12px')
     y += 18
-    makeButton(this, px, y, 'Clear Grid', () => { this.grid.resize(this.grid.cols, this.grid.rows); this.setStatus('Grid cleared'); this.isDirty = true }, { w: btnW, h: 24 })
+    makeButton(this, px, y, 'Clear Grid', () => { this.grid.resize(this.grid.cols, this.grid.rows); this.setStatus('Grid cleared'); this.isDirty = true }, { w: btnW, h: 28 })
     y += 28
-    makeButton(this, px, y, 'Export JSON', () => { this.exportLevel() }, { w: btnW, h: 24 })
+    makeButton(this, px, y, 'Export JSON', () => { this.exportLevel() }, { w: btnW, h: 28 })
     y += 28
-    makeButton(this, px, y, 'Import JSON', () => { this.importLevel() }, { w: btnW, h: 24 })
+    makeButton(this, px, y, 'Import JSON', () => { this.importLevel() }, { w: btnW, h: 28 })
 
     makeLabel(this, px, y + 8, 'ROUTES', COLORS.text.secondary, '12px')
     y += 26
@@ -182,9 +182,9 @@ export class EditorScene extends Phaser.Scene {
 
     makeLabel(this, px, y + 8, 'PLAY', COLORS.text.secondary, '12px')
     y += 26
-    makeButton(this, px, y, '▶ Play', () => { this.playLevel() }, { w: btnW, h: 24, textColor: COLORS.text.success })
+    makeButton(this, px, y, '▶ Play', () => { this.playLevel() }, { w: btnW, h: 28, textColor: COLORS.text.success })
     y += 28
-    makeButton(this, px, y, 'Test Combat', () => { this.playTestLevel() }, { w: btnW, h: 24, textColor: COLORS.text.warning })
+    makeButton(this, px, y, 'Test Combat', () => { this.playTestLevel() }, { w: btnW, h: 28, textColor: COLORS.text.warning })
 
     y += 8
     makeLabel(this, px, y, 'SIZE', COLORS.text.secondary, '12px')
@@ -197,7 +197,7 @@ export class EditorScene extends Phaser.Scene {
       { label: '16×10', cols: 16, rows: 10 },
     ]
     sizes.forEach((s) => {
-      makeButton(this, px, y, s.label, () => { this.grid.resize(s.cols, s.rows); this.isDirty = true }, { w: 68, h: 24, textSize: '11px', textColor: COLORS.text.secondary })
+      makeButton(this, px, y, s.label, () => { this.grid.resize(s.cols, s.rows); this.isDirty = true }, { w: 68, h: 28, textSize: '11px', textColor: COLORS.text.secondary })
       y += 28
     })
   }

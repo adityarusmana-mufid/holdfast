@@ -30,7 +30,7 @@ export const SPACING = {
   '3xl': 32,
   panelX: 10,
   btnW: 140,
-  btnH: 30,
+  btnH: 44,
   paletteBtnH: 36,
   tileSize: 64,
 }

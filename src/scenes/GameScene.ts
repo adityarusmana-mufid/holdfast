@@ -20,8 +20,9 @@ export class GameScene extends Phaser.Scene {
   private unitSprites: UnitSprite[] = []
   private cardBarScrollX: number = 0
   private cardBarContainer!: Phaser.GameObjects.Container
-  private selectedUnitId: string | null = null
-  private unitCards: { container: Phaser.GameObjects.Container; unitId: string }[] = []
+  private selectedSquadIndex: number | null = null
+  private deployedIndices: Set<number> = new Set()
+  private unitCards: { container: Phaser.GameObjects.Container; squadIndex: number }[] = []
   private dpText!: Phaser.GameObjects.Text
   private limitText!: Phaser.GameObjects.Text
   private livesText!: Phaser.GameObjects.Text
@@ -90,7 +91,8 @@ export class GameScene extends Phaser.Scene {
     this.drawBgGradient()
     this.unitSprites = []
     this.unitCards = []
-    this.selectedUnitId = null
+    this.selectedSquadIndex = null
+    this.deployedIndices = new Set()
     this.battleActive = false
     this.battleEnded = false
     this.deployState = 'idle'
@@ -157,8 +159,9 @@ export class GameScene extends Phaser.Scene {
         this.showUnitDamageNumber(damage, unit, damageType)
       },
       onUnitDeath: (unit: UnitSprite, _killer: EnemySprite) => {
-        this.depSystem.removeUnit(unit.row, unit.col)
+        const instId = this.depSystem.removeUnit(unit.row, unit.col)
         this.removeUnitSprite(unit.row, unit.col)
+        if (instId !== undefined) this.deployedIndices.delete(instId)
         this.flashMessage(`UNIT DESTROYED // ${unit.config.name}`, 0xd32f2f)
         this.rebuildCardBar()
       },
@@ -259,8 +262,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private getSelectedUnit(): UnitConfig | null {
-    if (this.selectedUnitId === null) return null
-    return this.unitConfigs.find(c => c.id === this.selectedUnitId) ?? null
+    if (this.selectedSquadIndex === null) return null
+    return this.unitConfigs[this.selectedSquadIndex] ?? null
   }
 
   private setupInput(): void {
@@ -321,10 +324,10 @@ export class GameScene extends Phaser.Scene {
           this.enterInspectMode(pos)
           return
         }
-        if (this.selectedUnitId === null) return
+        if (this.selectedSquadIndex === null) return
         const selected = this.getSelectedUnit()
         if (!selected) return
-        const check = this.depSystem.canDeploy(selected, pos.row, pos.col)
+        const check = this.depSystem.canDeploy(selected, pos.row, pos.col, this.selectedSquadIndex)
         if (check.ok) {
           this.pendingTile = pos
           this.pendingFacing = computeFacingTowardGoal(pos, this.getGoalPositions())
@@ -359,7 +362,7 @@ export class GameScene extends Phaser.Scene {
     this.hoverIndicator.setAlpha(0)
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       if (this.deployState === 'facing') {
-        if (!this.pendingTile || this.selectedUnitId === null) return
+        if (!this.pendingTile || this.selectedSquadIndex === null) return
         const selected = this.getSelectedUnit()
         if (!selected) return
         const center = this.grid.tileToPixel(this.pendingTile.row, this.pendingTile.col)
@@ -387,10 +390,10 @@ export class GameScene extends Phaser.Scene {
         return
       }
       const pos = this.grid.pixelToTile(pointer.x, pointer.y)
-      if (!pos || this.selectedUnitId === null) { this.hoverIndicator.setAlpha(0); return }
+      if (!pos || this.selectedSquadIndex === null) { this.hoverIndicator.setAlpha(0); return }
       const selected = this.getSelectedUnit()
       if (!selected) { this.hoverIndicator.setAlpha(0); return }
-      const check = this.depSystem.canDeploy(selected, pos.row, pos.col)
+      const check = this.depSystem.canDeploy(selected, pos.row, pos.col, this.selectedSquadIndex)
       const { tL, tR, bR, bL } = this.grid.getTileCorners(pos.row, pos.col)
       this.hoverIndicator.clear()
       this.hoverIndicator.fillStyle(check.ok ? 0x00c853 : 0xd32f2f, 0.25)
@@ -532,16 +535,17 @@ export class GameScene extends Phaser.Scene {
   }
 
   private confirmDeployment(): void {
-    if (!this.pendingTile || this.selectedUnitId === null) return
+    if (!this.pendingTile || this.selectedSquadIndex === null) return
     const selected = this.getSelectedUnit()
     if (!selected) return
-    const deployed = this.depSystem.deployUnit(selected, this.pendingTile.row, this.pendingTile.col, this.pendingFacing)
+    const deployed = this.depSystem.deployUnit(selected, this.pendingTile.row, this.pendingTile.col, this.pendingFacing, this.selectedSquadIndex)
     if (deployed) {
       const sprite = new UnitSprite(this, this.grid, selected, this.pendingTile.row, this.pendingTile.col, selected.hp, this.pendingFacing)
       this.unitSprites.push(sprite)
-      const cost = this.depSystem.getCurrentCost(selected)
+      this.deployedIndices.add(this.selectedSquadIndex)
+      const cost = this.depSystem.getCurrentCost(this.selectedSquadIndex, selected)
       this.flashMessage(`DEPLOY // ${selected.name}  -${cost} DP`, selected.color)
-      this.selectedUnitId = null
+      this.selectedSquadIndex = null
       this.rebuildCardBar()
     }
     this.clearRangePreview()
@@ -588,10 +592,11 @@ export class GameScene extends Phaser.Scene {
 
   private retreatInspectedUnit(): void {
     if (!this.inspectingUnit) return
-    const { row, col, config } = this.inspectingUnit
+    const { row, col, config, instanceId } = this.inspectingUnit
     const refund = this.depSystem.retreatUnit(row, col)
     if (refund > 0) {
       this.removeUnitSprite(row, col)
+      this.deployedIndices.delete(instanceId)
       this.flashMessage(`RETREAT // ${config.name}  +${refund} DP`, 0x00c853)
     }
     this.exitDecisionMode()
@@ -671,23 +676,27 @@ export class GameScene extends Phaser.Scene {
     const px = 10
     const py = 6
 
-    const entries = this.unitConfigs
-      .filter(c => !this.depSystem.isDeployed(c.id))
-      .sort((a, b) => this.depSystem.getCurrentCost(a) - this.depSystem.getCurrentCost(b))
+    const entries: { unit: UnitConfig; squadIndex: number }[] = []
+    this.unitConfigs.forEach((c, i) => {
+      if (!this.deployedIndices.has(i)) {
+        entries.push({ unit: c, squadIndex: i })
+      }
+    })
+    entries.sort((a, b) => this.depSystem.getCurrentCost(a.squadIndex, a.unit) - this.depSystem.getCurrentCost(b.squadIndex, b.unit))
 
-    entries.forEach((unit, i) => {
+    entries.forEach(({ unit, squadIndex }, i) => {
       const x = px + i * (cardW + gap)
-      const card = this.makeUnitCard(x, py, cardW, cardH, unit)
+      const card = this.makeUnitCard(x, py, cardW, cardH, unit, squadIndex)
       this.unitCards.push(card)
       this.cardBarContainer.add(card.container)
     })
   }
 
-  private makeUnitCard(cx: number, cy: number, cardW: number, cardH: number, unit: UnitConfig): { container: Phaser.GameObjects.Container; unitId: string } {
-    const cost = this.depSystem.getCurrentCost(unit)
+  private makeUnitCard(cx: number, cy: number, cardW: number, cardH: number, unit: UnitConfig, squadIndex: number): { container: Phaser.GameObjects.Container; squadIndex: number } {
+    const cost = this.depSystem.getCurrentCost(squadIndex, unit)
     const canAfford = this.depSystem.currentDP >= cost
-    const onCooldown = this.depSystem.isOnCooldown(unit.id)
-    const isSelected = this.selectedUnitId === unit.id
+    const onCooldown = this.depSystem.isOnCooldown(squadIndex)
+    const isSelected = this.selectedSquadIndex === squadIndex
 
     const bg = this.add.graphics()
     bg.fillStyle(0xffffff, 1)
@@ -727,7 +736,7 @@ export class GameScene extends Phaser.Scene {
       const overlay = this.add.graphics()
       overlay.fillStyle(0xd32f2f, 0.12)
       overlay.fillRoundedRect(0, 0, cardW, cardH, 6)
-      const remaining = Math.max(0, this.depSystem.getCooldownRemaining(unit.id))
+      const remaining = Math.max(0, this.depSystem.getCooldownRemaining(squadIndex))
       const cdText = this.add.text(cardW / 2, cardH / 2 - 4, `${remaining.toFixed(1)}s`, {
         fontSize: '13px', color: '#d32f2f', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
       })
@@ -739,18 +748,18 @@ export class GameScene extends Phaser.Scene {
     container.setSize(cardW, cardH)
     container.setInteractive(new Phaser.Geom.Rectangle(0, 0, cardW, cardH), Phaser.Geom.Rectangle.Contains)
     if (container.input) container.input.cursor = 'pointer'
-    container.on('pointerdown', () => this.selectUnit(unit.id))
-    return { container, unitId: unit.id }
+    container.on('pointerdown', () => this.selectUnit(squadIndex))
+    return { container, squadIndex }
   }
 
   private updateCardVisuals(): void {
-    for (const { container, unitId } of this.unitCards) {
-      const unit = this.unitConfigs.find(c => c.id === unitId)
+    for (const { container, squadIndex } of this.unitCards) {
+      const unit = this.unitConfigs[squadIndex]
       if (!unit) continue
-      const cost = this.depSystem.getCurrentCost(unit)
+      const cost = this.depSystem.getCurrentCost(squadIndex, unit)
       const canAfford = this.depSystem.currentDP >= cost
-      const onCooldown = this.depSystem.isOnCooldown(unit.id)
-      const isSelected = this.selectedUnitId === unitId
+      const onCooldown = this.depSystem.isOnCooldown(squadIndex)
+      const isSelected = this.selectedSquadIndex === squadIndex
 
       container.y = isSelected ? 2 : 6
 
@@ -768,7 +777,7 @@ export class GameScene extends Phaser.Scene {
       if (onCooldown) {
         if (container.length >= 6) {
           const cdText = container.getAt(5) as Phaser.GameObjects.Text
-          const remaining = Math.max(0, this.depSystem.getCooldownRemaining(unit.id))
+          const remaining = Math.max(0, this.depSystem.getCooldownRemaining(squadIndex))
           cdText.setText(`${remaining.toFixed(1)}s`)
           cdText.setAlpha(1)
         }
@@ -818,19 +827,19 @@ export class GameScene extends Phaser.Scene {
     this.resultText.setDepth(50)
   }
 
-  private selectUnit(unitId: string): void {
-    const unit = this.unitConfigs.find(c => c.id === unitId)
+  private selectUnit(squadIndex: number): void {
+    const unit = this.unitConfigs[squadIndex]
     if (!unit) return
 
-    if (this.selectedUnitId === unitId && this.deployState !== 'idle') {
+    if (this.selectedSquadIndex === squadIndex && this.deployState !== 'idle') {
       this.cancelDeployment()
-      this.selectedUnitId = null
+      this.selectedSquadIndex = null
       this.updateStatsPanel(null)
       this.updateCardVisuals()
       return
     }
 
-    this.selectedUnitId = unitId
+    this.selectedSquadIndex = squadIndex
     this.updateStatsPanel(unit)
     if (this.battleActive && !this.battleEnded && !this.isPaused) {
       if (this.deployState === 'facing') {
@@ -861,11 +870,11 @@ export class GameScene extends Phaser.Scene {
       this.removeUnitSprite(r, c)
     })
     this.depSystem.activeUnits.clear()
-    this.depSystem.deployedUnitIds.clear()
     this.depSystem.redeployTimers.clear()
     this.depSystem.deployCostMultiplier.clear()
+    this.deployedIndices.clear()
     this.exitDecisionMode()
-    this.selectedUnitId = null
+    this.selectedSquadIndex = null
     this.flashMessage('All units cleared', 0xd32f2f)
     this.rebuildCardBar()
   }
@@ -1168,7 +1177,8 @@ export class GameScene extends Phaser.Scene {
     this.battleEnded = false
     this.deployState = 'idle'
     this.pendingTile = null
-    this.selectedUnitId = null
+    this.selectedSquadIndex = null
+    this.deployedIndices.clear()
     this.exitDecisionMode()
     this.inspectRetreatBtn.setAlpha(0)
     this.inspectCloseBtn.setAlpha(0)

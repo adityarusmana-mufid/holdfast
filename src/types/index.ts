@@ -153,6 +153,7 @@ export interface EnemyConfig {
 
 export interface DeployedUnit {
   config: UnitConfig
+  instanceId: number
   row: number
   col: number
   currentHp: number

@@ -1,14 +1,14 @@
 import Phaser from 'phaser'
-import { UnitConfig, UnitTrait, LevelData } from '../types/index'
+import { UnitConfig, LevelData } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
-import { COLORS, FONTS, FONT_SIZE } from '../ui/Constants'
+import { COLORS, FONTS } from '../ui/Constants'
 import { makeButton } from '../ui/Components'
 
-const SLOT_W = 85
-const SLOT_H = 120
+const SLOT_W = 130
+const SLOT_H = 162
 const SLOT_GAP = 12
-const COLS = 4
-const ROWS = 3
+const COLS = 6
+const ROWS = 2
 
 export class SquadScene extends Phaser.Scene {
   private slots: (UnitConfig | null)[] = new Array(12).fill(null)
@@ -95,12 +95,12 @@ export class SquadScene extends Phaser.Scene {
       bg.lineStyle(2, unit.color, 0.6)
       bg.strokeRoundedRect(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H, 6)
 
-      const iconSize = 34
-      const iconTop = -28
+      const iconSize = 48
+      const iconTop = -52
       const icon = this.add.graphics()
       if (unit.type === 'ground') {
         icon.fillStyle(unit.color, 1)
-        icon.fillRoundedRect(-iconSize / 2, iconTop, iconSize, iconSize, 5)
+        icon.fillRoundedRect(-iconSize / 2, iconTop, iconSize, iconSize, 6)
         icon.fillStyle(0xffffff, 0.2)
         icon.fillRoundedRect(-iconSize / 4, iconTop + iconSize / 4, iconSize / 2, iconSize / 2, 3)
       } else {
@@ -110,16 +110,16 @@ export class SquadScene extends Phaser.Scene {
         icon.fillTriangle(0, iconTop + iconSize / 4, -iconSize / 4, iconTop + iconSize * 0.75, iconSize / 4, iconTop + iconSize * 0.75)
       }
 
-      const label = this.add.text(0, 12, unit.subtypeLabel, {
+      const label = this.add.text(0, 8, unit.subtypeLabel, {
         ...FONTS.small, color: COLORS.text.primary, align: 'center', wordWrap: { width: SLOT_W - 8 },
       }).setOrigin(0.5)
 
       const sub = this.add.text(0, 34, unit.archetype.toUpperCase(), {
-        fontSize: '9px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
+        fontSize: '10px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5)
 
       const dpText = this.add.text(-SLOT_W / 2 + 6, -SLOT_H / 2 + 4, `${unit.dpCost} DP`, {
-        fontSize: '9px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        fontSize: '10px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       })
 
       c.add([bg, icon, label, sub, dpText])
@@ -130,7 +130,7 @@ export class SquadScene extends Phaser.Scene {
       bg.strokeRoundedRect(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H, 6)
 
       const empty = this.add.text(0, 0, '+', {
-        fontSize: '28px', color: '#ccd0d6', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        fontSize: '32px', color: '#ccd0d6', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       }).setOrigin(0.5)
 
       c.add([bg, empty])

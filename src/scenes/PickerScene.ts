@@ -30,20 +30,22 @@ const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
 }
 
 const SIDEBAR_W = 210
-const CARD_W = 120
-const CARD_H = 88
-const CARD_GAP = 8
+const CARD_W = 190
+const CARD_H = 150
+const CARD_GAP = 12
 
 export class PickerScene extends Phaser.Scene {
   private slotIndex: number = -1
   private available: UnitConfig[] = []
   private pickedUnit: UnitConfig | null = null
-  private cardScrollY: number = 0
+  private cardScrollX: number = 0
   private cardScrollMax: number = 0
   private cardScrollContainer!: Phaser.GameObjects.Container
   private infoContainer!: Phaser.GameObjects.Container
   private confirmBtn!: Phaser.GameObjects.Graphics
   private cardContainers: { bg: Phaser.GameObjects.Graphics; unit: UnitConfig; lx: number; ly: number }[] = []
+  private startX = 0
+  private startY = 0
 
   constructor() {
     super({ key: 'PickerScene' })
@@ -51,10 +53,9 @@ export class PickerScene extends Phaser.Scene {
 
   init(data: { slotIndex: number; squad: (UnitConfig | null)[] }): void {
     this.slotIndex = data.slotIndex
-    const taken = new Set(data.squad.filter((s): s is UnitConfig => s !== null).map(s => s.id))
-    this.available = UNIT_CONFIGS.filter(u => !taken.has(u.id))
+    this.available = UNIT_CONFIGS
     this.pickedUnit = null
-    this.cardScrollY = 0
+    this.cardScrollX = 0
   }
 
   create(): void {
@@ -92,21 +93,21 @@ export class PickerScene extends Phaser.Scene {
   }
 
   private buildCardGrid(W: number, H: number): void {
-    const cols = Math.floor((W - SIDEBAR_W - 20) / (CARD_W + CARD_GAP))
-    const startX = SIDEBAR_W + 12
-    const startY = 16
+    this.startX = SIDEBAR_W + 12
+    this.startY = 16
 
     this.cardContainers = []
     this.cardScrollContainer = this.add.container(0, 0)
 
-    const rows = Math.ceil(this.available.length / cols)
-    const totalH = rows * (CARD_H + CARD_GAP)
-    const visibleH = H - startY - 16
-    this.cardScrollMax = Math.max(0, totalH - visibleH)
+    const cols = Math.ceil(this.available.length / 2)
+    const totalW = cols * (CARD_W + CARD_GAP)
+    const visibleW = W - SIDEBAR_W - 24
+    const visibleH = CARD_H * 2 + CARD_GAP
+    this.cardScrollMax = Math.max(0, totalW - visibleW)
 
     this.available.forEach((unit, i) => {
-      const col = i % cols
-      const row = Math.floor(i / cols)
+      const row = i % 2
+      const col = Math.floor(i / 2)
       const lx = col * (CARD_W + CARD_GAP)
       const ly = row * (CARD_H + CARD_GAP)
 
@@ -119,42 +120,75 @@ export class PickerScene extends Phaser.Scene {
       if (bg.input) bg.input.cursor = 'pointer'
       this.cardScrollContainer.add(bg)
 
-      const label = this.add.text(lx + CARD_W / 2, ly + 12, unit.subtypeLabel, {
+      const label = this.add.text(lx + CARD_W / 2, ly + 16, unit.subtypeLabel, {
         ...FONTS.bodyBold, color: COLORS.text.primary, align: 'center',
       }).setOrigin(0.5, 0)
       this.cardScrollContainer.add(label)
 
-      const arch = this.add.text(lx + CARD_W / 2, ly + 28, unit.archetype.toUpperCase(), {
-        fontSize: '9px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
+      const arch = this.add.text(lx + CARD_W / 2, ly + 42, unit.archetype.toUpperCase(), {
+        fontSize: '11px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5, 0)
       this.cardScrollContainer.add(arch)
 
-      const stats = this.add.text(lx + CARD_W / 2, ly + 44, `${unit.hp}HP ${unit.atk}ATK`, {
-        fontSize: '9px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
+      const stats = this.add.text(lx + CARD_W / 2, ly + 68, `${unit.hp}HP ${unit.atk}ATK`, {
+        fontSize: '11px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5, 0)
       this.cardScrollContainer.add(stats)
 
-      const dpLine = this.add.text(lx + CARD_W / 2, ly + 58, `${unit.dpCost}DP`, {
-        fontSize: '9px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
+      const dpLine = this.add.text(lx + CARD_W / 2, ly + 94, `${unit.dpCost}DP`, {
+        fontSize: '11px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5, 0)
       this.cardScrollContainer.add(dpLine)
 
       this.cardContainers.push({ bg, unit, lx, ly })
-
-      bg.on('pointerdown', () => this.selectCard(unit))
     })
 
-    this.cardScrollContainer.setPosition(startX, startY)
+    this.cardScrollContainer.setPosition(this.startX, this.startY)
 
     const maskShape = this.make.graphics()
+    maskShape.setPosition(this.startX, this.startY)
     maskShape.fillStyle(0xffffff)
-    maskShape.fillRect(0, 0, W - SIDEBAR_W - 24, visibleH)
+    maskShape.fillRect(0, 0, visibleW, visibleH)
     const mask = maskShape.createGeometryMask()
     this.cardScrollContainer.setMask(mask)
 
+    let dragStartX = 0
+    let dragStartScrollX = 0
+    let dragDist = 0
+
     this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
-      this.cardScrollY = Phaser.Math.Clamp(this.cardScrollY - dy * 0.5, -this.cardScrollMax, 0)
-      this.cardScrollContainer.y = startY + this.cardScrollY
+      this.cardScrollX = Phaser.Math.Clamp(this.cardScrollX - dy * 0.5, -this.cardScrollMax, 0)
+      this.cardScrollContainer.x = this.startX + this.cardScrollX
+    })
+
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (pointer.x < SIDEBAR_W) return
+      dragStartX = pointer.x
+      dragStartScrollX = this.cardScrollX
+      dragDist = 0
+    })
+
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (!pointer.isDown || dragStartX === 0) return
+      dragDist = Math.abs(pointer.x - dragStartX)
+      if (dragDist < 6) return
+      this.cardScrollX = Phaser.Math.Clamp(dragStartScrollX + (pointer.x - dragStartX), -this.cardScrollMax, 0)
+      this.cardScrollContainer.x = this.startX + this.cardScrollX
+    })
+
+    this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      if (dragDist < 6 && dragStartX !== 0 && pointer.x > SIDEBAR_W) {
+        const localX = pointer.x - this.cardScrollContainer.x
+        const localY = pointer.y - this.cardScrollContainer.y
+        for (const cc of this.cardContainers) {
+          if (localX >= cc.lx && localX <= cc.lx + CARD_W &&
+              localY >= cc.ly && localY <= cc.ly + CARD_H) {
+            this.selectCard(cc.unit)
+            break
+          }
+        }
+      }
+      dragStartX = 0
     })
   }
 

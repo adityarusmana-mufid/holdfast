@@ -112,7 +112,7 @@ export class PickerScene extends Phaser.Scene {
       const ly = row * (CARD_H + CARD_GAP)
 
       const bg = this.add.graphics()
-      bg.fillStyle(unit.color, 0.15)
+      bg.fillStyle(0xffffff, 1)
       bg.fillRoundedRect(lx, ly, CARD_W, CARD_H, 6)
       bg.lineStyle(2, unit.color, 0.6)
       bg.strokeRoundedRect(lx, ly, CARD_W, CARD_H, 6)
@@ -213,7 +213,7 @@ export class PickerScene extends Phaser.Scene {
     for (const cc of this.cardContainers) {
       const isSelected = cc.unit.id === unit.id
       cc.bg.clear()
-      cc.bg.fillStyle(cc.unit.color, 0.15)
+      cc.bg.fillStyle(0xffffff, 1)
       cc.bg.fillRoundedRect(cc.lx, cc.ly, CARD_W, CARD_H, 6)
       cc.bg.lineStyle(isSelected ? 3 : 2, isSelected ? 0x00a2ff : cc.unit.color, isSelected ? 1 : 0.6)
       cc.bg.strokeRoundedRect(cc.lx, cc.ly, CARD_W, CARD_H, 6)

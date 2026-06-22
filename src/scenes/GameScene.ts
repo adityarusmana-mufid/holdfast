@@ -246,7 +246,7 @@ export class GameScene extends Phaser.Scene {
     this.pauseOverlay.setAlpha(0)
 
     this.pauseText = this.add.text(this.scale.width / 2, this.scale.height / 2, 'PAUSED', {
-      fontSize: '48px', color: '#ffffff', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+      fontSize: '42px', color: '#ffffff', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
     this.pauseText.setOrigin(0.5)
     this.pauseText.setDepth(45)
@@ -293,7 +293,7 @@ export class GameScene extends Phaser.Scene {
 
       const mkBtn = (label: string, color: string, yOff: number, cb: () => void) => {
         const t = this.add.text(cx, cy + yOff, label, {
-          fontSize: '18px', color, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+          fontSize: FONT_SIZE.lg, color, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
         })
         t.setOrigin(0.5)
         t.setDepth(50)
@@ -324,7 +324,7 @@ export class GameScene extends Phaser.Scene {
     this.input.mouse?.disableContextMenu()
 
     this.inspectRetreatBtn = this.add.text(10, this.scale.height - 160, '', {
-      fontSize: '13px',
+      fontSize: '15px',
       color: COLORS.text.danger,
       fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       fontStyle: 'bold',
@@ -335,7 +335,7 @@ export class GameScene extends Phaser.Scene {
     this.inspectRetreatBtn.on('pointerdown', () => this.retreatInspectedUnit())
 
     this.inspectCloseBtn = this.add.text(10, this.scale.height - 142, '[ CLOSE ]', {
-      fontSize: '12px',
+      fontSize: FONT_SIZE.xs,
       color: COLORS.text.secondary,
       fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
@@ -345,7 +345,7 @@ export class GameScene extends Phaser.Scene {
     this.inspectCloseBtn.on('pointerdown', () => this.exitDecisionMode())
 
     this.facingCancelBtn = this.add.text(10, this.scale.height - 124, '[ CANCEL ]', {
-      fontSize: '12px',
+      fontSize: FONT_SIZE.xs,
       color: COLORS.text.danger,
       fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
@@ -781,8 +781,8 @@ export class GameScene extends Phaser.Scene {
     const texts: Phaser.GameObjects.Text[] = []
     const lines = ['', '', '']
     for (let i = 0; i < 3; i++) {
-      const t = this.add.text(16, py + i * 16, lines[i], {
-        fontSize: '12px',
+      const t = this.add.text(16, py + i * 20, lines[i], {
+        fontSize: FONT_SIZE.xs,
         color: COLORS.text.secondary,
         fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       })
@@ -871,13 +871,13 @@ export class GameScene extends Phaser.Scene {
       icon.fillTriangle(iconX, iconY - iconSize / 4, iconX - iconSize / 4, iconY + iconSize / 4, iconX + iconSize / 4, iconY + iconSize / 4)
     }
 
-    const nameLabel = this.add.text(cardW / 2, 78, unit.subtypeLabel, {
-      fontSize: '13px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    const nameLabel = this.add.text(cardW / 2, 75, unit.subtypeLabel, {
+      fontSize: '15px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
     nameLabel.setOrigin(0.5, 0)
 
-    const dpLabel = this.add.text(cardW / 2, 98, `DP ${cost}`, {
-      fontSize: '12px', color: onCooldown ? COLORS.text.danger : COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    const dpLabel = this.add.text(cardW / 2, 96, `DP ${cost}`, {
+      fontSize: FONT_SIZE.xs, color: onCooldown ? COLORS.text.danger : COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
     dpLabel.setOrigin(0.5, 0)
 
@@ -889,7 +889,7 @@ export class GameScene extends Phaser.Scene {
       overlay.fillRoundedRect(0, 0, cardW, cardH, 6)
       const remaining = Math.max(0, this.depSystem.getCooldownRemaining(squadIndex))
       const cdText = this.add.text(cardW / 2, cardH / 2 - 4, `${remaining.toFixed(1)}s`, {
-        fontSize: '13px', color: '#d32f2f', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+        fontSize: '15px', color: '#d32f2f', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
       })
       cdText.setOrigin(0.5)
       children.push(overlay, cdText)
@@ -1072,7 +1072,7 @@ export class GameScene extends Phaser.Scene {
     if (!this.fromSquad) {
       const hex = '#' + color.toString(16).padStart(6, '0')
       this.resultText.setText(label)
-      this.resultText.setStyle({ color: hex, fontSize: '26px' })
+      this.resultText.setStyle({ color: hex, fontSize: '28px' })
       this.resultText.setAlpha(1)
       this.tweens.add({
         targets: this.resultText,
@@ -1083,7 +1083,7 @@ export class GameScene extends Phaser.Scene {
         ease: 'Sine.easeInOut',
       })
       const restartBtn = this.add.text(this.scale.width / 2, this.scale.height / 2 + 10, '[ Restart Simulation ]', {
-        fontSize: '14px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        fontSize: FONT_SIZE.sm, color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       })
       restartBtn.setOrigin(0.5)
       restartBtn.setDepth(50)
@@ -1092,7 +1092,7 @@ export class GameScene extends Phaser.Scene {
         if (this.levelData) this.loadLevel(this.levelData)
       })
       const editorBtn = this.add.text(this.scale.width / 2, this.scale.height / 2 + 36, '[ Back to Editor ]', {
-        fontSize: '14px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        fontSize: FONT_SIZE.sm, color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       })
       editorBtn.setOrigin(0.5)
       editorBtn.setDepth(50)
@@ -1199,12 +1199,12 @@ export class GameScene extends Phaser.Scene {
     icon.fillCircle(pad + iconSize / 2, pad + iconSize / 2 + 2, iconSize / 4)
 
     const nameText = this.add.text(pad + iconSize + pad, pad, config.name, {
-      fontSize: '14px', color: '#ffffff', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+      fontSize: FONT_SIZE.sm, color: '#ffffff', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
 
     const desc = config.description ?? 'No intelligence available.'
-    const descText = this.add.text(pad + iconSize + pad, pad + 18, desc, {
-      fontSize: '11px', color: '#b0b8c4', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', wordWrap: { width: W - pad - iconSize - pad - pad },
+    const descText = this.add.text(pad + iconSize + pad, pad + 20, desc, {
+      fontSize: FONT_SIZE.xs, color: '#b0b8c4', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', wordWrap: { width: W - pad - iconSize - pad - pad },
     })
 
     const container = this.add.container(10, 10, [bg, icon, nameText, descText])
@@ -1250,7 +1250,7 @@ export class GameScene extends Phaser.Scene {
   private showHealNumber(amount: number, target: UnitSprite): void {
     const pos = this.grid.tileToPixel(target.row, target.col)
     const text = this.add.text(pos.x, pos.y - 20, `+${amount}`, {
-      fontSize: '13px', color: '#00c853', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+      fontSize: '15px', color: '#00c853', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
     text.setOrigin(0.5)
     text.setDepth(20)
@@ -1267,7 +1267,7 @@ export class GameScene extends Phaser.Scene {
     const color = damageType === 'thermal' ? '#9c27b0' : '#d32f2f'
     const label = damageType === 'thermal' ? `~${damage}` : `${damage}`
     const text = this.add.text(pos.x, pos.y - 16, label, {
-      fontSize: '12px', color, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+      fontSize: FONT_SIZE.xs, color, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
     text.setOrigin(0.5)
     text.setDepth(20)
@@ -1283,7 +1283,7 @@ export class GameScene extends Phaser.Scene {
     const color = damageType === 'thermal' ? '#9c27b0' : '#1a1a2e'
     const label = damageType === 'thermal' ? `~${damage}` : `${damage}`
     const text = this.add.text(enemy.x, enemy.y - 20, label, {
-      fontSize: '13px', color, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+      fontSize: '15px', color, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
     text.setOrigin(0.5)
     text.setDepth(20)
@@ -1297,8 +1297,8 @@ export class GameScene extends Phaser.Scene {
 
   private flashMessage(msg: string, color: number): void {
     const hex = '#' + color.toString(16).padStart(6, '0')
-    const text = this.add.text(this.scale.width / 2, this.scale.height - 50, msg, {
-      fontSize: '14px', color: hex, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    const text = this.add.text(this.scale.width / 2, this.scale.height - 54, msg, {
+      fontSize: FONT_SIZE.sm, color: hex, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
     text.setOrigin(0.5)
     this.tweens.add({
@@ -1385,8 +1385,8 @@ export class GameScene extends Phaser.Scene {
 
     const tx = cx + isz + 18
     const tw = w - tx - 20
-    const guideTextObj = this.add.text(tx, pY + 18, text, {
-      fontSize: '15px',
+    const guideTextObj = this.add.text(tx, pY + 16, text, {
+      fontSize: '17px',
       color: '#333333',
       fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       align: 'left',
@@ -1395,8 +1395,8 @@ export class GameScene extends Phaser.Scene {
     })
     guideTextObj.setDepth(62)
 
-    const dismissText = this.add.text(w - 16, pY + pH - 14, '[ tap to continue ]', {
-      fontSize: '13px',
+    const dismissText = this.add.text(w - 16, pY + pH - 16, '[ tap to continue ]', {
+      fontSize: '15px',
       color: '#888888',
       fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })

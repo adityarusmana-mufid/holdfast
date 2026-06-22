@@ -4,7 +4,7 @@ import { Grid, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../entities/Grid'
 import { tileColor, ROUTE_COLORS, validateRoutePath } from '../shared/utils/GridMath'
 import { exportLevelToFile, importLevelFromFile } from '../editor/LevelSerializer'
 import { ENEMY_CONFIGS } from '../config/enemies'
-import { COLORS, FONTS } from '../ui/Constants'
+import { COLORS, FONTS, FONT_SIZE } from '../ui/Constants'
 import { makeButton, makeLabel } from '../ui/Components'
 import { TEST_LEVEL } from '../levels/testLevel'
 
@@ -121,7 +121,7 @@ export class EditorScene extends Phaser.Scene {
       bg.on('pointerdown', () => this.selectTileType(item.type))
 
       const label = this.add.text(px + 8, y + btnH / 2, item.label, {
-        fontSize: '14px', color: '#cccccc', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        fontSize: FONT_SIZE.sm, color: '#cccccc', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       }).setOrigin(0, 0.5)
 
       const container = this.add.container(0, 0, [bg, label])

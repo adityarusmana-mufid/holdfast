@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { Direction, UnitConfig } from '../types/index'
 import { Grid, TILE_SIZE } from './Grid'
+import { FONT_SIZE } from '../ui/Constants'
 
 export class UnitSprite {
   private scene: Phaser.Scene
@@ -44,7 +45,7 @@ export class UnitSprite {
     this.drawHp(size)
 
     this.label = scene.add.text(0, half + 6, `${config.subtypeLabel}`, {
-      fontSize: '10px',
+      fontSize: FONT_SIZE.xs,
       color: '#4a4a5a',
       fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })

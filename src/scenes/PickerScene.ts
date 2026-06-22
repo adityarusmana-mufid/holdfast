@@ -102,7 +102,7 @@ export class PickerScene extends Phaser.Scene {
     cancelBg.on('pointerup', () => this.closePicker())
 
     this.add.text(SIDEBAR_W / 2, this.H - 48, '< Back', {
-      fontSize: '12px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      fontSize: FONT_SIZE.xs, color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     }).setOrigin(0.5)
 
     this.activeFilter = null
@@ -135,7 +135,7 @@ export class PickerScene extends Phaser.Scene {
 
       const label = key === 'all' ? 'ALL' : key.substring(0, 2).toUpperCase()
       const txt = this.add.text(fx + btnSize / 2, by + btnSize / 2, label, {
-        fontSize: '9px', color: key === this.activeFilter ? '#ffffff' : COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+        fontSize: '13px', color: key === this.activeFilter ? '#ffffff' : COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
       }).setOrigin(0.5)
 
       bg.setInteractive(new Phaser.Geom.Rectangle(fx, by, btnSize, btnSize), Phaser.Geom.Rectangle.Contains)
@@ -218,12 +218,12 @@ export class PickerScene extends Phaser.Scene {
       this.cardScrollContainer.add(icon)
 
       const label = this.add.text(lx + CARD_W / 2, ly + 119, unit.subtypeLabel, {
-        fontSize: '12px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center', wordWrap: { width: CARD_W - 12 },
+        fontSize: FONT_SIZE.xs, color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center', wordWrap: { width: CARD_W - 12 },
       }).setOrigin(0.5)
       this.cardScrollContainer.add(label)
 
       const arch = this.add.text(lx + CARD_W / 2, ly + 139, unit.archetype.toUpperCase(), {
-        fontSize: '10px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
+        fontSize: FONT_SIZE.xs, color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5)
       this.cardScrollContainer.add(arch)
 
@@ -343,31 +343,31 @@ export class PickerScene extends Phaser.Scene {
     ]
     for (const line of statsLines) {
       const t = this.add.text(px, py, line, {
-        fontSize: '10px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        fontSize: '13px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       })
       this.infoContainer.add(t)
-      py += 14
+      py += 18
     }
 
-    py += 6
+    py += 8
     const tHeader = this.add.text(px, py, 'TRAITS', {
-      fontSize: '9px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      fontSize: '13px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
     this.infoContainer.add(tHeader)
     py += 14
 
     if (unit.traits.length === 0) {
       this.infoContainer.add(this.add.text(px + 4, py, '—', {
-        fontSize: '9px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        fontSize: '13px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       }))
     } else {
       for (const t of unit.traits) {
         const desc = TRAIT_DESCRIPTIONS[t.traitId] ?? t.traitId
         const extra = t.value !== undefined ? ` (${t.value})` : t.duration !== undefined ? ` (${t.duration}s)` : ''
         this.infoContainer.add(this.add.text(px + 4, py, `• ${desc}${extra}`, {
-          fontSize: '9px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', wordWrap: { width: SIDEBAR_W - 16 },
+          fontSize: '13px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', wordWrap: { width: SIDEBAR_W - 16 },
         }))
-        py += 13
+        py += 17
       }
     }
   }
@@ -385,8 +385,8 @@ export class PickerScene extends Phaser.Scene {
     this.confirmBtn.removeAllListeners('pointerup')
     this.confirmBtn.on('pointerup', () => this.confirmPick())
 
-    const txt = this.add.text(SIDEBAR_W / 2, 636, `Confirm (${this.pickedUnit?.subtypeLabel ?? ''})`, {
-      fontSize: '11px', color: COLORS.text.success, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    const txt = this.add.text(SIDEBAR_W / 2, 634, `Confirm (${this.pickedUnit?.subtypeLabel ?? ''})`, {
+      fontSize: FONT_SIZE.xs, color: COLORS.text.success, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     }).setOrigin(0.5)
     this.infoContainer.add(txt)
   }

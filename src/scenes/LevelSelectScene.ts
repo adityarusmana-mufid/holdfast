@@ -120,7 +120,7 @@ export class LevelSelectScene extends Phaser.Scene {
 
       const textColor = !unlocked ? '#b0b8c4' : '#1a1a2e'
       const idText = this.add.text(0, -(isTr ? 4 : 6), levelId, {
-        fontSize: isTr ? '12px' : '14px', color: textColor,
+        fontSize: isTr ? '14px' : '16px', color: textColor,
         fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
         fontStyle: 'bold',
       }).setOrigin(0.5)
@@ -128,13 +128,13 @@ export class LevelSelectScene extends Phaser.Scene {
 
       if (completed) {
         const stars = this.add.text(0, 16, '★★★', {
-          fontSize: '9px', color: '#ffc107',
+          fontSize: '12px', color: '#ffc107',
           fontFamily: 'sans-serif',
         }).setOrigin(0.5)
         nodeContainer.add(stars)
       } else if (unlocked && isTr) {
         const tut = this.add.text(0, 16, 'TUT', {
-          fontSize: '8px', color: '#f0c27a',
+          fontSize: '12px', color: '#f0c27a',
           fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
           fontStyle: 'bold',
         }).setOrigin(0.5)

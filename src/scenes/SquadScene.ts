@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { UnitConfig, LevelData } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
-import { COLORS, FONTS } from '../ui/Constants'
+import { COLORS, FONTS, FONT_SIZE } from '../ui/Constants'
 import { makeButton } from '../ui/Components'
 
 const SLOT_W = 130
@@ -127,11 +127,11 @@ export class SquadScene extends Phaser.Scene {
       }).setOrigin(0.5)
 
       const sub = this.add.text(0, 34, unit.archetype.toUpperCase(), {
-        fontSize: '10px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
+        fontSize: FONT_SIZE.xs, color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5)
 
       const dpText = this.add.text(-SLOT_W / 2 + 6, -SLOT_H / 2 + 4, `${unit.dpCost} DP`, {
-        fontSize: '10px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        fontSize: FONT_SIZE.xs, color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       })
 
       c.add([bg, icon, label, sub, dpText])

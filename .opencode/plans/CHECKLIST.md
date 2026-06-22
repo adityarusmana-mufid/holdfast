@@ -1,6 +1,6 @@
 # Holdfast — Implementation Checklist
 
-Last updated: 2026-06-18
+Last updated: 2026-06-22
 
 ## Phase Status
 
@@ -10,13 +10,16 @@ Last updated: 2026-06-18
 | Flat elevation visuals | ✅ Done | `feat/flat-elevation-visual` | ✅ |
 | Perspective grid rendering | ✅ Done | `feat/perspective-tiles` | ✅ |
 | Gameplay systems doc'd | ✅ Done | `main` | ✅ |
+| Bottom card bar + auto-start | ✅ Done | `main` | ✅ |
+| Vitest test suite (62 tests) | ✅ Done | `main` | ✅ |
+| Visual philosophy doc | ✅ Done | `main` | ✅ |
 
-## Next Steps (Implementation)
-- [ ] Add defeat condition when all units dead (not just lives)
-- [ ] Add death animation for units
-- [ ] Plan 2.5D axonometric scene (coordinate mapping, depth sorting, tile sprites)
-- [ ] Research Ursus faction enemies for harder Chapter 2+ balance
-- [ ] Design enemy mechanics (e.g., Wraith ignores block, Defense Crusher shreds DEF, etc.)
+## Next Steps (Implementation — Phase 14+)
+- [ ] **Death animation for units** — explosion/dissolve effect instead of instant vanish. Low effort, high polish.
+- [ ] **Deploy click UX** (`dist < 12` bug) — PENDING user decision: does clicking center cancel or confirm facing?
+- [ ] **Research Ursus faction** — design new enemy types for Chapter 2+ (Wraith ignores block, Defense Crusher shreds DEF, etc.)
+- [ ] **Plan 2.5D axonometric scene** — coordinate mapping, depth sorting, tile sprites. Big visual overhaul.
+- [ ] **Level content for Chapter 2** — new levels, new enemies, escalating difficulty.
 
 ## Fixed Bugs
 
@@ -47,6 +50,7 @@ Last updated: 2026-06-18
 - All waves were missing `routeIndex`. `startNextWave()` looked up `routes[undefined]`, got `undefined`, errored, and skipped through all waves with zero spawns. Old completion code (`enemies.length === 0`) masked this. Fixed by adding `routeIndex: 0` to all waves + fallback in `jsonToLevelData()`.
 
 ## Completed (recent)
+- ✅ Phase 13 (Bottom card bar): Full-width grid, bottom card bar (96x128, 48px icons), auto-start with 2s grace, cancel by tapping selected card, pause overlay with dev actions, horizontal drag scroll. Removed START button, left palette, cancelFacingBtn.
 - ✅ Phase 12f (UX features): Pause button + overlay + deploy-on-unpause flow. Wave preview dotted line during prelude countdown. Enemy intro toasts (icon + name + description, 5s auto-dismiss, stacking).
 - ✅ Phase 12e (5 levels): Chapter 1 expanded to 5 levels (1-1 through 1-5), all validated.
 - ✅ Phase 12d (routeIndex fix): Added `routeIndex: 0` to all waves + fallback in `jsonToLevelData()`.

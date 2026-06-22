@@ -1,3 +1,8 @@
+## [2026-06-22] Branch Fix + Visual Philosophy Doc
+- **Branch fix**: Fast-forward merged `feat/kenney-assets` (11 commits) into `main`. The bottom-card-bar, per-instance deployment tracking, PickerScene, and test suite were all on `feat/kenney-assets` — none existed on `main`. Fast-forward merge moved everything to `main` with zero conflicts. Deleted stale `feat/kenney-assets` branch.
+- **Visual philosophy document**: `docs/superpowers/specs/2026-06-22-visual-philosophy.md` — documents the decision to use colored geometric shapes as final v1 visual style (not placeholder). Cites HEX Defense, Infinitode 2, and GeoDefense as proof that minimalist geometric TDs succeed commercially on design depth alone. Covers religious constraint, computational aesthetics, shape→meaning mapping, and v1→v2 upgrade path.
+- Files: `docs/superpowers/specs/2026-06-22-visual-philosophy.md`, `.opencode/plans/CHECKLIST.md`
+
 ## [2026-06-22] Phase 14 — Vitest Test Suite (62 tests, GridMath + DeploymentSystem)
 - Installed vitest (v4) + happy-dom, configured via `vitest.config.ts`
 - Added `npm run test` and `npm run test:watch` scripts to package.json

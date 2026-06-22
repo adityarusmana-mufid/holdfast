@@ -598,8 +598,20 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showSelectionDiamond(row: number, col: number, color: number): void {
-    const center = this.grid.tileToPixel(row, col)
-    const size = TILE_SIZE * 1.5
+    const topRow = Math.max(0, row - 1)
+    const bottomRow = Math.min(this.grid.rows - 1, row + 1)
+    const leftCol = Math.max(0, col - 1)
+    const rightCol = Math.min(this.grid.cols - 1, col + 1)
+
+    const tTop = this.grid.getTileCorners(topRow, col)
+    const tBottom = this.grid.getTileCorners(bottomRow, col)
+    const tLeft = this.grid.getTileCorners(row, leftCol)
+    const tRight = this.grid.getTileCorners(row, rightCol)
+
+    const topPt = { x: (tTop.bL.x + tTop.bR.x) / 2, y: (tTop.bL.y + tTop.bR.y) / 2 }
+    const bottomPt = { x: (tBottom.tL.x + tBottom.tR.x) / 2, y: (tBottom.tL.y + tBottom.tR.y) / 2 }
+    const leftPt = { x: (tLeft.tR.x + tLeft.bR.x) / 2, y: (tLeft.tR.y + tLeft.bR.y) / 2 }
+    const rightPt = { x: (tRight.tL.x + tRight.bL.x) / 2, y: (tRight.tL.y + tRight.bL.y) / 2 }
 
     this.selectionDiamond.clear()
 
@@ -608,10 +620,10 @@ export class GameScene extends Phaser.Scene {
       ;[-1, 1].forEach(dy => {
         this.selectionDiamond.fillStyle(0x000000, 0.06)
         this.selectionDiamond.beginPath()
-        this.selectionDiamond.moveTo(center.x + dx * 2, center.y - size + dy * 2)
-        this.selectionDiamond.lineTo(center.x + size + dx * 2, center.y + dy * 2)
-        this.selectionDiamond.lineTo(center.x + dx * 2, center.y + size + dy * 2)
-        this.selectionDiamond.lineTo(center.x - size + dx * 2, center.y + dy * 2)
+        this.selectionDiamond.moveTo(topPt.x + dx * 2, topPt.y + dy * 2)
+        this.selectionDiamond.lineTo(rightPt.x + dx * 2, rightPt.y + dy * 2)
+        this.selectionDiamond.lineTo(bottomPt.x + dx * 2, bottomPt.y + dy * 2)
+        this.selectionDiamond.lineTo(leftPt.x + dx * 2, leftPt.y + dy * 2)
         this.selectionDiamond.closePath()
         this.selectionDiamond.fillPath()
       })
@@ -619,18 +631,18 @@ export class GameScene extends Phaser.Scene {
 
     this.selectionDiamond.fillStyle(color, 0.2)
     this.selectionDiamond.beginPath()
-    this.selectionDiamond.moveTo(center.x, center.y - size)
-    this.selectionDiamond.lineTo(center.x + size, center.y)
-    this.selectionDiamond.lineTo(center.x, center.y + size)
-    this.selectionDiamond.lineTo(center.x - size, center.y)
+    this.selectionDiamond.moveTo(topPt.x, topPt.y)
+    this.selectionDiamond.lineTo(rightPt.x, rightPt.y)
+    this.selectionDiamond.lineTo(bottomPt.x, bottomPt.y)
+    this.selectionDiamond.lineTo(leftPt.x, leftPt.y)
     this.selectionDiamond.closePath()
     this.selectionDiamond.fillPath()
     this.selectionDiamond.lineStyle(2, color, 0.7)
     this.selectionDiamond.strokePath()
     this.selectionDiamond.lineStyle(1, color, 0.3)
     this.selectionDiamond.beginPath()
-    this.selectionDiamond.moveTo(center.x, center.y - size)
-    this.selectionDiamond.lineTo(center.x, center.y + size)
+    this.selectionDiamond.moveTo(topPt.x, topPt.y)
+    this.selectionDiamond.lineTo(bottomPt.x, bottomPt.y)
     this.selectionDiamond.strokePath()
     this.selectionDiamond.setAlpha(1)
   }

@@ -1,7 +1,10 @@
 ## [2026-06-22] Branch Fix + Visual Philosophy Doc
 - **Branch fix**: Fast-forward merged `feat/kenney-assets` (11 commits) into `main`. The bottom-card-bar, per-instance deployment tracking, PickerScene, and test suite were all on `feat/kenney-assets` — none existed on `main`. Fast-forward merge moved everything to `main` with zero conflicts. Deleted stale `feat/kenney-assets` branch.
 - **Visual philosophy document**: `docs/superpowers/specs/2026-06-22-visual-philosophy.md` — documents the decision to use colored geometric shapes as final v1 visual style (not placeholder). Cites HEX Defense, Infinitode 2, and GeoDefense as proof that minimalist geometric TDs succeed commercially on design depth alone. Covers religious constraint, computational aesthetics, shape→meaning mapping, and v1→v2 upgrade path.
-- Files: `docs/superpowers/specs/2026-06-22-visual-philosophy.md`, `.opencode/plans/CHECKLIST.md`
+- **CombatSystem tests (37)**: damage formula (kinetic/thermal/true + 5% floor), effective defense (ArmorGrid +100), trait checks, target selection (closest-to-goal, lowest-DEF, blocker priority), slow application, ranged-vs-melee attack params (RangedWhenNotBlocking, RangedAttack80, RangedAoE), heal-on-attack targeting, DoubleHit loop, enemy aerial targeting (findNearestRangedUnit). Excluded test files from tsc to avoid private-method mock issues.
+- Files: `docs/superpowers/specs/2026-06-22-visual-philosophy.md`, `.opencode/plans/CHECKLIST.md`, `src/systems/CombatSystem.test.ts`, `tsconfig.json`
+
+## [2026-06-22] Phase 14 — Vitest Test Suite (62 tests, GridMath + DeploymentSystem)
 
 ## [2026-06-22] Phase 14 — Vitest Test Suite (62 tests, GridMath + DeploymentSystem)
 - Installed vitest (v4) + happy-dom, configured via `vitest.config.ts`

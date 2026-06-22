@@ -86,6 +86,15 @@ export class EnemySprite {
   takeDamage(amount: number): number {
     this.currentHp = Math.max(0, this.currentHp - amount)
     this.drawHp(TILE_SIZE * 0.6)
+    if (this.container.scene) {
+      this.container.scene.tweens.add({
+        targets: this.container,
+        alpha: 0.4,
+        duration: 40,
+        yoyo: true,
+        ease: 'Quad.easeOut',
+      })
+    }
     if (this.currentHp <= 0) {
       this.alive = false
     }

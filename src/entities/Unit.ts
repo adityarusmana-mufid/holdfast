@@ -4,7 +4,7 @@ import { Grid, TILE_SIZE } from './Grid'
 
 export class UnitSprite {
   private scene: Phaser.Scene
-  private container: Phaser.GameObjects.Container
+  container: Phaser.GameObjects.Container
   private body: Phaser.GameObjects.Graphics
   private hpBar: Phaser.GameObjects.Graphics
   private hpBg: Phaser.GameObjects.Graphics
@@ -123,6 +123,15 @@ export class UnitSprite {
   takeDamage(amount: number): number {
     this.currentHp = Math.max(0, this.currentHp - amount)
     this.drawHp(TILE_SIZE * 0.7)
+    if (this.container.scene) {
+      this.container.scene.tweens.add({
+        targets: this.container,
+        alpha: 0.4,
+        duration: 40,
+        yoyo: true,
+        ease: 'Quad.easeOut',
+      })
+    }
     return this.currentHp
   }
 

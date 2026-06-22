@@ -90,6 +90,8 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.fadeIn(300, 0, 0, 0)
+    this.cameras.main.postFX.addBloom(0xffffff, 1, 1, 0.5, 0.25, 4)
+    this.cameras.main.postFX.addVignette(0.5, 0x000000)
     this.drawBgGradient()
     this.unitSprites = []
     this.unitCards = []
@@ -138,6 +140,7 @@ export class GameScene extends Phaser.Scene {
       onEnemyKilled: (enemy: EnemySprite, killer: UnitSprite | null) => {
         this.enemyManager.markEnemyDealtWith()
         this.depSystem.addDP(enemy.config.dpOnKill)
+        this.cameras.main.shake(100, 0.003)
         if (killer?.config.traits?.some(t => t.traitId === UnitTrait.DPOnKill)) {
           const dpTrait = killer.config.traits.find(t => t.traitId === UnitTrait.DPOnKill)
           this.depSystem.addDP(dpTrait!.value ?? 1)
@@ -164,6 +167,7 @@ export class GameScene extends Phaser.Scene {
         const instId = this.depSystem.removeUnit(unit.row, unit.col)
         this.removeUnitSprite(unit.row, unit.col)
         if (instId !== undefined) this.deployedIndices.delete(instId)
+        this.cameras.main.shake(150, 0.005)
         this.flashMessage(`UNIT DESTROYED // ${unit.config.name}`, 0xd32f2f)
         this.rebuildCardBar()
       },
@@ -542,6 +546,8 @@ export class GameScene extends Phaser.Scene {
     const deployed = this.depSystem.deployUnit(selected, this.pendingTile.row, this.pendingTile.col, this.pendingFacing, this.selectedSquadIndex)
     if (deployed) {
       const sprite = new UnitSprite(this, this.grid, selected, this.pendingTile.row, this.pendingTile.col, selected.hp, this.pendingFacing)
+      sprite.container.setScale(0.3)
+      this.tweens.add({ targets: sprite.container, scaleX: 1, scaleY: 1, duration: 200, ease: 'Back.easeOut' })
       this.unitSprites.push(sprite)
       this.deployedIndices.add(this.selectedSquadIndex)
       const cost = this.depSystem.getCurrentCost(this.selectedSquadIndex, selected)

@@ -71,6 +71,7 @@ export class GameScene extends Phaser.Scene {
   private wavePreviewTween: Phaser.Tweens.Tween | null = null
   private guideActive: boolean = false
   private selectionDiamond!: Phaser.GameObjects.Graphics
+  private unitPreview!: Phaser.GameObjects.Graphics
 
   constructor() {
     super({ key: 'GameScene' })
@@ -233,6 +234,10 @@ export class GameScene extends Phaser.Scene {
     this.selectionDiamond.setDepth(7)
     this.selectionDiamond.setAlpha(0)
 
+    this.unitPreview = this.add.graphics()
+    this.unitPreview.setDepth(8)
+    this.unitPreview.setAlpha(0)
+
     this.setupInput()
 
     this.pauseOverlay = this.add.graphics()
@@ -394,6 +399,7 @@ export class GameScene extends Phaser.Scene {
           this.pendingFacing = computeFacingTowardGoal(pos, this.getGoalPositions())
           this.deployState = 'facing'
           this.showSelectionDiamond(pos.row, pos.col, selected.color)
+          this.showUnitPreview(selected, pos.row, pos.col, this.pendingFacing)
           this.showRangePreview(selected, pos, this.pendingFacing)
           this.showFacingArrow(pos, this.pendingFacing)
           this.hoverIndicator.setAlpha(0)
@@ -426,6 +432,7 @@ export class GameScene extends Phaser.Scene {
         if (!this.pendingTile || this.selectedSquadIndex === null) return
         const selected = this.getSelectedUnit()
         if (!selected) return
+        this.showUnitPreview(selected, this.pendingTile.row, this.pendingTile.col, this.pendingFacing)
         const center = this.grid.tileToPixel(this.pendingTile.row, this.pendingTile.col)
         const dx = pointer.x - center.x
         const dy = pointer.y - center.y
@@ -448,12 +455,14 @@ export class GameScene extends Phaser.Scene {
 
       if (!this.battleActive || this.battleEnded) {
         this.hoverIndicator.setAlpha(0)
+        this.hideSelectionDiamond()
+        this.hideUnitPreview()
         return
       }
       const pos = this.grid.pixelToTile(pointer.x, pointer.y)
-      if (!pos || this.selectedSquadIndex === null) { this.hoverIndicator.setAlpha(0); return }
+      if (!pos || this.selectedSquadIndex === null) { this.hoverIndicator.setAlpha(0); this.hideSelectionDiamond(); this.hideUnitPreview(); return }
       const selected = this.getSelectedUnit()
-      if (!selected) { this.hoverIndicator.setAlpha(0); return }
+      if (!selected) { this.hoverIndicator.setAlpha(0); this.hideSelectionDiamond(); this.hideUnitPreview(); return }
       const check = this.depSystem.canDeploy(selected, pos.row, pos.col, this.selectedSquadIndex)
       const { tL, tR, bR, bL } = this.grid.getTileCorners(pos.row, pos.col)
       this.hoverIndicator.clear()
@@ -468,6 +477,13 @@ export class GameScene extends Phaser.Scene {
       this.hoverIndicator.closePath()
       this.hoverIndicator.strokePath()
       this.hoverIndicator.setAlpha(1)
+      if (check.ok && this.deployState === 'placing') {
+        this.showSelectionDiamond(pos.row, pos.col, selected.color)
+        this.showUnitPreview(selected, pos.row, pos.col, computeFacingTowardGoal(pos, this.getGoalPositions()))
+      } else {
+        this.hideSelectionDiamond()
+        this.hideUnitPreview()
+      }
     })
 
     this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
@@ -581,11 +597,12 @@ export class GameScene extends Phaser.Scene {
     this.facingArrow.clear()
     this.facingArrow.setAlpha(0)
     this.hideSelectionDiamond()
+    this.hideUnitPreview()
   }
 
   private showSelectionDiamond(row: number, col: number, color: number): void {
     const center = this.grid.tileToPixel(row, col)
-    const size = 28
+    const size = 42
 
     this.selectionDiamond.clear()
     this.selectionDiamond.fillStyle(color, 0.15)
@@ -609,6 +626,36 @@ export class GameScene extends Phaser.Scene {
   private hideSelectionDiamond(): void {
     this.selectionDiamond.clear()
     this.selectionDiamond.setAlpha(0)
+  }
+
+  private showUnitPreview(config: UnitConfig, row: number, col: number, facing: Direction): void {
+    const center = this.grid.tileToPixel(row, col)
+    const size = 36
+    const half = size / 2
+
+    this.unitPreview.clear()
+    this.unitPreview.fillStyle(config.color, 0.35)
+
+    if (config.type === 'ground') {
+      this.unitPreview.fillRoundedRect(center.x - half, center.y - half, size, size, 4)
+    } else {
+      this.unitPreview.fillTriangle(center.x, center.y - half, center.x - half, center.y + half, center.x + half, center.y + half)
+    }
+
+    const halfSmall = size / 4
+    this.unitPreview.fillStyle(0xffffff, 0.15)
+    if (config.type === 'ground') {
+      this.unitPreview.fillRoundedRect(center.x - halfSmall, center.y - halfSmall, halfSmall * 2, halfSmall * 2, 2)
+    } else {
+      this.unitPreview.fillTriangle(center.x, center.y - halfSmall / 2, center.x - halfSmall, center.y + halfSmall, center.x + halfSmall, center.y + halfSmall)
+    }
+
+    this.unitPreview.setAlpha(1)
+  }
+
+  private hideUnitPreview(): void {
+    this.unitPreview.clear()
+    this.unitPreview.setAlpha(0)
   }
 
   private confirmDeployment(): void {

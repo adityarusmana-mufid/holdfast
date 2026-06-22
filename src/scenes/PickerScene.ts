@@ -78,6 +78,10 @@ export class PickerScene extends Phaser.Scene {
     this.W = 1280
     this.H = 720
 
+    const mainBg = this.add.graphics()
+    mainBg.fillStyle(0xeef2f5, 1)
+    mainBg.fillRect(0, 0, this.W, this.H)
+
     const sidebarBg = this.add.graphics()
     sidebarBg.fillStyle(0xe8ecf0, 1)
     sidebarBg.fillRect(0, 0, SIDEBAR_W, this.H)

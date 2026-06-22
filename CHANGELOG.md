@@ -1,3 +1,11 @@
+## [2026-06-22] Phase — Visual Polish + Guide Text + SquadScene Polish
+- **Visual polish** merged from `feat/visual-polish`: death animation (pop-in/out), deploy click UX fix, manual glow, screen shake, hit flash, deploy pop-in, three-phase enemy attack (wind-up→launch→wind-down), player attack projectiles/swing, decision mode scaling, camera bloom/vignette removed
+- **Guide text overlay**: `guideText` field in `LevelData` type, parsed from JSON, displayed as centered white panel on dark overlay in GameScene — click to dismiss. Battle auto-start deferred until guide dismissed for tutorial levels.
+- **15 level JSONs** with guide texts (all story + TR stages)
+- **SquadScene**: first 7 slots pre-filled with balanced default squad, deployment limit shown in label, instructional subtitle
+- `feat/visual-polish` merged to main and deleted
+- Files: `src/types/index.ts`, `src/config/chapters.ts`, `src/scenes/GameScene.ts`, `src/scenes/LevelSelectScene.ts`, `src/scenes/SquadScene.ts`, `levels/*`, `docs/superpowers/specs/2026-06-22-guide-system.md`
+
 ## [2026-06-22] Phase — Prologue Restructure (Story + TR Interlacing)
 - **Prologue restructured** to match Arknights Episode 00 interlacing: story stages (0-1 through 0-8) alternate with TR tutorial stages (TR-1 through TR-7) in sequence → `0-1 → TR-1 → 0-2 → TR-2 → ... → 0-7 → TR-7 → 0-8`
 - **8 story stages** created (`levels/0-1.json` through `0-8.json`) with escalating enemy compositions (soldiers → troopers → drones → casters → heavies), simple 10×3 straight-route layouts, no tutorial flag — go through SquadScene flow

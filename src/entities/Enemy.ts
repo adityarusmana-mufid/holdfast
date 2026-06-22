@@ -44,6 +44,10 @@ export class EnemySprite {
     const size = TILE_SIZE * 0.6
     const half = size / 2
 
+    const glow = scene.add.graphics()
+    glow.fillStyle(config.color, 0.1)
+    glow.fillCircle(0, 0, size * 0.7)
+
     this.body = scene.add.graphics()
     this.body.fillStyle(config.color, 1)
     this.body.fillCircle(0, 0, half)
@@ -66,7 +70,7 @@ export class EnemySprite {
     this.hpBar = scene.add.graphics()
     this.drawHp(size)
 
-    this.container = scene.add.container(this.x, this.y, [this.body, this.dirIndicator, this.hpBg, this.hpBar])
+    this.container = scene.add.container(this.x, this.y, [glow, this.body, this.dirIndicator, this.hpBg, this.hpBar])
     this.container.setDepth(9)
   }
 

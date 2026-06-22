@@ -32,6 +32,10 @@ export class UnitSprite {
     this.body = scene.add.graphics()
     this.drawBody(config, size, facing)
 
+    const glow = scene.add.graphics()
+    glow.fillStyle(config.color, 0.12)
+    glow.fillCircle(0, 0, size * 0.9)
+
     this.hpBg = scene.add.graphics()
     this.hpBg.fillStyle(0xcfd8dc, 0.6)
     this.hpBg.fillRect(-half, -half - 8, size, 4)
@@ -46,7 +50,7 @@ export class UnitSprite {
     })
     this.label.setOrigin(0.5)
 
-    this.container = scene.add.container(pos.x, pos.y, [this.body, this.hpBg, this.hpBar, this.label])
+    this.container = scene.add.container(pos.x, pos.y, [glow, this.body, this.hpBg, this.hpBar, this.label])
     this.container.setDepth(10)
   }
 

@@ -464,11 +464,11 @@ export class GameScene extends Phaser.Scene {
       this.hoverIndicator.setAlpha(1)
     })
 
-    this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], dx: number, _dy: number) => {
+    this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
       if (!this.cardBarContainer) return
       const totalW = this.unitConfigs.length * (96 + 6) + 10
       const maxScroll = Math.max(0, totalW - this.scale.width)
-      this.cardBarScrollX = Phaser.Math.Clamp(this.cardBarScrollX - dx * 0.5, -maxScroll, 0)
+      this.cardBarScrollX = Phaser.Math.Clamp(this.cardBarScrollX + dy * 0.5, 0, maxScroll)
       this.cardBarContainer.setX(this.cardBarScrollX)
     })
 
@@ -493,7 +493,7 @@ export class GameScene extends Phaser.Scene {
       dragStartX = pointer.x
       const totalW = this.unitConfigs.length * (96 + 6) + 10
       const maxScroll = Math.max(0, totalW - this.scale.width)
-      this.cardBarScrollX = Phaser.Math.Clamp(this.cardBarScrollX + dx2, -maxScroll, 0)
+      this.cardBarScrollX = Phaser.Math.Clamp(this.cardBarScrollX - dx2, 0, maxScroll)
       this.cardBarContainer.setX(this.cardBarScrollX)
     })
     this.input.on('pointerup', () => { dragStartX = 0; dragStartWorldX = 0; dragStarted = false })
@@ -731,7 +731,7 @@ export class GameScene extends Phaser.Scene {
     entries.sort((a, b) => this.depSystem.getCurrentCost(a.squadIndex, a.unit) - this.depSystem.getCurrentCost(b.squadIndex, b.unit))
 
     entries.forEach(({ unit, squadIndex }, i) => {
-      const x = px + i * (cardW + gap)
+      const x = this.scale.width - px - cardW - i * (cardW + gap)
       const card = this.makeUnitCard(x, py, cardW, cardH, unit, squadIndex)
       this.unitCards.push(card)
       this.cardBarContainer.add(card.container)

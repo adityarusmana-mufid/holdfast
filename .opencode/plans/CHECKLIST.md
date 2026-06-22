@@ -12,7 +12,7 @@ Last updated: 2026-06-22
 | Gameplay systems doc'd | ✅ Done | `main` | ✅ |
 | Bottom card bar + auto-start | ✅ Done | `main` | ✅ |
 | Vitest test suite (62 tests) | ✅ Done | `main` | ✅ |
-| Visual philosophy doc | ✅ Done | `main` | ✅ |
+| CombatSystem tests (37 tests) | ✅ Done | `main` | ✅ |
 
 ## Next Steps (Implementation — Phase 14+)
 - [ ] **Death animation for units** — explosion/dissolve effect instead of instant vanish. Low effort, high polish.

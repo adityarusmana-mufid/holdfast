@@ -841,10 +841,7 @@ export class GameScene extends Phaser.Scene {
     const col1 = Math.round(W * 0.12)
     const col2 = Math.round(W * 0.32)
 
-    this.dpText = this.add.text(col1, 10, '', {
-      fontSize: FONT_SIZE.lg, color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
-    })
-    this.limitText = this.add.text(col1, 32, '', {
+    this.limitText = this.add.text(col1, 10, '', {
       fontSize: FONT_SIZE.sm, color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
     this.livesText = this.add.text(col2, 10, '', {
@@ -853,9 +850,13 @@ export class GameScene extends Phaser.Scene {
     this.waveText = this.add.text(col2, 32, '', {
       fontSize: FONT_SIZE.sm, color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
-    this.statusText = this.add.text(col1, 54, '', {
+    this.statusText = this.add.text(col1, 32, '', {
       fontSize: FONT_SIZE.sm, color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
+
+    this.dpText = this.add.text(W - 10, this.scale.height - 140 - 26, '', {
+      fontSize: FONT_SIZE.lg, color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    }).setOrigin(1, 0)
 
     if (this.levelData) {
       this.add.text(W - 20, 10, this.levelData.name, {

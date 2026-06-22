@@ -398,7 +398,7 @@ export class GameScene extends Phaser.Scene {
           this.pendingTile = pos
           this.pendingFacing = computeFacingTowardGoal(pos, this.getGoalPositions())
           this.deployState = 'facing'
-          this.showSelectionDiamond(pos.row, pos.col, selected.color)
+          this.showSelectionDiamond(pos.row, pos.col, 0xcccccc)
           this.showUnitPreview(selected, pos.row, pos.col, this.pendingFacing)
           this.showRangePreview(selected, pos, this.pendingFacing)
           this.showFacingArrow(pos, this.pendingFacing)
@@ -455,14 +455,13 @@ export class GameScene extends Phaser.Scene {
 
       if (!this.battleActive || this.battleEnded) {
         this.hoverIndicator.setAlpha(0)
-        this.hideSelectionDiamond()
         this.hideUnitPreview()
         return
       }
       const pos = this.grid.pixelToTile(pointer.x, pointer.y)
-      if (!pos || this.selectedSquadIndex === null) { this.hoverIndicator.setAlpha(0); this.hideSelectionDiamond(); this.hideUnitPreview(); return }
+      if (!pos || this.selectedSquadIndex === null) { this.hoverIndicator.setAlpha(0); this.hideUnitPreview(); return }
       const selected = this.getSelectedUnit()
-      if (!selected) { this.hoverIndicator.setAlpha(0); this.hideSelectionDiamond(); this.hideUnitPreview(); return }
+      if (!selected) { this.hoverIndicator.setAlpha(0); this.hideUnitPreview(); return }
       const check = this.depSystem.canDeploy(selected, pos.row, pos.col, this.selectedSquadIndex)
       const { tL, tR, bR, bL } = this.grid.getTileCorners(pos.row, pos.col)
       this.hoverIndicator.clear()
@@ -478,10 +477,8 @@ export class GameScene extends Phaser.Scene {
       this.hoverIndicator.strokePath()
       this.hoverIndicator.setAlpha(1)
       if (check.ok && this.deployState === 'placing') {
-        this.showSelectionDiamond(pos.row, pos.col, selected.color)
         this.showUnitPreview(selected, pos.row, pos.col, computeFacingTowardGoal(pos, this.getGoalPositions()))
       } else {
-        this.hideSelectionDiamond()
         this.hideUnitPreview()
       }
     })
@@ -699,7 +696,7 @@ export class GameScene extends Phaser.Scene {
     this.inspectCloseBtn.setAlpha(0)
     this.inspectingUnit = unit
     this.decisionMode = true
-    this.showSelectionDiamond(unit.row, unit.col, unit.config.color)
+    this.showSelectionDiamond(unit.row, unit.col, 0xcccccc)
     this.updateStatsPanel(unit.config, unit)
     const isFullRefund = unit.config.traits?.some(t => t.traitId === UnitTrait.FullRefundRetreat)
     const refund = isFullRefund ? unit.dpCostPaid : Math.floor(unit.dpCostPaid / 2)

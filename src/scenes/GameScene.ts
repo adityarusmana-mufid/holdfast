@@ -11,6 +11,7 @@ import { HealingSystem } from '../systems/HealingSystem'
 import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONT_SIZE } from '../ui/Constants'
 import { spawnProjectile, playSwing, showWindUp, flashDamage } from '../effects/CombatEffects'
+import { saveCompletion } from '../shared/SaveData'
 
 export class GameScene extends Phaser.Scene {
   private grid!: Grid
@@ -301,13 +302,10 @@ export class GameScene extends Phaser.Scene {
         return t
       }
 
-      const restartBtn = mkBtn('[ Restart Level ]', COLORS.text.accent, 50, () => {
-        if (this.levelData) this.loadLevel(this.levelData)
-      })
-      const backBtn = mkBtn('[ Back to Squad ]', COLORS.text.secondary, 80, () => {
+      const backBtn = mkBtn('[ Back to Squad ]', COLORS.text.secondary, 50, () => {
         this.scene.start(this.fromSquad ? 'SquadScene' : 'EditorScene')
       })
-      this.pauseButtons = [restartBtn, backBtn]
+      this.pauseButtons = [backBtn]
     } else {
       this.pauseOverlay.setAlpha(0)
       this.pauseText.setAlpha(0)
@@ -356,8 +354,19 @@ export class GameScene extends Phaser.Scene {
     this.facingCancelBtn.setInteractive({ cursor: 'pointer' })
     this.facingCancelBtn.on('pointerdown', () => this.cancelDeployment())
 
+    let facingDragActive = false
+    let facingDragStartX = 0
+    let facingDragStartY = 0
+
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (this.deployState === 'facing' || this.isPaused) {
+      if (this.isPaused) return
+
+      if (this.deployState === 'facing' && this.pendingTile && this.selectedSquadIndex !== null) {
+        const selected = this.getSelectedUnit()
+        if (selected) {
+          this.pendingFacing = this.computeFacingFromPointer(pointer)
+          this.confirmDeployment()
+        }
         return
       }
 
@@ -409,19 +418,18 @@ export class GameScene extends Phaser.Scene {
           this.cancelDeployment()
           this.flashMessage(check.reason ?? 'Cannot deploy', 0xd32f2f)
         }
+        facingDragStartX = pointer.x
+        facingDragStartY = pointer.y
+        facingDragActive = false
       }
     })
 
     this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
-      if (this.deployState === 'facing' && this.pendingTile) {
-        const center = this.grid.tileToPixel(this.pendingTile.row, this.pendingTile.col)
-        const dx = pointer.x - center.x
-        const dy = pointer.y - center.y
-        const dist = Math.sqrt(dx * dx + dy * dy)
-        if (dist >= 12) {
-          this.confirmDeployment()
-        }
+      if (this.deployState === 'facing' && this.pendingTile && this.selectedSquadIndex !== null && facingDragActive) {
+        this.pendingFacing = this.computeFacingFromPointer(pointer)
+        this.confirmDeployment()
       }
+      facingDragActive = false
     })
 
     this.hoverIndicator = this.add.graphics()
@@ -441,6 +449,7 @@ export class GameScene extends Phaser.Scene {
           this.facingArrow.setAlpha(0)
           this.rangePreview.setAlpha(0)
         } else {
+          facingDragActive = true
           this.facingArrow.setAlpha(1)
           this.rangePreview.setAlpha(1)
           const facing = this.computeFacingFromPointer(pointer)
@@ -1095,6 +1104,10 @@ export class GameScene extends Phaser.Scene {
     const outcome = label.includes('FAIL') || label === 'DESYNC' ? 'defeat' : 'victory'
     const stars = outcome === 'defeat' ? 0 : this.calculateStars()
 
+    if (outcome === 'victory') {
+      saveCompletion(this.levelId, stars, this.enemiesDefeated)
+    }
+
     this.time.delayedCall(1500, () => {
       this.scene.start('ResultScene', {
         chapterId: this.chapterId,
@@ -1349,39 +1362,51 @@ export class GameScene extends Phaser.Scene {
     overlay.fillRect(0, 0, w, h)
     overlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains)
 
-    const panelW = Math.min(500, w - 80)
-    const panelH = 200
-    const px = (w - panelW) / 2
-    const py = (h - panelH) / 2
+    const pH = 130
+    const pY = h - pH
 
     const panel = this.add.graphics()
     panel.setDepth(61)
     panel.fillStyle(0xffffff, 1)
-    panel.fillRoundedRect(px, py, panelW, panelH, 8)
-    panel.lineStyle(2, 0x333333, 1)
-    panel.strokeRoundedRect(px, py, panelW, panelH, 8)
+    panel.fillRoundedRect(0, pY, w, pH, { tl: 14, tr: 14, bl: 0, br: 0 })
 
-    const guideTextObj = this.add.text(w / 2, h / 2 - 10, text, {
-      fontSize: '18px',
+    const cx = 34
+    const cy = pY + pH / 2
+    const isz = 20
+    const icon = this.add.graphics()
+    icon.setDepth(62)
+    icon.fillStyle(0x4fc3f7, 1)
+    icon.fillPoints([
+      new Phaser.Geom.Point(cx, cy - isz),
+      new Phaser.Geom.Point(cx + isz, cy),
+      new Phaser.Geom.Point(cx, cy + isz),
+      new Phaser.Geom.Point(cx - isz, cy),
+    ], true)
+
+    const tx = cx + isz + 18
+    const tw = w - tx - 20
+    const guideTextObj = this.add.text(tx, pY + 18, text, {
+      fontSize: '15px',
       color: '#333333',
       fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-      align: 'center',
-      wordWrap: { width: panelW - 40 },
+      align: 'left',
+      wordWrap: { width: tw },
+      lineSpacing: 4,
     })
-    guideTextObj.setOrigin(0.5)
     guideTextObj.setDepth(62)
 
-    const dismissText = this.add.text(w / 2, h / 2 + 60, '[ Tap to continue ]', {
-      fontSize: '14px',
+    const dismissText = this.add.text(w - 16, pY + pH - 14, '[ tap to continue ]', {
+      fontSize: '13px',
       color: '#888888',
       fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
-    dismissText.setOrigin(0.5)
+    dismissText.setOrigin(1, 1)
     dismissText.setDepth(62)
 
     const dismiss = () => {
       overlay.destroy()
       panel.destroy()
+      icon.destroy()
       guideTextObj.destroy()
       dismissText.destroy()
       this.guideActive = false

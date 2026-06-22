@@ -53,6 +53,7 @@ export interface ChapterDef {
   title: string
   subtitle: string
   levels: string[]
+  nodePositions: { x: number; y: number }[]
 }
 
 // Prologue interlacing matches Arknights Episode 00 pattern:
@@ -72,6 +73,23 @@ export const CHAPTERS: ChapterDef[] = [
       '0-6', 'TR-6',
       '0-7', 'TR-7',
       '0-8',
+    ],
+    nodePositions: [
+      { x: 40, y: 0 },   // 0-1   mid
+      { x: 160, y: 28 },  // TR-1  low
+      { x: 280, y: -28 }, // 0-2   high
+      { x: 400, y: 0 },   // TR-2  mid
+      { x: 520, y: 28 },  // 0-3   low
+      { x: 640, y: -28 }, // TR-3  high
+      { x: 760, y: 0 },   // 0-4   mid
+      { x: 880, y: 28 },  // TR-4  low
+      { x: 1000, y: -28 }, // 0-5  high
+      { x: 1120, y: 0 },  // TR-5  mid
+      { x: 1240, y: 28 }, // 0-6   low
+      { x: 1360, y: -28 }, // TR-6 high
+      { x: 1480, y: 0 },  // 0-7   mid
+      { x: 1600, y: 28 }, // TR-7  low
+      { x: 1720, y: -28 }, // 0-8  high
     ],
   },
 ]

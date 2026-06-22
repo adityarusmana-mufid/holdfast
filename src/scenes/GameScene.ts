@@ -599,7 +599,7 @@ export class GameScene extends Phaser.Scene {
 
   private showSelectionDiamond(row: number, col: number, color: number): void {
     const center = this.grid.tileToPixel(row, col)
-    const size = 42
+    const size = TILE_SIZE * 1.5
 
     this.selectionDiamond.clear()
     this.selectionDiamond.fillStyle(color, 0.15)

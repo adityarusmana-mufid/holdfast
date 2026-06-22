@@ -728,7 +728,7 @@ export class GameScene extends Phaser.Scene {
         entries.push({ unit: c, squadIndex: i })
       }
     })
-    entries.sort((a, b) => this.depSystem.getCurrentCost(a.squadIndex, a.unit) - this.depSystem.getCurrentCost(b.squadIndex, b.unit))
+    entries.sort((a, b) => this.depSystem.getCurrentCost(b.squadIndex, b.unit) - this.depSystem.getCurrentCost(a.squadIndex, a.unit))
 
     entries.forEach(({ unit, squadIndex }, i) => {
       const x = this.scale.width - px - cardW - i * (cardW + gap)

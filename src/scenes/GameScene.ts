@@ -70,6 +70,7 @@ export class GameScene extends Phaser.Scene {
   private activeToasts: Phaser.GameObjects.Container[] = []
   private wavePreviewTween: Phaser.Tweens.Tween | null = null
   private guideActive: boolean = false
+  private selectionDiamond!: Phaser.GameObjects.Graphics
 
   constructor() {
     super({ key: 'GameScene' })
@@ -227,6 +228,10 @@ export class GameScene extends Phaser.Scene {
     this.cancelDeployIndicator = this.add.graphics()
     this.cancelDeployIndicator.setDepth(10)
     this.cancelDeployIndicator.setAlpha(0)
+
+    this.selectionDiamond = this.add.graphics()
+    this.selectionDiamond.setDepth(7)
+    this.selectionDiamond.setAlpha(0)
 
     this.setupInput()
 
@@ -388,6 +393,7 @@ export class GameScene extends Phaser.Scene {
           this.pendingTile = pos
           this.pendingFacing = computeFacingTowardGoal(pos, this.getGoalPositions())
           this.deployState = 'facing'
+          this.showSelectionDiamond(pos.row, pos.col, selected.color)
           this.showRangePreview(selected, pos, this.pendingFacing)
           this.showFacingArrow(pos, this.pendingFacing)
           this.hoverIndicator.setAlpha(0)
@@ -574,6 +580,35 @@ export class GameScene extends Phaser.Scene {
     this.rangePreview.setAlpha(0)
     this.facingArrow.clear()
     this.facingArrow.setAlpha(0)
+    this.hideSelectionDiamond()
+  }
+
+  private showSelectionDiamond(row: number, col: number, color: number): void {
+    const center = this.grid.tileToPixel(row, col)
+    const size = 28
+
+    this.selectionDiamond.clear()
+    this.selectionDiamond.fillStyle(color, 0.15)
+    this.selectionDiamond.beginPath()
+    this.selectionDiamond.moveTo(center.x, center.y - size)
+    this.selectionDiamond.lineTo(center.x + size, center.y)
+    this.selectionDiamond.lineTo(center.x, center.y + size)
+    this.selectionDiamond.lineTo(center.x - size, center.y)
+    this.selectionDiamond.closePath()
+    this.selectionDiamond.fillPath()
+    this.selectionDiamond.lineStyle(2, color, 0.6)
+    this.selectionDiamond.strokePath()
+    this.selectionDiamond.lineStyle(1, color, 0.2)
+    this.selectionDiamond.beginPath()
+    this.selectionDiamond.moveTo(center.x, center.y - size)
+    this.selectionDiamond.lineTo(center.x, center.y + size)
+    this.selectionDiamond.strokePath()
+    this.selectionDiamond.setAlpha(1)
+  }
+
+  private hideSelectionDiamond(): void {
+    this.selectionDiamond.clear()
+    this.selectionDiamond.setAlpha(0)
   }
 
   private confirmDeployment(): void {
@@ -617,6 +652,7 @@ export class GameScene extends Phaser.Scene {
     this.inspectCloseBtn.setAlpha(0)
     this.inspectingUnit = unit
     this.decisionMode = true
+    this.showSelectionDiamond(unit.row, unit.col, unit.config.color)
     this.updateStatsPanel(unit.config, unit)
     const isFullRefund = unit.config.traits?.some(t => t.traitId === UnitTrait.FullRefundRetreat)
     const refund = isFullRefund ? unit.dpCostPaid : Math.floor(unit.dpCostPaid / 2)
@@ -633,6 +669,7 @@ export class GameScene extends Phaser.Scene {
       this.inspectingUnit = null
     }
     this.decisionMode = false
+    this.hideSelectionDiamond()
     this.updateStatsPanel(this.getSelectedUnit())
   }
 

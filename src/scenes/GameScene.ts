@@ -69,6 +69,7 @@ export class GameScene extends Phaser.Scene {
   private encounteredTypes: Set<string> = new Set()
   private activeToasts: Phaser.GameObjects.Container[] = []
   private wavePreviewTween: Phaser.Tweens.Tween | null = null
+  private guideActive: boolean = false
 
   constructor() {
     super({ key: 'GameScene' })
@@ -246,7 +247,9 @@ export class GameScene extends Phaser.Scene {
 
     this.buildPauseButton()
 
-    if (this.autoStart) {
+    if (this.levelData?.guideText) {
+      this.showGuide(this.levelData.guideText)
+    } else if (this.autoStart) {
       this.battleActive = true
       this.time.delayedCall(2000, () => this.enemyManager.startBattle())
       this.flashMessage('MEMORY STREAM READY // Deploy units', 0x00c853)
@@ -1235,6 +1238,64 @@ export class GameScene extends Phaser.Scene {
     this.rebuildCardBar()
     this.updateStatsPanel(null)
     this.updateHUD()
+  }
+
+  private showGuide(text: string): void {
+    const w = this.scale.width
+    const h = this.scale.height
+
+    this.guideActive = true
+
+    const overlay = this.add.graphics()
+    overlay.setDepth(60)
+    overlay.fillStyle(0x000000, 0.6)
+    overlay.fillRect(0, 0, w, h)
+    overlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains)
+
+    const panelW = Math.min(500, w - 80)
+    const panelH = 200
+    const px = (w - panelW) / 2
+    const py = (h - panelH) / 2
+
+    const panel = this.add.graphics()
+    panel.setDepth(61)
+    panel.fillStyle(0xffffff, 1)
+    panel.fillRoundedRect(px, py, panelW, panelH, 8)
+    panel.lineStyle(2, 0x333333, 1)
+    panel.strokeRoundedRect(px, py, panelW, panelH, 8)
+
+    const guideTextObj = this.add.text(w / 2, h / 2 - 10, text, {
+      fontSize: '18px',
+      color: '#333333',
+      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      align: 'center',
+      wordWrap: { width: panelW - 40 },
+    })
+    guideTextObj.setOrigin(0.5)
+    guideTextObj.setDepth(62)
+
+    const dismissText = this.add.text(w / 2, h / 2 + 60, '[ Tap to continue ]', {
+      fontSize: '14px',
+      color: '#888888',
+      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    })
+    dismissText.setOrigin(0.5)
+    dismissText.setDepth(62)
+
+    const dismiss = () => {
+      overlay.destroy()
+      panel.destroy()
+      guideTextObj.destroy()
+      dismissText.destroy()
+      this.guideActive = false
+      if (this.autoStart) {
+        this.battleActive = true
+        this.time.delayedCall(2000, () => this.enemyManager.startBattle())
+        this.flashMessage('MEMORY STREAM READY // Deploy units', 0x00c853)
+      }
+    }
+
+    overlay.on('pointerdown', dismiss)
   }
 
   private drawBgGradient(): void {

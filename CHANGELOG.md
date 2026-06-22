@@ -1,3 +1,11 @@
+## [2026-06-22] Phase — Prologue Restructure (Story + TR Interlacing)
+- **Prologue restructured** to match Arknights Episode 00 interlacing: story stages (0-1 through 0-8) alternate with TR tutorial stages (TR-1 through TR-7) in sequence → `0-1 → TR-1 → 0-2 → TR-2 → ... → 0-7 → TR-7 → 0-8`
+- **8 story stages** created (`levels/0-1.json` through `0-8.json`) with escalating enemy compositions (soldiers → troopers → drones → casters → heavies), simple 10×3 straight-route layouts, no tutorial flag — go through SquadScene flow
+- **7 TR stages** renamed to `levels/TR-1.json` through `TR-7.json` with `tutorial: true` flag — skip SquadScene, fixed squad
+- **`tutorial` field** added to `LevelData` type, parsed in `jsonToLevelData()`
+- **Scrolling** added to `LevelSelectScene` (Phaser geometry mask + mouse wheel), visual distinction between TR (amber background) and story (white) level cards, level ID shown in card title
+- Files: `levels/0-1.json` through `0-8.json`, `levels/TR-1.json` through `TR-7.json`, `src/types/index.ts`, `src/config/chapters.ts`, `src/scenes/LevelSelectScene.ts`
+
 ## [2026-06-22] Branch Fix + Visual Philosophy Doc
 - **Branch fix**: Fast-forward merged `feat/kenney-assets` (11 commits) into `main`. The bottom-card-bar, per-instance deployment tracking, PickerScene, and test suite were all on `feat/kenney-assets` — none existed on `main`. Fast-forward merge moved everything to `main` with zero conflicts. Deleted stale `feat/kenney-assets` branch.
 - **Visual philosophy document**: `docs/superpowers/specs/2026-06-22-visual-philosophy.md` — documents the decision to use colored geometric shapes as final v1 visual style (not placeholder). Cites HEX Defense, Infinitode 2, and GeoDefense as proof that minimalist geometric TDs succeed commercially on design depth alone. Covers religious constraint, computational aesthetics, shape→meaning mapping, and v1→v2 upgrade path.

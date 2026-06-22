@@ -57,6 +57,8 @@ export interface LevelData {
   dpCap: number
   deploymentLimit: number
   lives: number
+  tutorial?: boolean
+  guideText?: string
 }
 
 export type Direction = 'up' | 'down' | 'left' | 'right'

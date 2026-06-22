@@ -1,20 +1,20 @@
 {
-  "name": "Tutorial",
+  "name": "Breach the Line",
   "cols": 12,
   "rows": 3,
   "tiles": [
     [
       { "row": 0, "col": 0, "type": "floor" },
       { "row": 0, "col": 1, "type": "floor" },
-      { "row": 0, "col": 2, "type": "floor" },
-      { "row": 0, "col": 3, "type": "floor" },
-      { "row": 0, "col": 4, "type": "floor" },
-      { "row": 0, "col": 5, "type": "floor" },
-      { "row": 0, "col": 6, "type": "floor" },
-      { "row": 0, "col": 7, "type": "floor" },
+      { "row": 0, "col": 2, "type": "deploy_ranged" },
+      { "row": 0, "col": 3, "type": "deploy_ranged" },
+      { "row": 0, "col": 4, "type": "deploy_ranged" },
+      { "row": 0, "col": 5, "type": "deploy_ranged" },
+      { "row": 0, "col": 6, "type": "deploy_ranged" },
+      { "row": 0, "col": 7, "type": "deploy_ranged" },
       { "row": 0, "col": 8, "type": "deploy_ranged" },
       { "row": 0, "col": 9, "type": "deploy_ranged" },
-      { "row": 0, "col": 10, "type": "deploy_ranged" },
+      { "row": 0, "col": 10, "type": "floor" },
       { "row": 0, "col": 11, "type": "floor" }
     ],
     [
@@ -24,8 +24,8 @@
       { "row": 1, "col": 3, "type": "route" },
       { "row": 1, "col": 4, "type": "route" },
       { "row": 1, "col": 5, "type": "route" },
-      { "row": 1, "col": 6, "type": "repair_node" },
-      { "row": 1, "col": 7, "type": "armor_grid" },
+      { "row": 1, "col": 6, "type": "route" },
+      { "row": 1, "col": 7, "type": "route" },
       { "row": 1, "col": 8, "type": "route" },
       { "row": 1, "col": 9, "type": "route" },
       { "row": 1, "col": 10, "type": "route" },
@@ -34,15 +34,15 @@
     [
       { "row": 2, "col": 0, "type": "floor" },
       { "row": 2, "col": 1, "type": "floor" },
-      { "row": 2, "col": 2, "type": "floor" },
-      { "row": 2, "col": 3, "type": "floor" },
-      { "row": 2, "col": 4, "type": "floor" },
-      { "row": 2, "col": 5, "type": "floor" },
+      { "row": 2, "col": 2, "type": "deploy_ranged" },
+      { "row": 2, "col": 3, "type": "deploy_ranged" },
+      { "row": 2, "col": 4, "type": "deploy_ranged" },
+      { "row": 2, "col": 5, "type": "deploy_ranged" },
       { "row": 2, "col": 6, "type": "deploy_ranged" },
-      { "row": 2, "col": 7, "type": "floor" },
+      { "row": 2, "col": 7, "type": "deploy_ranged" },
       { "row": 2, "col": 8, "type": "deploy_ranged" },
       { "row": 2, "col": 9, "type": "deploy_ranged" },
-      { "row": 2, "col": 10, "type": "deploy_ranged" },
+      { "row": 2, "col": 10, "type": "floor" },
       { "row": 2, "col": 11, "type": "floor" }
     ]
   ],
@@ -64,22 +64,14 @@
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 5, "spawnInterval": 2.5 }
+        { "enemyType": "soldier", "count": 3, "spawnInterval": 3 }
       ],
-      "preludeDuration": 6
+      "preludeDuration": 10
     },
     {
       "routeIndex": 0,
       "entries": [
         { "enemyType": "trooper", "count": 3, "spawnInterval": 3 }
-      ],
-      "preludeDuration": 6
-    },
-    {
-      "routeIndex": 0,
-      "entries": [
-        { "enemyType": "caster", "count": 2, "spawnInterval": 4 },
-        { "enemyType": "soldier", "count": 3, "spawnInterval": 2 }
       ],
       "preludeDuration": 8
     },
@@ -87,14 +79,16 @@
       "routeIndex": 0,
       "entries": [
         { "enemyType": "heavy", "count": 1, "spawnInterval": 1 },
-        { "enemyType": "trooper", "count": 2, "spawnInterval": 3 }
+        { "enemyType": "soldier", "count": 3, "spawnInterval": 2.5 }
       ],
-      "preludeDuration": 8
+      "preludeDuration": 10
     }
   ],
+  "tutorial": true,
   "startingDP": 25,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": "Armored tanks shrug off bullets. Casters deal thermal damage that burns through armor."
 }

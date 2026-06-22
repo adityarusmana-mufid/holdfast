@@ -11,7 +11,7 @@ const COLS = 6
 const ROWS = 2
 
 export class SquadScene extends Phaser.Scene {
-  private slots: (UnitConfig | null)[] = new Array(12).fill(null)
+  private slots: (UnitConfig | null)[] = []
   private slotContainers: Phaser.GameObjects.Container[] = []
   private squadLabel!: Phaser.GameObjects.Text
 
@@ -27,6 +27,12 @@ export class SquadScene extends Phaser.Scene {
     this.levelId = data.levelId
     this.chapterId = data.chapterId
     this.levelData = data.levelData
+    this.slots = new Array(12).fill(null)
+    const defaultIds = ['pioneer', 'charger', 'protector', 'fighter', 'sniper', 'core_caster', 'medic_st']
+    for (let i = 0; i < defaultIds.length; i++) {
+      const unit = UNIT_CONFIGS.find(u => u.id === defaultIds[i])
+      if (unit) this.slots[i] = unit
+    }
   }
 
   create(): void {
@@ -35,6 +41,10 @@ export class SquadScene extends Phaser.Scene {
 
     this.add.text(W / 2, 20, 'SQUAD SELECTION', {
       ...FONTS.h2, color: COLORS.text.primary,
+    }).setOrigin(0.5, 0)
+
+    this.add.text(W / 2, 44, `Tap an empty slot to pick a unit. Pre-filled squad is ready to deploy.`, {
+      ...FONTS.small, color: COLORS.text.dim,
     }).setOrigin(0.5, 0)
 
     makeButton(this, W - 150, 20, 'Auto Fill', () => this.autoFill(), { w: 110, h: 26, textSize: '11px' })
@@ -52,7 +62,8 @@ export class SquadScene extends Phaser.Scene {
       const y = startY + row * (SLOT_H + SLOT_GAP) + SLOT_H / 2
 
       const c = this.add.container(x, y)
-      this.drawSlot(c, null)
+      const unit = this.slots[i]
+      this.drawSlot(c, unit)
       c.setSize(SLOT_W, SLOT_H)
       c.setInteractive(new Phaser.Geom.Rectangle(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H), Phaser.Geom.Rectangle.Contains)
       if (c.input) c.input.cursor = 'pointer'
@@ -63,7 +74,8 @@ export class SquadScene extends Phaser.Scene {
       this.slotContainers.push(c)
     }
 
-    this.squadLabel = this.add.text(W / 2, startY + gridH + 14, 'Squad: 0/12 selected', {
+    const depLimit = this.levelData?.deploymentLimit ?? 8
+    this.squadLabel = this.add.text(W / 2, startY + gridH + 14, `Squad: ${this.slots.filter(s => s !== null).length}/12 selected  |  Field limit: ${depLimit}`, {
       ...FONTS.body, color: COLORS.text.secondary,
     }).setOrigin(0.5, 0)
 
@@ -180,6 +192,7 @@ export class SquadScene extends Phaser.Scene {
 
   private updateSquadLabel(): void {
     const count = this.slots.filter(s => s !== null).length
-    this.squadLabel.setText(`Squad: ${count}/12 selected`)
+    const depLimit = this.levelData?.deploymentLimit ?? 8
+    this.squadLabel.setText(`Squad: ${count}/12 selected  |  Field limit: ${depLimit}`)
   }
 }

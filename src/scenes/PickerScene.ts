@@ -33,6 +33,18 @@ const SIDEBAR_W = 210
 const CARD_W = 190
 const CARD_H = 150
 const CARD_GAP = 12
+const FILTER_W = 44
+const ARCHETYPE_ORDER = ['all', 'vanguard', 'guard', 'defender', 'sniper', 'caster', 'medic', 'supporter']
+const ARCHETYPE_COLORS: Record<string, number> = {
+  all: 0x78909c,
+  vanguard: 0x4fc3f7,
+  guard: 0xe53935,
+  defender: 0x5c6bc0,
+  sniper: 0x66bb6a,
+  caster: 0xab47bc,
+  medic: 0xec407a,
+  supporter: 0xffa726,
+}
 
 export class PickerScene extends Phaser.Scene {
   private slotIndex: number = -1
@@ -46,6 +58,10 @@ export class PickerScene extends Phaser.Scene {
   private cardContainers: { bg: Phaser.GameObjects.Graphics; unit: UnitConfig; lx: number; ly: number }[] = []
   private startX = 0
   private startY = 0
+  private activeFilter: string | null = null
+  private W = 1280
+  private H = 720
+  private filterBtns: { key: string; bg: Phaser.GameObjects.Graphics; label: Phaser.GameObjects.Text }[] = []
 
   constructor() {
     super({ key: 'PickerScene' })
@@ -59,12 +75,12 @@ export class PickerScene extends Phaser.Scene {
   }
 
   create(): void {
-    const W = 1280
-    const H = 720
+    this.W = 1280
+    this.H = 720
 
     const sidebarBg = this.add.graphics()
     sidebarBg.fillStyle(0xe8ecf0, 1)
-    sidebarBg.fillRect(0, 0, SIDEBAR_W, H)
+    sidebarBg.fillRect(0, 0, SIDEBAR_W, this.H)
 
     this.add.text(SIDEBAR_W / 2, 20, 'SELECT UNIT', {
       ...FONTS.h3, color: COLORS.text.primary,
@@ -76,7 +92,7 @@ export class PickerScene extends Phaser.Scene {
     this.confirmBtn.setAlpha(0)
 
     const cancelBg = this.add.graphics()
-    cancelBg.setPosition(10, H - 62)
+    cancelBg.setPosition(10, this.H - 62)
     cancelBg.fillStyle(0xffffff, 1)
     cancelBg.fillRoundedRect(0, 0, SIDEBAR_W - 20, 28, 4)
     cancelBg.lineStyle(1, 0xccd0d6, 0.8)
@@ -85,27 +101,90 @@ export class PickerScene extends Phaser.Scene {
     if (cancelBg.input) cancelBg.input.cursor = 'pointer'
     cancelBg.on('pointerup', () => this.closePicker())
 
-    this.add.text(SIDEBAR_W / 2, H - 48, '< Back', {
+    this.add.text(SIDEBAR_W / 2, this.H - 48, '< Back', {
       fontSize: '12px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     }).setOrigin(0.5)
 
-    this.buildCardGrid(W, H)
+    this.activeFilter = null
+    this.buildFilterButtons()
+    this.buildCardGrid()
   }
 
-  private buildCardGrid(W: number, H: number): void {
+  private buildFilterButtons(): void {
+    this.filterBtns = []
+    const fx = this.W - FILTER_W - 6
+    const btnSize = 36
+    const gap = 4
+    const startY = 56
+
+    const stripBg = this.add.graphics()
+    stripBg.fillStyle(0xe8ecf0, 0.6)
+    stripBg.fillRect(fx - 2, 48, FILTER_W + 4, ARCHETYPE_ORDER.length * (btnSize + gap) + 8)
+
+    ARCHETYPE_ORDER.forEach((key, i) => {
+      const by = startY + i * (btnSize + gap)
+      const color = ARCHETYPE_COLORS[key] ?? 0x78909c
+
+      const bg = this.add.graphics()
+      bg.fillStyle(key === this.activeFilter ? color : 0xffffff, key === this.activeFilter ? 0.9 : 0.5)
+      bg.fillRoundedRect(fx, by, btnSize, btnSize, 4)
+      bg.lineStyle(key === this.activeFilter ? 2 : 1, color, key === this.activeFilter ? 1 : 0.4)
+      bg.strokeRoundedRect(fx, by, btnSize, btnSize, 4)
+
+      const label = key === 'all' ? 'ALL' : key.substring(0, 2).toUpperCase()
+      const txt = this.add.text(fx + btnSize / 2, by + btnSize / 2, label, {
+        fontSize: '9px', color: key === this.activeFilter ? '#ffffff' : COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+      }).setOrigin(0.5)
+
+      bg.setInteractive(new Phaser.Geom.Rectangle(fx, by, btnSize, btnSize), Phaser.Geom.Rectangle.Contains)
+      if (bg.input) bg.input.cursor = 'pointer'
+      bg.on('pointerdown', () => {
+        const newFilter = key === 'all' ? null : key
+        if (newFilter === this.activeFilter) return
+        this.activeFilter = newFilter
+        this.cardScrollX = 0
+        this.rebuildGrid()
+      })
+
+      this.filterBtns.push({ key, bg, label: txt })
+    })
+  }
+
+  private rebuildGrid(): void {
+    this.cardScrollContainer.destroy()
+    this.cardContainers = []
     this.startX = SIDEBAR_W + 12
     this.startY = 16
 
+    for (const fb of this.filterBtns) {
+      const isActive = (fb.key === 'all' && this.activeFilter === null) || fb.key === this.activeFilter
+      const color = ARCHETYPE_COLORS[fb.key] ?? 0x78909c
+      fb.bg.clear()
+      fb.bg.fillStyle(isActive ? color : 0xffffff, isActive ? 0.9 : 0.5)
+      fb.bg.fillRoundedRect(0, 0, 36, 36, 4)
+      fb.bg.lineStyle(isActive ? 2 : 1, color, isActive ? 1 : 0.4)
+      fb.bg.strokeRoundedRect(0, 0, 36, 36, 4)
+      fb.label.setColor(isActive ? '#ffffff' : COLORS.text.dim)
+    }
+
+    this.buildCardGrid()
+  }
+
+  private buildCardGrid(): void {
     this.cardContainers = []
     this.cardScrollContainer = this.add.container(0, 0)
 
-    const cols = Math.ceil(this.available.length / 2)
+    const filtered = this.activeFilter
+      ? this.available.filter(u => u.archetype === this.activeFilter)
+      : this.available
+
+    const cols = Math.ceil(filtered.length / 2)
     const totalW = cols * (CARD_W + CARD_GAP)
-    const visibleW = W - SIDEBAR_W - 24
-    const visibleH = CARD_H * 2 + CARD_GAP
+    const filterEnd = this.W - FILTER_W - 6
+    const visibleW = filterEnd - (SIDEBAR_W + 12) - 6
     this.cardScrollMax = Math.max(0, totalW - visibleW)
 
-    this.available.forEach((unit, i) => {
+    filtered.forEach((unit, i) => {
       const row = i % 2
       const col = Math.floor(i / 2)
       const lx = col * (CARD_W + CARD_GAP)
@@ -164,7 +243,7 @@ export class PickerScene extends Phaser.Scene {
     const maskShape = this.make.graphics()
     maskShape.setPosition(this.startX, this.startY)
     maskShape.fillStyle(0xffffff)
-    maskShape.fillRect(0, 0, visibleW, visibleH)
+    maskShape.fillRect(0, 0, visibleW, CARD_H * 2 + CARD_GAP)
     const mask = maskShape.createGeometryMask()
     this.cardScrollContainer.setMask(mask)
 
@@ -179,6 +258,8 @@ export class PickerScene extends Phaser.Scene {
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (pointer.x < SIDEBAR_W) return
+      const filterEnd = this.W - FILTER_W - 6
+      if (pointer.x > filterEnd) return
       dragStartX = pointer.x
       dragStartScrollX = this.cardScrollX
       dragDist = 0
@@ -194,6 +275,8 @@ export class PickerScene extends Phaser.Scene {
 
     this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
       if (dragDist < 6 && dragStartX !== 0 && pointer.x > SIDEBAR_W) {
+        const filterEnd = this.W - FILTER_W - 6
+        if (pointer.x > filterEnd) { dragStartX = 0; return }
         const localX = pointer.x - this.cardScrollContainer.x
         const localY = pointer.y - this.cardScrollContainer.y
         for (const cc of this.cardContainers) {

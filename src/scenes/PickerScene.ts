@@ -30,8 +30,8 @@ const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
 }
 
 const SIDEBAR_W = 210
-const CARD_W = 190
-const CARD_H = 150
+const CARD_W = 160
+const CARD_H = 190
 const CARD_GAP = 12
 const FILTER_W = 44
 const ARCHETYPE_ORDER = ['all', 'vanguard', 'guard', 'defender', 'sniper', 'caster', 'medic', 'supporter']
@@ -106,6 +106,8 @@ export class PickerScene extends Phaser.Scene {
     }).setOrigin(0.5)
 
     this.activeFilter = null
+    this.startX = SIDEBAR_W + 12
+    this.startY = 16
     this.buildFilterButtons()
     this.buildCardGrid()
   }
@@ -199,14 +201,14 @@ export class PickerScene extends Phaser.Scene {
       if (bg.input) bg.input.cursor = 'pointer'
       this.cardScrollContainer.add(bg)
 
-      const iconSize = 48
-      const iconTop = ly + 8
+      const iconSize = 72
+      const iconTop = ly + 37
       const icon = this.add.graphics()
       if (unit.type === 'ground') {
         icon.fillStyle(unit.color, 1)
-        icon.fillRoundedRect(lx + CARD_W / 2 - iconSize / 2, iconTop, iconSize, iconSize, 6)
+        icon.fillRoundedRect(lx + CARD_W / 2 - iconSize / 2, iconTop, iconSize, iconSize, 8)
         icon.fillStyle(0xffffff, 0.2)
-        icon.fillRoundedRect(lx + CARD_W / 2 - iconSize / 4, iconTop + iconSize / 4, iconSize / 2, iconSize / 2, 3)
+        icon.fillRoundedRect(lx + CARD_W / 2 - iconSize / 4, iconTop + iconSize / 4, iconSize / 2, iconSize / 2, 4)
       } else {
         icon.fillStyle(unit.color, 1)
         icon.fillTriangle(lx + CARD_W / 2, iconTop, lx + CARD_W / 2 - iconSize / 2, iconTop + iconSize, lx + CARD_W / 2 + iconSize / 2, iconTop + iconSize)
@@ -215,25 +217,15 @@ export class PickerScene extends Phaser.Scene {
       }
       this.cardScrollContainer.add(icon)
 
-      const label = this.add.text(lx + CARD_W / 2, ly + 64, unit.subtypeLabel, {
-        ...FONTS.small, color: COLORS.text.primary, align: 'center', wordWrap: { width: CARD_W - 8 },
+      const label = this.add.text(lx + CARD_W / 2, ly + 119, unit.subtypeLabel, {
+        fontSize: '12px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center', wordWrap: { width: CARD_W - 12 },
       }).setOrigin(0.5)
       this.cardScrollContainer.add(label)
 
-      const arch = this.add.text(lx + CARD_W / 2, ly + 90, unit.archetype.toUpperCase(), {
+      const arch = this.add.text(lx + CARD_W / 2, ly + 139, unit.archetype.toUpperCase(), {
         fontSize: '10px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5)
       this.cardScrollContainer.add(arch)
-
-      const stats = this.add.text(lx + CARD_W / 2, ly + 116, `${unit.hp}HP ${unit.atk}ATK`, {
-        fontSize: '10px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
-      }).setOrigin(0.5)
-      this.cardScrollContainer.add(stats)
-
-      const dpLine = this.add.text(lx + 6, ly + 4, `${unit.dpCost} DP`, {
-        fontSize: '10px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-      })
-      this.cardScrollContainer.add(dpLine)
 
       this.cardContainers.push({ bg, unit, lx, ly })
     })
@@ -310,15 +302,26 @@ export class PickerScene extends Phaser.Scene {
     const px = 8
     let py = 60
 
-    const bg = this.add.graphics()
-    bg.fillStyle(0xffffff, 0.9)
-    bg.fillRoundedRect(0, py - 4, SIDEBAR_W - 4, 320, 6)
-    bg.lineStyle(1, unit.color, 0.5)
-    bg.strokeRoundedRect(0, py - 4, SIDEBAR_W - 4, 320, 6)
-    this.infoContainer.add(bg)
+    const iconSize = 72
+    const cx = SIDEBAR_W / 2
+    const icon = this.add.graphics()
+    const iy = 92 - iconSize / 2
+    if (unit.type === 'ground') {
+      icon.fillStyle(unit.color, 1)
+      icon.fillRoundedRect(cx - iconSize / 2, iy, iconSize, iconSize, 8)
+      icon.fillStyle(0xffffff, 0.2)
+      icon.fillRoundedRect(cx - iconSize / 4, iy + iconSize / 4, iconSize / 2, iconSize / 2, 4)
+    } else {
+      icon.fillStyle(unit.color, 1)
+      icon.fillTriangle(cx, iy, cx - iconSize / 2, iy + iconSize, cx + iconSize / 2, iy + iconSize)
+      icon.fillStyle(0xffffff, 0.2)
+      icon.fillTriangle(cx, iy + iconSize / 4, cx - iconSize / 4, iy + iconSize * 0.75, cx + iconSize / 4, iy + iconSize * 0.75)
+    }
+    this.infoContainer.add(icon)
 
+    py = iy + iconSize + 12
     const name = this.add.text(px, py, unit.subtypeLabel, {
-      ...FONTS.h3, color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      ...FONTS.h3, color: COLORS.text.primary,
     })
     this.infoContainer.add(name)
 

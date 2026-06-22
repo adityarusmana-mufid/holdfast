@@ -1,3 +1,20 @@
+## [2026-06-22] Phase 14 — Vitest Test Suite (62 tests, GridMath + DeploymentSystem)
+- Installed vitest (v4) + happy-dom, configured via `vitest.config.ts`
+- Added `npm run test` and `npm run test:watch` scripts to package.json
+- **GridMath tests (36)**: `rotatePattern` (rotation matrix correctness across all 4 facings), `positionsInRange` (with/without facing, bounds clamping), `computeFacingTowardGoal` (goal proximity selection, tie-breaking, empty fallback), `manhattanDistance`, `chebyshevDistance`, `positionsEqual`, `isDeployable`, `isWalkable`, `validateRoutePath`, `getNeighbors` (orthogonal, diagonal, edge clamping)
+- **DeploymentSystem tests (26)**: `getCurrentCost` (base, multiplier, cap, per-instance independence), cooldown lifecycle (start, tick, expiry, per-instance), DP regen/accumulation, `deployUnit` (success, occupied, insufficient DP, deployment limit), `retreatUnit` (half refund, FullRefundRetreat trait, no-unit case), `removeUnit` (cost multiplier progression), `updateTimers` (decay, expiry), `reset` (full state clear)
+- Fixed `rotatePattern` to normalize `-0` to `0` via `+ 0` mapping
+- Files: `vitest.config.ts`, `package.json`, `src/shared/utils/GridMath.test.ts`, `src/systems/DeploymentSystem.test.ts`, `src/shared/utils/GridMath.ts`
+
+## [2026-06-19] Phase 13 — Bottom Card Bar + Auto-Start + Full-Width Grid
+- **Bottom card bar**: Replaced left-side vertical palette with Arknights-style bottom bar (96×128 cards, 48×48 icons, horizontal drag scroll for mobile)
+- **Auto-start battle**: SquadScene passes `autoStart: true` → GameScene loads with 2s grace period, then battle begins automatically. Removed `[ START SIMULATION ]` button entirely.
+- **Cancel via tap**: Tapping the already-selected card cancels deployment (replaces floating CANCEL text button)
+- **Pause overlay menu**: Added `[ Restart Level ]` + `[ Back to Squad ]` buttons when paused
+- **Full-width grid**: `computeGridOffsetX` no longer reserves 160px left area — grid uses entire width
+- **HUD status**: Shows READY / [ RUNNING ] / DESYNC / SYNC COMPLETE based on state
+- Files: `src/scenes/GameScene.ts`, `src/scenes/SquadScene.ts`
+
 ## [2026-06-18] Phase 12f — 3 Arknights-Inspired UX Features
 - **Pause + Deploy Flow**: `[ II ]` button pauses all game time (DP, movement, combat, healing). Dark overlay + "PAUSED" text. Select a unit while paused, unpause to enter decision mode (50% speed) and deploy immediately. Mirrors Arknights pause-deploy meta.
 - **Wave Path Preview**: Animated dotted caterpillar line along route waypoints (red/orange dots) shown during wave `preludeDuration` countdown. Previously unused `preludeDuration` field now drives the preview window. Line auto-clears when wave starts spawning.

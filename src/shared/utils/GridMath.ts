@@ -101,7 +101,7 @@ export function rotatePattern(pattern: number[][], facing: Direction): number[][
       case 'right': return [dc, -dr]
       case 'left':  return [-dc, dr]
     }
-  })
+  }).map(([r, c]) => [r + 0, c + 0])
 }
 
 export function computeFacingTowardGoal(unit: Position, goals: Position[]): Direction {

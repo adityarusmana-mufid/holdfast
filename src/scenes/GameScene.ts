@@ -90,8 +90,6 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.fadeIn(300, 0, 0, 0)
-    this.cameras.main.postFX.addBloom(0xffffff, 1, 1, 0.5, 0.25, 4)
-    this.cameras.main.postFX.addVignette(0.5, 0x000000)
     this.drawBgGradient()
     this.unitSprites = []
     this.unitCards = []

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { DeploymentSystem } from './DeploymentSystem'
-import { UnitConfig, TileType, UnitTrait } from '../types/index'
+import { UnitConfig, TileType, UnitTrait, Direction } from '../types/index'
 
 const mockGrid = {
   getTile: () => ({ type: TileType.Ground, row: 0, col: 0 }),
@@ -175,6 +175,60 @@ describe('DeploymentSystem', () => {
       ds.deployUnit(unit, 0, 0, 'up', 0)
       const second = ds.deployUnit(unit, 1, 0, 'up', 1)
       expect(second).toBeNull()
+    })
+  })
+
+  describe('facing direction on deploy', () => {
+    it('stores facing direction on deployed unit', () => {
+      const deployed = ds.deployUnit(unit, 0, 0, 'right', 0)
+      expect(deployed).not.toBeNull()
+      expect(deployed!.facing).toBe('right')
+    })
+
+    it('returns facing via getUnitAt', () => {
+      ds.deployUnit(unit, 0, 0, 'down', 0)
+      const retrieved = ds.getUnitAt(0, 0)
+      expect(retrieved).not.toBeUndefined()
+      expect(retrieved!.facing).toBe('down')
+    })
+
+    it('supports all 4 directions', () => {
+      ds.currentDP = 99
+      const dirs: Direction[] = ['up', 'down', 'left', 'right']
+      const units = dirs.map((d, i) => ds.deployUnit(makeUnit({ id: `u${i}` }), i, 0, d, i))
+      units.forEach((u, i) => expect(u!.facing).toBe(dirs[i]))
+    })
+
+    it('multiple units keep independent facings', () => {
+      const u1 = ds.deployUnit(unit, 0, 0, 'left', 0)
+      const u2 = ds.deployUnit(makeUnit({ id: 'u2' }), 1, 0, 'right', 1)
+      expect(u1!.facing).toBe('left')
+      expect(u2!.facing).toBe('right')
+    })
+  })
+
+  describe('deploy flow: canDeploy before deployUnit', () => {
+    it('canDeploy succeeds before deployUnit is called', () => {
+      const check = ds.canDeploy(unit, 0, 0, 0)
+      expect(check.ok).toBe(true)
+      expect(ds.activeUnits.size).toBe(0)
+    })
+
+    it('deployUnit is a separate step after canDeploy', () => {
+      const check = ds.canDeploy(unit, 0, 0, 0)
+      expect(check.ok).toBe(true)
+      expect(ds.activeUnits.size).toBe(0)
+
+      const deployed = ds.deployUnit(unit, 0, 0, 'up', 0)
+      expect(deployed).not.toBeNull()
+      expect(ds.activeUnits.size).toBe(1)
+    })
+
+    it('no units are deployed before explicit deployUnit call', () => {
+      ds.canDeploy(unit, 0, 0, 0)
+      ds.canDeploy(unit, 1, 0, 1)
+      ds.canDeploy(unit, 2, 0, 2)
+      expect(ds.activeUnits.size).toBe(0)
     })
   })
 

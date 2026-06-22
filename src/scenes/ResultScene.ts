@@ -2,7 +2,13 @@ import Phaser from 'phaser'
 import { COLORS, FONTS } from '../ui/Constants'
 import { makeButton } from '../ui/Components'
 import { getLevelDef, getNextLevelId, getLevelData } from '../config/chapters'
+import { UNIT_CONFIGS } from '../config/units'
 import { LevelData, UnitConfig } from '../types/index'
+
+function tutorialSquad(): UnitConfig[] {
+  const ids = ['pioneer', 'charger', 'protector', 'fighter', 'sniper', 'core_caster', 'medic_st']
+  return ids.map(id => UNIT_CONFIGS.find(u => u.id === id)).filter((u): u is UnitConfig => u !== undefined)
+}
 
 export class ResultScene extends Phaser.Scene {
   private chapterId!: string
@@ -84,13 +90,26 @@ export class ResultScene extends Phaser.Scene {
     }, { w: 140, h: 44 })
 
     if (isVictory && nextLevelId && getLevelData(nextLevelId)) {
-      makeButton(this, W / 2 + 20, btnY, 'Next Level', () => {
-        this.scene.start('SquadScene', {
-          levelId: nextLevelId,
-          chapterId: this.chapterId,
-          levelData: getLevelData(nextLevelId) as LevelData,
-        })
-      }, { w: 140, h: 44 })
+      const nextData = getLevelData(nextLevelId) as LevelData
+      if (nextData.tutorial) {
+        makeButton(this, W / 2 + 20, btnY, 'Next Level', () => {
+          this.scene.start('GameScene', {
+            level: nextData,
+            squad: tutorialSquad(),
+            chapterId: this.chapterId,
+            levelId: nextLevelId,
+            autoStart: true,
+          })
+        }, { w: 140, h: 44 })
+      } else {
+        makeButton(this, W / 2 + 20, btnY, 'Next Level', () => {
+          this.scene.start('SquadScene', {
+            levelId: nextLevelId,
+            chapterId: this.chapterId,
+            levelData: nextData,
+          })
+        }, { w: 140, h: 44 })
+      }
     }
 
     if (isVictory && !nextLevelId) {

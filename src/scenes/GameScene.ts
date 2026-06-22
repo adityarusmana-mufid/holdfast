@@ -10,6 +10,7 @@ import { CombatSystem } from '../systems/CombatSystem'
 import { HealingSystem } from '../systems/HealingSystem'
 import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONT_SIZE } from '../ui/Constants'
+import { spawnProjectile, playSwing, showWindUp, flashDamage } from '../effects/CombatEffects'
 
 export class GameScene extends Phaser.Scene {
   private grid!: Grid
@@ -35,6 +36,7 @@ export class GameScene extends Phaser.Scene {
   private autoStart: boolean = false
   private resultText!: Phaser.GameObjects.Text
   private hoverIndicator!: Phaser.GameObjects.Graphics
+  private activeWindUps: Map<number, { cancel: () => void }> = new Map()
 
   private deployState: 'idle' | 'placing' | 'facing' = 'idle'
   private pendingTile: Position | null = null
@@ -168,6 +170,40 @@ export class GameScene extends Phaser.Scene {
         this.cameras.main.shake(150, 0.005)
         this.flashMessage(`UNIT DESTROYED // ${unit.config.name}`, 0xd32f2f)
         this.rebuildCardBar()
+      },
+      onUnitAttackInitiated: (unit: UnitSprite, target: EnemySprite, damageType: string) => {
+        const speed = this.decisionMode ? 0.5 : 1
+        const tile = target.getCurrentTile()
+        if (!tile) return
+        const dist = Math.abs(unit.row - tile.row) + Math.abs(unit.col - tile.col)
+        if (dist > 1) {
+          const from = this.grid.tileToPixel(unit.row, unit.col)
+          const dur = Math.min(0.4, Math.max(0.15, dist * 0.08)) / speed
+          spawnProjectile(this, from.x, from.y, target, damageType, dur)
+        } else {
+          const tPos = this.grid.tileToPixel(tile.row, tile.col)
+          playSwing(this, unit.container, tPos.x, tPos.y, speed)
+        }
+      },
+      onEnemyWindUp: (enemy: EnemySprite, target: UnitSprite, attackId: number) => {
+        const speed = this.decisionMode ? 0.5 : 1
+        const cancel = showWindUp(this, enemy.getContainer(), 0.4, speed)
+        this.activeWindUps.set(attackId, cancel)
+
+        if (enemy.config.isAerial) {
+          const from = { x: enemy.x, y: enemy.y }
+          const tPos = this.grid.tileToPixel(target.row, target.col)
+          const dur = 0.25 / speed
+          spawnProjectile(this, from.x, from.y, { x: tPos.x, y: tPos.y, alive: target.isAlive() }, enemy.config.damageType, dur)
+        }
+      },
+      onEnemyAttackLanded: (_enemy: EnemySprite, target: UnitSprite, _damage: number) => {
+        const tPos = this.grid.tileToPixel(target.row, target.col)
+        flashDamage(this, tPos.x, tPos.y, 0xd32f2f)
+      },
+      onEnemyAttackCancelled: (attackId: number) => {
+        const entry = this.activeWindUps.get(attackId)
+        if (entry) { entry.cancel(); this.activeWindUps.delete(attackId) }
       },
     })
 

@@ -10,6 +10,19 @@ export interface CombatEvents {
   onHealApplied?: (target: UnitSprite, amount: number, source: UnitSprite) => void
   onUnitDamageDealt?: (damage: number, unit: UnitSprite, damageType: string) => void
   onUnitDeath?: (unit: UnitSprite, killer: EnemySprite) => void
+  onUnitAttackInitiated?: (unit: UnitSprite, target: EnemySprite, damageType: string) => void
+  onEnemyWindUp?: (enemy: EnemySprite, target: UnitSprite, attackId: number) => void
+  onEnemyAttackLanded?: (enemy: EnemySprite, target: UnitSprite, damage: number) => void
+  onEnemyAttackCancelled?: (attackId: number) => void
+}
+
+interface PendingAttack {
+  attackId: number
+  enemy: EnemySprite
+  target: UnitSprite
+  damage: number
+  elapsed: number
+  duration: number
 }
 
 interface AttackParams {
@@ -19,11 +32,15 @@ interface AttackParams {
 }
 
 const DRONE_ATTACK_RANGE = 3
+const ENEMY_WIND_UP_DURATION = 0.4
 
 export class CombatSystem {
   private grid: Grid
   private events: CombatEvents
   private enemyAttackTimers: Map<number, number> = new Map()
+  private pendingAttacks: PendingAttack[] = []
+  private nextAttackId = 0
+  private enemiesInWindUp: Set<number> = new Set()
 
   constructor(grid: Grid, events: CombatEvents) {
     this.grid = grid
@@ -54,6 +71,7 @@ export class CombatSystem {
         const hitCount = this.hasTrait(unit, UnitTrait.DoubleHit) ? 2 : 1
         for (let i = 0; i < hitCount; i++) {
           if (!target.alive) break
+          this.events.onUnitAttackInitiated?.(unit, target, unit.config.damageType)
           this.applyDamage(unit, target, params.atk)
         }
 
@@ -82,6 +100,7 @@ export class CombatSystem {
 
     for (const enemy of enemies) {
       if (!enemy.alive) continue
+      if (this.enemiesInWindUp.has(enemy.id)) continue
 
       const acc = this.enemyAttackTimers.get(enemy.id) ?? 0
       const newAcc = acc + dt
@@ -103,16 +122,13 @@ export class CombatSystem {
 
       const def = this.getUnitEffectiveDef(target)
       const damage = this.calcDamage(enemy.config.atk, def, target.config.res, enemy.config.damageType)
-      target.takeDamage(damage)
-
-      if (damage > 0 && this.events.onUnitDamageDealt) {
-        this.events.onUnitDamageDealt(damage, target, enemy.config.damageType)
-      }
-
-      if (!target.isAlive() && this.events.onUnitDeath) {
-        this.events.onUnitDeath(target, enemy)
-      }
+      const attackId = this.nextAttackId++
+      this.enemiesInWindUp.add(enemy.id)
+      this.pendingAttacks.push({ attackId, enemy, target, damage, elapsed: 0, duration: ENEMY_WIND_UP_DURATION })
+      this.events.onEnemyWindUp?.(enemy, target, attackId)
     }
+
+    this.processPendingAttacks(dt)
   }
 
   private getUnitEffectiveDef(unit: UnitSprite): number {
@@ -172,6 +188,7 @@ export class CombatSystem {
     const targets = this.getEnemiesInRange(unit, enemies, params.rangePattern)
     for (const target of targets) {
       if (!target.alive) continue
+      this.events.onUnitAttackInitiated?.(unit, target, unit.config.damageType)
       this.applyDamage(unit, target, params.atk)
     }
   }
@@ -180,6 +197,7 @@ export class CombatSystem {
     const targets = this.getEnemiesInRange(unit, enemies)
     for (const target of targets) {
       if (!target.alive) continue
+      this.events.onUnitAttackInitiated?.(unit, target, unit.config.damageType)
       this.applyDamage(unit, target)
     }
   }
@@ -390,6 +408,31 @@ export class CombatSystem {
     if (type === 'true') return atk
     if (type === 'kinetic') return Math.max(Math.floor(atk * 0.05), atk - def)
     return Math.max(Math.floor(atk * 0.05), Math.floor(atk * (1 - res / 100)))
+  }
+
+  private processPendingAttacks(dt: number): void {
+    const remaining: PendingAttack[] = []
+    for (const pa of this.pendingAttacks) {
+      pa.elapsed += dt
+      if (pa.elapsed >= pa.duration) {
+        this.enemiesInWindUp.delete(pa.enemy.id)
+        if (pa.target.isAlive()) {
+          pa.target.takeDamage(pa.damage)
+          if (pa.damage > 0 && this.events.onUnitDamageDealt) {
+            this.events.onUnitDamageDealt(pa.damage, pa.target, pa.enemy.config.damageType)
+          }
+          this.events.onEnemyAttackLanded?.(pa.enemy, pa.target, pa.damage)
+          if (!pa.target.isAlive() && this.events.onUnitDeath) {
+            this.events.onUnitDeath(pa.target, pa.enemy)
+          }
+        } else {
+          this.events.onEnemyAttackCancelled?.(pa.attackId)
+        }
+      } else {
+        remaining.push(pa)
+      }
+    }
+    this.pendingAttacks = remaining
   }
 
   private hasTrait(unit: UnitSprite, traitId: UnitTrait): boolean {

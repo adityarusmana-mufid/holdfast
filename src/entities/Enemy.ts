@@ -8,6 +8,8 @@ export class EnemySprite {
   readonly id: number
   private scene: Phaser.Scene
   private container: Phaser.GameObjects.Container
+
+  getContainer(): Phaser.GameObjects.Container { return this.container }
   private body: Phaser.GameObjects.Graphics
   private hpBar: Phaser.GameObjects.Graphics
   private hpBg: Phaser.GameObjects.Graphics

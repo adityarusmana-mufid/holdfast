@@ -131,7 +131,19 @@ export class UnitSprite {
   }
 
   destroy(): void {
-    this.container.destroy()
+    if (this.container.scene) {
+      this.container.scene.tweens.add({
+        targets: this.container,
+        scaleX: 0,
+        scaleY: 0,
+        alpha: 0,
+        duration: 250,
+        ease: 'Power2',
+        onComplete: () => { this.container.destroy() },
+      })
+    } else {
+      this.container.destroy()
+    }
   }
 
   setPosition(row: number, col: number, grid: Grid): void {

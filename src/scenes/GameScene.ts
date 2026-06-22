@@ -49,6 +49,7 @@ export class GameScene extends Phaser.Scene {
   private inspectingUnit: DeployedUnit | null = null
   private inspectRetreatBtn!: Phaser.GameObjects.Text
   private inspectCloseBtn!: Phaser.GameObjects.Text
+  private facingCancelBtn!: Phaser.GameObjects.Text
 
   private unitConfigs: UnitConfig[] = UNIT_CONFIGS
   private fromSquad: boolean = false
@@ -294,6 +295,16 @@ export class GameScene extends Phaser.Scene {
     this.inspectCloseBtn.setInteractive({ cursor: 'pointer' })
     this.inspectCloseBtn.on('pointerdown', () => this.exitDecisionMode())
 
+    this.facingCancelBtn = this.add.text(10, this.scale.height - 124, '[ CANCEL ]', {
+      fontSize: '12px',
+      color: COLORS.text.danger,
+      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    })
+    this.facingCancelBtn.setDepth(50)
+    this.facingCancelBtn.setAlpha(0)
+    this.facingCancelBtn.setInteractive({ cursor: 'pointer' })
+    this.facingCancelBtn.on('pointerdown', () => this.cancelDeployment())
+
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (this.deployState === 'facing' || this.isPaused) {
         return
@@ -339,6 +350,7 @@ export class GameScene extends Phaser.Scene {
           this.showRangePreview(selected, pos, this.pendingFacing)
           this.showFacingArrow(pos, this.pendingFacing)
           this.hoverIndicator.setAlpha(0)
+          this.facingCancelBtn.setAlpha(1)
           this.flashMessage(`DIRECTION // ${selected.name}`, selected.color)
         } else {
           this.cancelDeployment()
@@ -353,9 +365,7 @@ export class GameScene extends Phaser.Scene {
         const dx = pointer.x - center.x
         const dy = pointer.y - center.y
         const dist = Math.sqrt(dx * dx + dy * dy)
-        if (dist < 12) {
-          this.cancelDeployment()
-        } else {
+        if (dist >= 12) {
           this.confirmDeployment()
         }
       }
@@ -374,11 +384,11 @@ export class GameScene extends Phaser.Scene {
         const dy = pointer.y - center.y
         const dist = Math.sqrt(dx * dx + dy * dy)
         if (dist < 12) {
-          this.showCancelIndicator(center.x, center.y)
-          this.rangePreview.setAlpha(0)
           this.facingArrow.setAlpha(0)
+          this.rangePreview.setAlpha(0)
         } else {
-          this.cancelDeployIndicator.setAlpha(0)
+          this.facingArrow.setAlpha(1)
+          this.rangePreview.setAlpha(1)
           const facing = this.computeFacingFromPointer(pointer)
           if (facing !== this.pendingFacing) {
             this.pendingFacing = facing
@@ -518,19 +528,6 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private showCancelIndicator(cx: number, cy: number): void {
-    const s = 14
-    this.cancelDeployIndicator.clear()
-    this.cancelDeployIndicator.lineStyle(3, 0xd32f2f, 0.9)
-    this.cancelDeployIndicator.beginPath()
-    this.cancelDeployIndicator.moveTo(cx - s, cy - s)
-    this.cancelDeployIndicator.lineTo(cx + s, cy + s)
-    this.cancelDeployIndicator.moveTo(cx + s, cy - s)
-    this.cancelDeployIndicator.lineTo(cx - s, cy + s)
-    this.cancelDeployIndicator.strokePath()
-    this.cancelDeployIndicator.setAlpha(1)
-  }
-
   private clearRangePreview(): void {
     this.rangePreview.clear()
     this.rangePreview.setAlpha(0)
@@ -554,6 +551,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.clearRangePreview()
     this.cancelDeployIndicator.setAlpha(0)
+    this.facingCancelBtn.setAlpha(0)
     this.pendingTile = null
     this.deployState = 'placing'
     this.exitDecisionMode()
@@ -562,6 +560,7 @@ export class GameScene extends Phaser.Scene {
   private cancelDeployment(): void {
     this.clearRangePreview()
     this.cancelDeployIndicator.setAlpha(0)
+    this.facingCancelBtn.setAlpha(0)
     this.pendingTile = null
     this.deployState = 'placing'
     this.exitDecisionMode()

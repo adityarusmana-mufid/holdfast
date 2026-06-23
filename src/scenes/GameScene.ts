@@ -61,6 +61,8 @@ export class GameScene extends Phaser.Scene {
   private startingLives: number = 0
   private enemiesDefeated: number = 0
 
+  private speedMultiplier: number = 1
+  private speedButton!: Phaser.GameObjects.Text
   private isPaused: boolean = false
   private pauseOverlay!: Phaser.GameObjects.Graphics
   private pauseText!: Phaser.GameObjects.Text
@@ -176,7 +178,7 @@ export class GameScene extends Phaser.Scene {
         this.rebuildCardBar()
       },
       onUnitAttackInitiated: (unit: UnitSprite, target: EnemySprite, damageType: string) => {
-        const speed = this.decisionMode ? 0.5 : 1
+        const speed = this.effectiveSpeed
         const tile = target.getCurrentTile()
         if (!tile) return
         const dist = Math.abs(unit.row - tile.row) + Math.abs(unit.col - tile.col)
@@ -190,7 +192,7 @@ export class GameScene extends Phaser.Scene {
         }
       },
       onEnemyWindUp: (enemy: EnemySprite, target: UnitSprite, attackId: number) => {
-        const speed = this.decisionMode ? 0.5 : 1
+        const speed = this.effectiveSpeed
         const cancel = showWindUp(this, enemy.getContainer(), 0.4, speed)
         this.activeWindUps.set(attackId, cancel)
 
@@ -268,6 +270,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   private buildPauseButton(): void {
+    this.speedButton = this.add.text(this.scale.width - 110, 10, 'x1', {
+      fontSize: FONT_SIZE.sm, color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    })
+    this.speedButton.setInteractive({ cursor: 'pointer' })
+    this.speedButton.on('pointerdown', () => this.toggleSpeed())
+
     this.pauseButton = this.add.text(this.scale.width - 55, 10, '[ II ]', {
       fontSize: FONT_SIZE.lg, color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
@@ -276,6 +284,12 @@ export class GameScene extends Phaser.Scene {
       if (!this.battleActive || this.battleEnded) return
       this.togglePause()
     })
+  }
+
+  private toggleSpeed(): void {
+    this.speedMultiplier = this.speedMultiplier === 1 ? 2 : 1
+    this.speedButton.setText(`x${this.speedMultiplier}`)
+    this.speedButton.setColor(this.speedMultiplier > 1 ? '#4fc3f7' : COLORS.text.dim)
   }
 
   private togglePause(): void {
@@ -754,15 +768,19 @@ export class GameScene extends Phaser.Scene {
     this.rebuildCardBar()
   }
 
+  private get effectiveSpeed(): number {
+    return this.speedMultiplier * (this.decisionMode ? 0.5 : 1)
+  }
+
   update(_time: number, delta: number): void {
     const dt = delta / 1000
+    const speed = this.effectiveSpeed
 
     if (this.battleActive && !this.battleEnded && !this.isPaused) {
-      const speed = this.decisionMode ? 0.5 : 1
       this.depSystem.update(dt * speed)
       this.enemyManager.update(dt * speed)
       this.combatSystem.update(delta * speed, this.unitSprites, this.enemyManager.getEnemies())
-      this.healingSystem.update(delta, this.unitSprites, (target, amount, source) => {
+      this.healingSystem.update(delta * speed, this.unitSprites, (target, amount, source) => {
         this.showHealNumber(amount, target)
       })
       this.checkBattleEnd()

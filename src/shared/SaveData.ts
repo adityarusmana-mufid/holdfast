@@ -23,7 +23,12 @@ export function saveCompletion(levelId: string, stars: number, enemiesDefeated: 
   localStorage.setItem(SAVE_KEY, JSON.stringify(data))
 }
 
+export function isDevMode(): boolean {
+  return typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('dev') === '1'
+}
+
 export function isLevelUnlocked(levelId: string, levelOrder: string[]): boolean {
+  if (isDevMode()) return true
   const data = loadSave()
   if (levelOrder.length === 0) return false
   if (levelOrder[0] === levelId) return true

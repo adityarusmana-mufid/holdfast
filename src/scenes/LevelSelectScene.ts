@@ -42,6 +42,11 @@ export class LevelSelectScene extends Phaser.Scene {
   private chapterId!: string
   private selectedLevelId: string | null = null
   private infoPanel!: Phaser.GameObjects.Container
+  private infoPanelOverlay!: Phaser.GameObjects.Graphics
+  private infoPanelW = 0
+  private infoPanelPx = 0
+  private W = 1280
+  private H = 720
 
   constructor() {
     super({ key: 'LevelSelectScene' })
@@ -53,8 +58,10 @@ export class LevelSelectScene extends Phaser.Scene {
   }
 
   create(): void {
-    const W = 1280
-    const H = 720
+    this.W = 1280
+    this.H = 720
+    const W = this.W
+    const H = this.H
     const ch = CHAPTERS.find(c => c.id === this.chapterId)
     const levelIds = getLevelIdsForChapter(this.chapterId)
 
@@ -190,6 +197,12 @@ export class LevelSelectScene extends Phaser.Scene {
     this.infoPanel.setDepth(20)
     this.infoPanel.setVisible(false)
 
+    this.infoPanelOverlay = this.add.graphics()
+    this.infoPanelOverlay.setDepth(19)
+    this.infoPanelOverlay.setVisible(false)
+    this.infoPanelOverlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, W, H), Phaser.Geom.Rectangle.Contains)
+    this.infoPanelOverlay.on('pointerdown', () => this.hideLevelInfo())
+
     makeButton(this, 20, H - 52, '< Back', () => {
       this.scene.start('ChapterSelectScene')
     }, { w: 100 })
@@ -198,31 +211,30 @@ export class LevelSelectScene extends Phaser.Scene {
   private showLevelInfo(levelId: string): void {
     this.selectedLevelId = levelId
     this.infoPanel.removeAll(true)
-    this.infoPanel.setVisible(true)
 
-    const W = 1280
-    const H = 720
-    const panelW = Math.floor(W / 6)
-    const px = W - panelW
+    const W = this.W
+    const H = this.H
+    this.infoPanelW = Math.floor(W / 6)
+    this.infoPanelPx = W - this.infoPanelW
     const pad = 14
-
-    const bg = this.add.graphics()
-    bg.fillStyle(0xffffff, 1)
-    bg.fillRect(px, 0, panelW, H)
-    bg.lineStyle(1, 0xccd0d6, 0.6)
-    bg.beginPath()
-    bg.moveTo(px, 0)
-    bg.lineTo(px, H)
-    bg.strokePath()
-    this.infoPanel.add(bg)
 
     const data = getLevelData(levelId)
     if (!data) return
 
+    const bg = this.add.graphics()
+    bg.fillStyle(0xffffff, 1)
+    bg.fillRect(0, 0, this.infoPanelW, H)
+    bg.lineStyle(1, 0xccd0d6, 0.6)
+    bg.beginPath()
+    bg.moveTo(0, 0)
+    bg.lineTo(0, H)
+    bg.strokePath()
+    this.infoPanel.add(bg)
+
     let py = 100
 
-    const title = this.add.text(px + pad, py, data.name, {
-      ...FONTS.h3, color: COLORS.text.primary, wordWrap: { width: panelW - pad * 2 },
+    const title = this.add.text(pad, py, data.name, {
+      ...FONTS.h3, color: COLORS.text.primary, wordWrap: { width: this.infoPanelW - pad * 2 },
     })
     this.infoPanel.add(title)
 
@@ -230,50 +242,91 @@ export class LevelSelectScene extends Phaser.Scene {
 
     const totalEnemies = data.waves.reduce((sum, w) => sum + w.entries.reduce((s, e) => s + e.count, 0), 0)
     const summary = `${data.waves.length} wave${data.waves.length > 1 ? 's' : ''}, ${totalEnemies} total hostiles`
-    const desc = this.add.text(px + pad, py, summary, {
-      ...FONTS.small, color: COLORS.text.secondary, wordWrap: { width: panelW - pad * 2 },
+    const desc = this.add.text(pad, py, summary, {
+      ...FONTS.small, color: COLORS.text.secondary, wordWrap: { width: this.infoPanelW - pad * 2 },
     })
     this.infoPanel.add(desc)
 
     py += 24
 
-    const deployLine = this.add.text(px + pad, py, `Deploy limit: ${data.deploymentLimit}`, {
+    const deployLine = this.add.text(pad, py, `Deploy limit: ${data.deploymentLimit}`, {
       ...FONTS.small, color: COLORS.text.dim,
     })
     this.infoPanel.add(deployLine)
 
     if (data.tutorial) {
       py += 40
-      const tutHint = this.add.text(px + pad, py, 'Tutorial level — auto squad', {
-        ...FONTS.small, color: '#f0c27a', wordWrap: { width: panelW - pad * 2 },
+      const tutHint = this.add.text(pad, py, 'Tutorial level — auto squad', {
+        ...FONTS.small, color: '#f0c27a', wordWrap: { width: this.infoPanelW - pad * 2 },
       })
       this.infoPanel.add(tutHint)
     }
 
-    const enterBg = this.add.graphics()
-    const btnW = panelW - pad * 2
+    const btnW = this.infoPanelW - pad * 2
     const btnH = 34
-    const btnX = px + pad
     const btnY = H - 60 - btnH
+
+    const intelBg = this.add.graphics()
+    const intelBtnX = pad
+    intelBg.fillStyle(0x78909c, 0.15)
+    intelBg.fillRoundedRect(intelBtnX, btnY, btnW / 2 - 4, btnH, 4)
+    intelBg.lineStyle(1, 0x78909c, 0.6)
+    intelBg.strokeRoundedRect(intelBtnX, btnY, btnW / 2 - 4, btnH, 4)
+    intelBg.setInteractive(new Phaser.Geom.Rectangle(intelBtnX, btnY, btnW / 2 - 4, btnH), Phaser.Geom.Rectangle.Contains)
+    if (intelBg.input) intelBg.input.cursor = 'pointer'
+    intelBg.on('pointerdown', () => {
+      this.scene.launch('LevelPreviewScene', {
+        levelId, chapterId: this.chapterId, levelData: data,
+      })
+    })
+    this.infoPanel.add(intelBg)
+
+    const intelLabel = this.add.text(intelBtnX + (btnW / 2 - 4) / 2, btnY + btnH / 2, 'INTEL', {
+      ...FONTS.small, color: '#78909c', fontStyle: 'bold',
+    }).setOrigin(0.5)
+    this.infoPanel.add(intelLabel)
+
+    const enterBg = this.add.graphics()
+    const enterBtnX = pad + btnW / 2 + 4
     enterBg.fillStyle(data.tutorial ? 0xf0c27a : 0x4fc3f7, 0.15)
-    enterBg.fillRoundedRect(btnX, btnY, btnW, btnH, 4)
+    enterBg.fillRoundedRect(enterBtnX, btnY, btnW / 2 - 4, btnH, 4)
     enterBg.lineStyle(1, data.tutorial ? 0xf0c27a : 0x4fc3f7, 0.6)
-    enterBg.strokeRoundedRect(btnX, btnY, btnW, btnH, 4)
-    enterBg.setInteractive(new Phaser.Geom.Rectangle(btnX, btnY, btnW, btnH), Phaser.Geom.Rectangle.Contains)
+    enterBg.strokeRoundedRect(enterBtnX, btnY, btnW / 2 - 4, btnH, 4)
+    enterBg.setInteractive(new Phaser.Geom.Rectangle(enterBtnX, btnY, btnW / 2 - 4, btnH), Phaser.Geom.Rectangle.Contains)
     if (enterBg.input) enterBg.input.cursor = 'pointer'
     enterBg.on('pointerdown', () => this.enterLevel(levelId, data))
     this.infoPanel.add(enterBg)
 
-    const enterLabel = this.add.text(btnX + btnW / 2, btnY + btnH / 2, 'ENTER', {
+    const enterLabel = this.add.text(enterBtnX + (btnW / 2 - 4) / 2, btnY + btnH / 2, 'ENTER', {
       ...FONTS.bodyBold, color: data.tutorial ? '#f0c27a' : '#4fc3f7',
     }).setOrigin(0.5)
     this.infoPanel.add(enterLabel)
+
+    this.infoPanel.setPosition(this.infoPanelPx, 0)
+    this.infoPanel.setAlpha(1)
+    this.infoPanel.setVisible(true)
+
+    this.infoPanelOverlay.clear()
+    this.infoPanelOverlay.fillStyle(0x000000, 0.12)
+    this.infoPanelOverlay.fillRect(0, 0, this.infoPanelPx, H)
+    this.infoPanelOverlay.setVisible(true)
   }
 
   private hideLevelInfo(): void {
+    if (!this.selectedLevelId) return
     this.selectedLevelId = null
-    this.infoPanel.setVisible(false)
-    this.infoPanel.removeAll(true)
+    this.infoPanelOverlay.setVisible(false)
+    this.tweens.add({
+      targets: this.infoPanel,
+      x: this.W,
+      alpha: 0,
+      duration: 200,
+      ease: 'Quad.easeIn',
+      onComplete: () => {
+        this.infoPanel.setVisible(false)
+        this.infoPanel.removeAll(true)
+      },
+    })
   }
 
   private enterLevel(levelId: string, data: ReturnType<typeof getLevelData>): void {

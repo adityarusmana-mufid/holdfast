@@ -2,6 +2,8 @@ import Phaser from 'phaser'
 import { EnemyConfig, Position, StatusEffect } from '../types/index'
 import { Grid, TILE_SIZE } from '../entities/Grid'
 
+const AERIAL_ELEVATION = 40
+
 let nextEnemyId = 0
 
 export class EnemySprite {
@@ -14,6 +16,8 @@ export class EnemySprite {
   private hpBar: Phaser.GameObjects.Graphics
   private hpBg: Phaser.GameObjects.Graphics
   private dirIndicator: Phaser.GameObjects.Graphics
+  private shadow: Phaser.GameObjects.Graphics | null = null
+  private shadowGlow: Phaser.GameObjects.Graphics | null = null
 
   config: EnemyConfig
   currentHp: number
@@ -46,6 +50,20 @@ export class EnemySprite {
     const size = TILE_SIZE * 0.6
     const half = size / 2
 
+    if (config.isAerial) {
+      this.visualOffsetY = -AERIAL_ELEVATION
+      const sw = size * 1.2
+      const sh = size * 0.35
+      this.shadowGlow = scene.add.graphics()
+      this.shadowGlow.fillStyle(0x000000, 0.08)
+      this.shadowGlow.fillEllipse(0, 0, sw * 1.2, sh * 1.2)
+      this.shadowGlow.setDepth(8)
+      this.shadow = scene.add.graphics()
+      this.shadow.fillStyle(0x000000, 0.3)
+      this.shadow.fillEllipse(0, 0, sw, sh)
+      this.shadow.setDepth(8)
+    }
+
     const glow = scene.add.graphics()
     glow.fillStyle(config.color, 0.1)
     glow.fillCircle(0, 0, size * 0.7)
@@ -73,7 +91,7 @@ export class EnemySprite {
     this.drawHp(size)
 
     this.container = scene.add.container(this.x, this.y, [glow, this.body, this.dirIndicator, this.hpBg, this.hpBar])
-    this.container.setDepth(9)
+    this.container.setDepth(config.isAerial ? 15 : 9)
   }
 
   private drawHp(size: number): void {
@@ -87,6 +105,12 @@ export class EnemySprite {
 
   applyVisualPosition(): void {
     this.container.setPosition(this.x + this.visualOffsetX, this.y + this.visualOffsetY)
+    if (this.shadow) {
+      this.shadow.setPosition(this.x, this.y)
+    }
+    if (this.shadowGlow) {
+      this.shadowGlow.setPosition(this.x, this.y)
+    }
   }
 
   takeDamage(amount: number): number {
@@ -174,6 +198,8 @@ export class EnemySprite {
   }
 
   destroy(): void {
+    if (this.shadow) { this.shadow.destroy(); this.shadow = null }
+    if (this.shadowGlow) { this.shadowGlow.destroy(); this.shadowGlow = null }
     const scene = this.container.scene
     if (scene) {
       if (!scene.textures.exists('particle')) {

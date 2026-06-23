@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { FONTS } from '../ui/Constants'
+import { FONTS, FONT_SIZE, COLORS } from '../ui/Constants'
 import { makeButton } from '../ui/Components'
 import { getLevelIdsForChapter, getLevelData, CHAPTERS } from '../config/chapters'
 import { UNIT_CONFIGS } from '../config/units'
@@ -40,6 +40,8 @@ function drawNodeCard(bg: Phaser.GameObjects.Graphics, w: number, h: number, typ
 
 export class LevelSelectScene extends Phaser.Scene {
   private chapterId!: string
+  private selectedLevelId: string | null = null
+  private infoPanel!: Phaser.GameObjects.Container
 
   constructor() {
     super({ key: 'LevelSelectScene' })
@@ -47,6 +49,7 @@ export class LevelSelectScene extends Phaser.Scene {
 
   init(data: { chapterId: string }): void {
     this.chapterId = data.chapterId
+    this.selectedLevelId = null
   }
 
   create(): void {
@@ -146,13 +149,10 @@ export class LevelSelectScene extends Phaser.Scene {
         if (bg.input) bg.input.cursor = 'pointer'
 
         bg.on('pointerdown', () => {
-          if (data?.tutorial) {
-            this.scene.start('GameScene', {
-              level: data, squad: tutorialSquad(),
-              chapterId: this.chapterId, levelId, autoStart: true,
-            })
+          if (this.selectedLevelId === levelId) {
+            this.enterLevel(levelId, data)
           } else {
-            this.scene.start('SquadScene', { levelId, chapterId: this.chapterId, levelData: data })
+            this.showLevelInfo(levelId)
           }
         })
 
@@ -186,8 +186,105 @@ export class LevelSelectScene extends Phaser.Scene {
       scrollContainer.x = pad - scrollX
     })
 
+    this.infoPanel = this.add.container(0, 0)
+    this.infoPanel.setDepth(20)
+    this.infoPanel.setVisible(false)
+
     makeButton(this, 20, H - 52, '< Back', () => {
       this.scene.start('ChapterSelectScene')
     }, { w: 100 })
+  }
+
+  private showLevelInfo(levelId: string): void {
+    this.selectedLevelId = levelId
+    this.infoPanel.removeAll(true)
+    this.infoPanel.setVisible(true)
+
+    const W = 1280
+    const H = 720
+    const panelW = Math.floor(W / 6)
+    const px = W - panelW
+    const pad = 14
+
+    const bg = this.add.graphics()
+    bg.fillStyle(0xffffff, 1)
+    bg.fillRect(px, 0, panelW, H)
+    bg.lineStyle(1, 0xccd0d6, 0.6)
+    bg.beginPath()
+    bg.moveTo(px, 0)
+    bg.lineTo(px, H)
+    bg.strokePath()
+    this.infoPanel.add(bg)
+
+    const data = getLevelData(levelId)
+    if (!data) return
+
+    let py = 100
+
+    const title = this.add.text(px + pad, py, data.name, {
+      ...FONTS.h3, color: COLORS.text.primary, wordWrap: { width: panelW - pad * 2 },
+    })
+    this.infoPanel.add(title)
+
+    py += 34
+
+    const totalEnemies = data.waves.reduce((sum, w) => sum + w.entries.reduce((s, e) => s + e.count, 0), 0)
+    const summary = `${data.waves.length} wave${data.waves.length > 1 ? 's' : ''}, ${totalEnemies} total hostiles`
+    const desc = this.add.text(px + pad, py, summary, {
+      ...FONTS.small, color: COLORS.text.secondary, wordWrap: { width: panelW - pad * 2 },
+    })
+    this.infoPanel.add(desc)
+
+    py += 24
+
+    const deployLine = this.add.text(px + pad, py, `Deploy limit: ${data.deploymentLimit}`, {
+      ...FONTS.small, color: COLORS.text.dim,
+    })
+    this.infoPanel.add(deployLine)
+
+    if (data.tutorial) {
+      py += 40
+      const tutHint = this.add.text(px + pad, py, 'Tutorial level — auto squad', {
+        ...FONTS.small, color: '#f0c27a', wordWrap: { width: panelW - pad * 2 },
+      })
+      this.infoPanel.add(tutHint)
+    }
+
+    const enterBg = this.add.graphics()
+    const btnW = panelW - pad * 2
+    const btnH = 34
+    const btnX = px + pad
+    const btnY = H - 60 - btnH
+    enterBg.fillStyle(data.tutorial ? 0xf0c27a : 0x4fc3f7, 0.15)
+    enterBg.fillRoundedRect(btnX, btnY, btnW, btnH, 4)
+    enterBg.lineStyle(1, data.tutorial ? 0xf0c27a : 0x4fc3f7, 0.6)
+    enterBg.strokeRoundedRect(btnX, btnY, btnW, btnH, 4)
+    enterBg.setInteractive(new Phaser.Geom.Rectangle(btnX, btnY, btnW, btnH), Phaser.Geom.Rectangle.Contains)
+    if (enterBg.input) enterBg.input.cursor = 'pointer'
+    enterBg.on('pointerdown', () => this.enterLevel(levelId, data))
+    this.infoPanel.add(enterBg)
+
+    const enterLabel = this.add.text(btnX + btnW / 2, btnY + btnH / 2, 'ENTER', {
+      ...FONTS.bodyBold, color: data.tutorial ? '#f0c27a' : '#4fc3f7',
+    }).setOrigin(0.5)
+    this.infoPanel.add(enterLabel)
+  }
+
+  private hideLevelInfo(): void {
+    this.selectedLevelId = null
+    this.infoPanel.setVisible(false)
+    this.infoPanel.removeAll(true)
+  }
+
+  private enterLevel(levelId: string, data: ReturnType<typeof getLevelData>): void {
+    if (!data) return
+    if (data.tutorial) {
+      this.scene.start('GameScene', {
+        level: data, squad: tutorialSquad(),
+        chapterId: this.chapterId, levelId, autoStart: true,
+      })
+    } else {
+      this.scene.start('SquadScene', { levelId, chapterId: this.chapterId, levelData: data })
+    }
   }
 }

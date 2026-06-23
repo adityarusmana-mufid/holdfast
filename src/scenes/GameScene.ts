@@ -317,7 +317,9 @@ export class GameScene extends Phaser.Scene {
       }
 
       const backBtn = mkBtn('[ Back to Squad ]', COLORS.text.secondary, 50, () => {
-        this.scene.start(this.fromSquad ? 'SquadScene' : 'EditorScene')
+        this.scene.start(this.fromSquad ? 'SquadScene' : 'EditorScene', {
+          chapterId: this.chapterId, levelId: this.levelId, levelData: this.levelData,
+        })
       })
       this.pauseButtons = [backBtn]
     } else {

@@ -2,16 +2,10 @@ import Phaser from 'phaser'
 import { FONTS, FONT_SIZE, COLORS } from '../ui/Constants'
 import { makeButton } from '../ui/Components'
 import { getLevelIdsForChapter, getLevelData, CHAPTERS } from '../config/chapters'
-import { UNIT_CONFIGS } from '../config/units'
-import { UnitConfig } from '../types/index'
 import { isLevelUnlocked, getCompletion } from '../shared/SaveData'
+import { tutorialSquad } from '../shared/utils/levelHelpers'
 
 const BASE_Y = 290
-
-function tutorialSquad(): UnitConfig[] {
-  const ids = ['pioneer', 'charger', 'protector', 'fighter', 'sniper', 'core_caster', 'medic_st']
-  return ids.map(id => UNIT_CONFIGS.find(u => u.id === id)).filter((u): u is UnitConfig => u !== undefined)
-}
 
 function drawNodeCard(bg: Phaser.GameObjects.Graphics, w: number, h: number, type: 'locked' | 'unlocked' | 'completed', isTr: boolean): void {
   const hw = w / 2

@@ -271,15 +271,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private buildPauseButton(): void {
-    this.speedButton = makeNodeButton(this, this.scale.width - 128, 4, 'x1', () => this.toggleSpeed(), {
-      w: 56, h: 36, textSize: '13px',
+    this.speedButton = makeNodeButton(this, this.scale.width - 136, 4, 'x1', () => this.toggleSpeed(), {
+      w: 60, h: 44, textSize: '13px',
     })
 
-    this.pauseButton = makeNodeButton(this, this.scale.width - 64, 4, '[ II ]', () => {
+    this.pauseButton = makeNodeButton(this, this.scale.width - 68, 4, '[ II ]', () => {
       if (!this.battleActive || this.battleEnded) return
       this.togglePause()
     }, {
-      w: 56, h: 36, textSize: '13px',
+      w: 60, h: 44, textSize: '13px',
     })
   }
 

@@ -108,7 +108,7 @@ export function makeNodeButton(
 
   c.add([shadow, bg, txt])
   c.setSize(W, H)
-  c.setInteractive(new Phaser.Geom.Rectangle(0, 0, W, H), Phaser.Geom.Rectangle.Contains)
+  c.setInteractive(new Phaser.Geom.Rectangle(-4, -4, W + 8, H + 8), Phaser.Geom.Rectangle.Contains)
   if (c.input) c.input.cursor = 'pointer'
 
   c.on('pointerdown', () => {

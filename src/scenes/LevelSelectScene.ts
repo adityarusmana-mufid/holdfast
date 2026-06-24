@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
 import { FONTS, FONT_SIZE, COLORS } from '../ui/Constants'
-import { makeButton } from '../ui/Components'
+import { makeMetalButton } from '../ui/Components'
 import { getLevelIdsForChapter, getLevelData, CHAPTERS } from '../config/chapters'
 import { isLevelUnlocked, getCompletion } from '../shared/SaveData'
 import { tutorialSquad } from '../shared/utils/levelHelpers'
@@ -10,26 +10,75 @@ const BASE_Y = 290
 function drawNodeCard(bg: Phaser.GameObjects.Graphics, w: number, h: number, type: 'locked' | 'unlocked' | 'completed', isTr: boolean): void {
   const hw = w / 2
   const hh = h / 2
+  bg.fillStyle(0x000000, 0.08)
+  bg.fillRect(-hw + 2, -hh + 2, w, h)
+  bg.fillStyle(0x000000, 0.06)
+  bg.fillRect(-hw + 4, -hh + 4, w, h)
+  bg.fillStyle(0x000000, 0.04)
+  bg.fillRect(-hw + 6, -hh + 6, w, h)
+  bg.fillStyle(0x000000, 0.03)
+  bg.fillRect(-hw + 8, -hh + 8, w, h)
+  bg.fillStyle(0x000000, 0.02)
+  bg.fillRect(-hw + 10, -hh + 10, w, h)
+  bg.fillStyle(0x000000, 0.01)
+  bg.fillRect(-hw + 12, -hh + 12, w, h)
   if (type === 'locked') {
-    bg.fillStyle(0xe8eaed, 0.6)
-    bg.fillRoundedRect(-hw, -hh, w, h, 8)
-    bg.lineStyle(1, 0xccd0d6, 0.5)
-    bg.strokeRoundedRect(-hw, -hh, w, h, 8)
+    bg.fillStyle(0xe0e2e5, 0.8)
+    bg.fillRect(-hw, -hh, w, h)
+  } else if (type === 'completed' && isTr) {
+    bg.fillGradientStyle(0x424242, 0x424242, 0x303030, 0x303030, 1)
+    bg.fillRect(-hw, -hh, w, h)
   } else if (type === 'completed') {
-    bg.fillStyle(0xffffff, 1)
-    bg.fillRoundedRect(-hw + 1, -hh + 1, w, h, 8)
-    bg.fillStyle(isTr ? 0xfff8e8 : 0xe8f5e9, 1)
-    bg.fillRoundedRect(-hw, -hh, w, h, 8)
-    bg.lineStyle(2, isTr ? 0xf0c27a : 0x4caf50, 0.8)
-    bg.strokeRoundedRect(-hw, -hh, w, h, 8)
+    bg.fillGradientStyle(0xffffff, 0xffffff, 0xf0f0f0, 0xf0f0f0, 1)
+    bg.fillRect(-hw, -hh, w, h)
+  } else if (isTr) {
+    bg.fillGradientStyle(0x4a4a4a, 0x4a4a4a, 0x383838, 0x383838, 1)
+    bg.fillRect(-hw, -hh, w, h)
   } else {
     bg.fillStyle(0xffffff, 1)
-    bg.fillRoundedRect(-hw + 1, -hh + 1, w, h, 8)
-    bg.fillStyle(0xffffff, 1)
-    bg.fillRoundedRect(-hw, -hh, w, h, 8)
-    bg.lineStyle(2, isTr ? 0xf0c27a : 0x4fc3f7, 0.7)
-    bg.strokeRoundedRect(-hw, -hh, w, h, 8)
+    bg.fillRect(-hw, -hh, w, h)
   }
+}
+
+function drawPointyHexagon(gfx: Phaser.GameObjects.Graphics, cx: number, cy: number, h: number, fill: number, fillAlpha: number, strokeColor?: number, strokeWidth?: number): void {
+  const R = h / 2
+  gfx.fillStyle(fill, fillAlpha)
+  gfx.beginPath()
+  for (let i = 0; i <= 6; i++) {
+    const a = -Math.PI / 2 + (Math.PI / 3) * i
+    const x = cx + R * Math.cos(a)
+    const y = cy + R * Math.sin(a)
+    if (i === 0) gfx.moveTo(x, y)
+    else gfx.lineTo(x, y)
+  }
+  gfx.closePath()
+  gfx.fillPath()
+  if (strokeColor !== undefined && strokeWidth !== undefined) {
+    gfx.lineStyle(strokeWidth, strokeColor, 1)
+    gfx.beginPath()
+    for (let i = 0; i <= 6; i++) {
+      const a = -Math.PI / 2 + (Math.PI / 3) * i
+      const x = cx + R * Math.cos(a)
+      const y = cy + R * Math.sin(a)
+      if (i === 0) gfx.moveTo(x, y)
+      else gfx.lineTo(x, y)
+    }
+    gfx.closePath()
+    gfx.strokePath()
+  }
+}
+
+function fillHexagonSector(gfx: Phaser.GameObjects.Graphics, cx: number, cy: number, h: number, segments: number, fill: number, alpha: number): void {
+  const R = h / 2
+  gfx.fillStyle(fill, alpha)
+  gfx.beginPath()
+  gfx.moveTo(cx, cy)
+  for (let i = 0; i <= segments; i++) {
+    const a = -Math.PI / 2 + (Math.PI / 3) * i
+    gfx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a))
+  }
+  gfx.closePath()
+  gfx.fillPath()
 }
 
 export class LevelSelectScene extends Phaser.Scene {
@@ -62,7 +111,7 @@ export class LevelSelectScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#f0f2f5')
 
     const gridGfx = this.add.graphics()
-    gridGfx.lineStyle(1, 0x4fc3f7, 0.08)
+    gridGfx.lineStyle(1, 0xcfd8dc, 0.15)
     for (let x = 0; x <= W; x += 48) gridGfx.lineBetween(x, 0, x, H)
     for (let y = 0; y <= H; y += 48) gridGfx.lineBetween(0, y, W, y)
 
@@ -81,8 +130,8 @@ export class LevelSelectScene extends Phaser.Scene {
     }
 
     const pad = 80
-    const totalW = positions[positions.length - 1].x + 60
-    const scrollMax = Math.max(0, totalW - (W - pad * 2))
+    const scrollMin = pad + positions[0].x - W / 2
+    const scrollMax = pad + positions[positions.length - 1].x - W / 2
 
     const scrollContainer = this.add.container(pad, 0)
 
@@ -90,18 +139,9 @@ export class LevelSelectScene extends Phaser.Scene {
     for (let i = 0; i < positions.length - 1; i++) {
       const from = positions[i]
       const to = positions[i + 1]
-      track.lineStyle(2, 0xb0c4de, 0.5)
-      track.lineBetween(from.x, BASE_Y + from.y, to.x, BASE_Y + to.y)
-    }
-    for (let i = 0; i < positions.length - 1; i++) {
       const completed = getCompletion(levelIds[i])
-      if (completed) {
-        const from = positions[i]
-        const to = positions[i + 1]
-        const isTr = levelIds[i].startsWith('TR-')
-        track.lineStyle(2, isTr ? 0xf0c27a : 0x4fc3f7, 0.9)
-        track.lineBetween(from.x, BASE_Y + from.y, to.x, BASE_Y + to.y)
-      }
+      track.lineStyle(3, completed ? 0x90a4ae : 0xcfd8dc, completed ? 0.9 : 0.5)
+      track.lineBetween(from.x, BASE_Y + from.y, to.x, BASE_Y + to.y)
     }
     scrollContainer.add(track)
 
@@ -112,8 +152,8 @@ export class LevelSelectScene extends Phaser.Scene {
       const unlocked = isLevelUnlocked(levelId, levelIds)
       const completed = getCompletion(levelId)
 
-      const nodeW = isTr ? 60 : 76
-      const nodeH = isTr ? 48 : 60
+      const nodeW = 90
+      const nodeH = 26
 
       const nodeContainer = this.add.container(pos.x, BASE_Y + pos.y)
 
@@ -122,27 +162,51 @@ export class LevelSelectScene extends Phaser.Scene {
       drawNodeCard(bg, nodeW, nodeH, cardType, isTr)
       nodeContainer.add(bg)
 
-      const textColor = !unlocked ? '#b0b8c4' : '#1a1a2e'
-      const idText = this.add.text(0, -(isTr ? 4 : 6), levelId, {
+      const textColor = !unlocked ? '#b0b8c4' : isTr ? '#cfd8dc' : '#1a1a2e'
+      const idText = this.add.text(0, 0, levelId, {
         fontSize: isTr ? '14px' : '16px', color: textColor,
         fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
         fontStyle: 'bold',
       }).setOrigin(0.5)
       nodeContainer.add(idText)
 
-      if (completed) {
-        const stars = this.add.text(0, 16, '★★★', {
-          fontSize: '12px', color: '#ffc107',
-          fontFamily: 'sans-serif',
-        }).setOrigin(0.5)
-        nodeContainer.add(stars)
-      } else if (unlocked && isTr) {
-        const tut = this.add.text(0, 16, 'TUT', {
-          fontSize: '12px', color: '#f0c27a',
-          fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-          fontStyle: 'bold',
-        }).setOrigin(0.5)
-        nodeContainer.add(tut)
+      const tagLabel = isTr ? 'TUTORIAL' : 'OPERATION'
+      const tagGfx = this.add.graphics()
+      const tagH = 12
+      tagGfx.fillStyle(0x000000, 1)
+      tagGfx.fillRect(-nodeW / 2, -nodeH / 2 - tagH, nodeW, tagH)
+      nodeContainer.add(tagGfx)
+      const tagText = this.add.text(0, -nodeH / 2 - tagH / 2, tagLabel, {
+        fontSize: '7px', color: '#ffffff',
+        fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        fontStyle: 'bold',
+      }).setOrigin(0.5)
+      nodeContainer.add(tagText)
+
+      // hexagon (left side, thick white border, recessed grey + cyan sector)
+      if (unlocked) {
+        const hexH = Math.round((nodeH + tagH) * 7 / 8)
+        const hexCx = -nodeW / 2
+        const hexCy = nodeH / 2 - hexH / 2
+        const hexGfx = this.add.graphics()
+        // shadow
+        hexGfx.fillStyle(0x000000, 0.08)
+        drawPointyHexagon(hexGfx, hexCx + 2, hexCy + 2, hexH, 0x000000, 0.08)
+        // thick white outer (container rim)
+        drawPointyHexagon(hexGfx, hexCx, hexCy, hexH, 0xffffff, 1)
+        // recessed dark grey interior (inset 3px from edge)
+        const insetH = hexH - 7
+        drawPointyHexagon(hexGfx, hexCx, hexCy, insetH, 0x424242, 1)
+        // ponytail: white frosting on sector for challenge mode, add when challenge mode exists
+        if (completed) {
+          const starSegments = completed.stars * 2
+          if (starSegments >= 6) {
+            drawPointyHexagon(hexGfx, hexCx, hexCy, insetH, 0x00bcd4, 1)
+          } else {
+            fillHexagonSector(hexGfx, hexCx, hexCy, insetH, starSegments, 0x00bcd4, 1)
+          }
+        }
+        nodeContainer.add(hexGfx)
       }
 
       if (unlocked) {
@@ -160,9 +224,7 @@ export class LevelSelectScene extends Phaser.Scene {
         bg.on('pointerover', () => {
           bg.clear()
           bg.fillStyle(0xffffff, 1)
-          bg.fillRoundedRect(-nodeW / 2 - 1, -nodeH / 2 - 1, nodeW + 2, nodeH + 2, 9)
-          bg.lineStyle(2, isTr ? 0xf0c27a : 0x4fc3f7, 1)
-          bg.strokeRoundedRect(-nodeW / 2 - 1, -nodeH / 2 - 1, nodeW + 2, nodeH + 2, 9)
+          bg.fillRect(-nodeW / 2 - 2, -nodeH / 2 - 2, nodeW + 4, nodeH + 4)
         })
 
         bg.on('pointerout', () => {
@@ -183,7 +245,7 @@ export class LevelSelectScene extends Phaser.Scene {
 
     let scrollX = 0
     this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
-      scrollX = Phaser.Math.Clamp(scrollX - dy * 0.8, 0, scrollMax)
+      scrollX = Phaser.Math.Clamp(scrollX - dy * 0.8, scrollMin, scrollMax)
       scrollContainer.x = pad - scrollX
     })
 
@@ -197,7 +259,7 @@ export class LevelSelectScene extends Phaser.Scene {
     this.infoPanelOverlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, W, H), Phaser.Geom.Rectangle.Contains)
     this.infoPanelOverlay.on('pointerdown', () => this.hideLevelInfo())
 
-    makeButton(this, 20, H - 52, '< Back', () => {
+    makeMetalButton(this, 20, H - 52, '< Back', () => {
       this.scene.start('ChapterSelectScene')
     }, { w: 100 })
   }
@@ -248,10 +310,28 @@ export class LevelSelectScene extends Phaser.Scene {
     })
     this.infoPanel.add(deployLine)
 
+    py += 20
+
+    const completed = getCompletion(levelId)
+    if (completed) {
+      const starStr = '★'.repeat(completed.stars) + '☆'.repeat(3 - completed.stars)
+      const starsTxt = this.add.text(pad, py, starStr, {
+        fontSize: '18px', color: '#90a4ae',
+        fontFamily: 'sans-serif',
+      })
+      this.infoPanel.add(starsTxt)
+      py += 8
+      const enemiesTxt = this.add.text(pad, py, `Enemies defeated: ${completed.enemiesDefeated}`, {
+        ...FONTS.small, color: COLORS.text.dim,
+      })
+      this.infoPanel.add(enemiesTxt)
+      py += 4
+    }
+
     if (data.tutorial) {
       py += 40
       const tutHint = this.add.text(pad, py, 'Tutorial level — auto squad', {
-        ...FONTS.small, color: '#f0c27a', wordWrap: { width: this.infoPanelW - pad * 2 },
+        ...FONTS.small, color: '#90a4ae', wordWrap: { width: this.infoPanelW - pad * 2 },
       })
       this.infoPanel.add(tutHint)
     }
@@ -259,42 +339,20 @@ export class LevelSelectScene extends Phaser.Scene {
     const btnW = this.infoPanelW - pad * 2
     const btnH = 34
     const btnY = H - 60 - btnH
-
-    const intelBg = this.add.graphics()
     const intelBtnX = pad
-    intelBg.fillStyle(0x78909c, 0.15)
-    intelBg.fillRoundedRect(intelBtnX, btnY, btnW / 2 - 4, btnH, 4)
-    intelBg.lineStyle(1, 0x78909c, 0.6)
-    intelBg.strokeRoundedRect(intelBtnX, btnY, btnW / 2 - 4, btnH, 4)
-    intelBg.setInteractive(new Phaser.Geom.Rectangle(intelBtnX, btnY, btnW / 2 - 4, btnH), Phaser.Geom.Rectangle.Contains)
-    if (intelBg.input) intelBg.input.cursor = 'pointer'
-    intelBg.on('pointerdown', () => {
+    const enterBtnX = pad + btnW / 2 + 4
+
+    const intelBtn = makeMetalButton(this, intelBtnX, btnY, 'INTEL', () => {
       this.scene.launch('LevelPreviewScene', {
         levelId, chapterId: this.chapterId, levelData: data,
       })
+    }, { w: btnW / 2 - 4, h: btnH, skew: 6, textSize: FONT_SIZE.xs, textColor: '#78909c' })
+    this.infoPanel.add(intelBtn)
+
+    const enterBtn = makeMetalButton(this, enterBtnX, btnY, 'ENTER', () => this.enterLevel(levelId, data), {
+      w: btnW / 2 - 4, h: btnH, skew: 6, textSize: FONT_SIZE.sm, textColor: '#546e7a',
     })
-    this.infoPanel.add(intelBg)
-
-    const intelLabel = this.add.text(intelBtnX + (btnW / 2 - 4) / 2, btnY + btnH / 2, 'INTEL', {
-      ...FONTS.small, color: '#78909c', fontStyle: 'bold',
-    }).setOrigin(0.5)
-    this.infoPanel.add(intelLabel)
-
-    const enterBg = this.add.graphics()
-    const enterBtnX = pad + btnW / 2 + 4
-    enterBg.fillStyle(data.tutorial ? 0xf0c27a : 0x4fc3f7, 0.15)
-    enterBg.fillRoundedRect(enterBtnX, btnY, btnW / 2 - 4, btnH, 4)
-    enterBg.lineStyle(1, data.tutorial ? 0xf0c27a : 0x4fc3f7, 0.6)
-    enterBg.strokeRoundedRect(enterBtnX, btnY, btnW / 2 - 4, btnH, 4)
-    enterBg.setInteractive(new Phaser.Geom.Rectangle(enterBtnX, btnY, btnW / 2 - 4, btnH), Phaser.Geom.Rectangle.Contains)
-    if (enterBg.input) enterBg.input.cursor = 'pointer'
-    enterBg.on('pointerdown', () => this.enterLevel(levelId, data))
-    this.infoPanel.add(enterBg)
-
-    const enterLabel = this.add.text(enterBtnX + (btnW / 2 - 4) / 2, btnY + btnH / 2, 'ENTER', {
-      ...FONTS.bodyBold, color: data.tutorial ? '#f0c27a' : '#4fc3f7',
-    }).setOrigin(0.5)
-    this.infoPanel.add(enterLabel)
+    this.infoPanel.add(enterBtn)
 
     this.infoPanel.setPosition(this.infoPanelPx, 0)
     this.infoPanel.setAlpha(1)

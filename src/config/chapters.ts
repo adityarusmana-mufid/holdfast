@@ -75,21 +75,21 @@ export const CHAPTERS: ChapterDef[] = [
       '0-8',
     ],
     nodePositions: [
-      { x: 40, y: 0 },   // 0-1   mid
-      { x: 160, y: 28 },  // TR-1  low
-      { x: 280, y: -28 }, // 0-2   high
-      { x: 400, y: 0 },   // TR-2  mid
-      { x: 520, y: 28 },  // 0-3   low
-      { x: 640, y: -28 }, // TR-3  high
-      { x: 760, y: 0 },   // 0-4   mid
-      { x: 880, y: 28 },  // TR-4  low
-      { x: 1000, y: -28 }, // 0-5  high
-      { x: 1120, y: 0 },  // TR-5  mid
-      { x: 1240, y: 28 }, // 0-6   low
-      { x: 1360, y: -28 }, // TR-6 high
-      { x: 1480, y: 0 },  // 0-7   mid
-      { x: 1600, y: 28 }, // TR-7  low
-      { x: 1720, y: -28 }, // 0-8  high
+      { x: 40, y: 0 },    // 0-1   intro
+      { x: 200, y: 0 },   // TR-1  flat (pair with 0-1)
+      { x: 360, y: -30 }, // 0-2   rise
+      { x: 520, y: -30 }, // TR-2  stay up
+      { x: 680, y: 0 },   // 0-3   mid
+      { x: 840, y: 0 },   // TR-3  stay mid
+      { x: 1000, y: 30 }, // 0-4   dip
+      { x: 1160, y: 30 }, // TR-4  stay down
+      { x: 1320, y: -30 },// 0-5   rise
+      { x: 1480, y: 0 },  // TR-5  mid
+      { x: 1640, y: 0 },  // 0-6   stay mid
+      { x: 1800, y: 30 }, // TR-6  dip
+      { x: 1960, y: -30 },// 0-7   rise
+      { x: 2120, y: -30 },// TR-7  stay up
+      { x: 2280, y: 0 },  // 0-8   flat finish
     ],
   },
 ]

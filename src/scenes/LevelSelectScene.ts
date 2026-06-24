@@ -265,7 +265,7 @@ export class LevelSelectScene extends Phaser.Scene {
     this.infoPanelOverlay = this.add.graphics()
     this.infoPanelOverlay.setDepth(19)
     this.infoPanelOverlay.setVisible(false)
-    this.infoPanelOverlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, W, H), Phaser.Geom.Rectangle.Contains)
+    this.infoPanelOverlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, 0, 0), Phaser.Geom.Rectangle.Contains)
     this.infoPanelOverlay.on('pointerdown', () => this.hideLevelInfo())
 
     makeNodeButton(this, 20, H - 52, '< Back', () => {
@@ -370,12 +370,14 @@ export class LevelSelectScene extends Phaser.Scene {
     this.infoPanelOverlay.clear()
     this.infoPanelOverlay.fillStyle(0x000000, 0.12)
     this.infoPanelOverlay.fillRect(0, 0, this.infoPanelPx, H)
+    ;(this.infoPanelOverlay.input!.hitArea as Phaser.Geom.Rectangle).width = this.infoPanelPx
     this.infoPanelOverlay.setVisible(true)
   }
 
   private hideLevelInfo(): void {
     if (!this.selectedLevelId) return
     this.selectedLevelId = null
+    ;(this.infoPanelOverlay.input!.hitArea as Phaser.Geom.Rectangle).width = 0
     this.infoPanelOverlay.setVisible(false)
     this.tweens.add({
       targets: this.infoPanel,

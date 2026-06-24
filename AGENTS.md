@@ -89,6 +89,7 @@ Holdfast 1 is self-contained — no accounts, no collection, no base. Just 3 cha
 
 ## Skills (project-specific)
 - `designing-holdfast-levels` — Use when creating or editing level JSONs. Covers Arknights-inspired structure, tile placement, enemy escalation, wave pacing, validation. Saved in `.opencode/skills/designing-holdfast-levels/`.
+- `phaser-patterns` — Use when creating, editing, or reviewing ANY Phaser scene or component. Its primary function is structured scene layout: detecting overlapping/squished elements, verifying visual hierarchy, enforcing minimum gaps and touch targets. Always invoke before writing new scene code or reviewing existing scenes.
 
 ## Reference Sources
 Arknights game mechanic references documented in `.opencode/explore/2026-06-12-design-decisions.md`:

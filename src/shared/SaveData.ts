@@ -5,6 +5,7 @@ export interface LevelCompletion {
 
 interface SaveData {
   levelCompletions: Record<string, LevelCompletion>
+  squads: Record<string, (string | null)[]>
 }
 
 const SAVE_KEY = 'holdfast_save'
@@ -12,9 +13,15 @@ const SAVE_KEY = 'holdfast_save'
 function loadSave(): SaveData {
   try {
     const raw = localStorage.getItem(SAVE_KEY)
-    if (raw) return JSON.parse(raw) as SaveData
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      return {
+        levelCompletions: parsed.levelCompletions ?? {},
+        squads: parsed.squads ?? {},
+      }
+    }
   } catch { /* ignore */ }
-  return { levelCompletions: {} }
+  return { levelCompletions: {}, squads: {} }
 }
 
 export function saveCompletion(levelId: string, stars: number, enemiesDefeated: number): void {
@@ -40,6 +47,16 @@ export function isLevelUnlocked(levelId: string, levelOrder: string[]): boolean 
 
 export function getCompletion(levelId: string): LevelCompletion | undefined {
   return loadSave().levelCompletions[levelId]
+}
+
+export function saveSquad(levelId: string, slotIds: (string | null)[]): void {
+  const data = loadSave()
+  data.squads[levelId] = slotIds
+  localStorage.setItem(SAVE_KEY, JSON.stringify(data))
+}
+
+export function loadSquad(levelId: string): (string | null)[] | undefined {
+  return loadSave().squads[levelId]
 }
 
 export function resetAllProgress(): void {

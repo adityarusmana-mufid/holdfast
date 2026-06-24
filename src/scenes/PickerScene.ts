@@ -34,7 +34,7 @@ const SIDEBAR_W = 210
 const CARD_W = 160
 const CARD_H = 190
 const CARD_GAP = 12
-const FILTER_W = 44
+const FILTER_W = 52
 const ARCHETYPE_ORDER = ['all', 'vanguard', 'guard', 'defender', 'sniper', 'caster', 'medic', 'supporter']
 const ARCHETYPE_COLORS: Record<string, number> = {
   all: 0x78909c,
@@ -96,8 +96,8 @@ export class PickerScene extends Phaser.Scene {
     this.confirmBtn = this.add.container(-100, -100)
     this.confirmBtn.setVisible(false)
 
-    const cancelBtn = makeNodeButton(this, 10, this.H - 34, '< Back', () => this.closePicker(), {
-      w: SIDEBAR_W - 20, h: 28, textSize: FONT_SIZE.xs,
+    const cancelBtn = makeNodeButton(this, 10, this.H - 38, '< Back', () => this.closePicker(), {
+      w: SIDEBAR_W - 20, h: 34, textSize: FONT_SIZE.xs,
     })
 
     this.activeFilter = null
@@ -110,9 +110,9 @@ export class PickerScene extends Phaser.Scene {
   private buildFilterButtons(): void {
     this.filterBtns = []
     const fx = this.W - FILTER_W - 6
-    const btnSize = 36
+    const btnSize = 44
     const gap = 4
-    const startY = 56
+    const startY = 48
 
     const stripBg = this.add.graphics()
     stripBg.fillStyle(0xe8ecf0, 0.6)
@@ -369,8 +369,8 @@ export class PickerScene extends Phaser.Scene {
 
   private showConfirm(): void {
     if (this.confirmBtn) this.confirmBtn.destroy()
-    this.confirmBtn = makeNodeButton(this, 10, 622, `Confirm (${this.pickedUnit?.subtypeLabel ?? ''})`, () => this.confirmPick(), {
-      w: SIDEBAR_W - 20, h: 28, textSize: FONT_SIZE.xs, role: 'primary',
+    this.confirmBtn = makeNodeButton(this, 10, 618, `Confirm (${this.pickedUnit?.subtypeLabel ?? ''})`, () => this.confirmPick(), {
+      w: SIDEBAR_W - 20, h: 34, textSize: FONT_SIZE.xs, role: 'primary',
     })
   }
 

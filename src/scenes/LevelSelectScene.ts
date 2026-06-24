@@ -346,7 +346,7 @@ export class LevelSelectScene extends Phaser.Scene {
     }
 
     const btnW = this.infoPanelW - pad * 2
-    const btnH = 34
+    const btnH = 40
     const btnY = H - 60 - btnH
     const intelBtnX = pad
     const enterBtnX = pad + btnW / 2 + 4

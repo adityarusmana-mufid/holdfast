@@ -1,3 +1,11 @@
+## [2026-06-24] Phase — Fullscreen Toggle + Contrast Fixes
+- **Fullscreen toggle**: HTML button overlay in bottom-right corner calls `game.scale.toggleFullscreen()`. Hidden on unsupported platforms (`fullscreenEnabled` check + `FULLSCREEN_UNSUPPORTED` event). Uses Phaser's built-in fullscreen API with wrapper around parent element.
+- **WCAG contrast fixes**: 15 color pairs failed audit. Fixed danger button (12.63:1), dim text (#5d6d7d, 5.32:1), locked nodes, subtitles, stars, squad placeholders, result screen stars, game scene override text.
+- **Crash fix**: `loadSave()` in SaveData.ts used unchecked `as SaveData` cast — legacy saves without `squads` field crashed. Added `?? {}` runtime fallback.
+- **`makeMetalButton`** → **`makeNodeButton`**: Replaced deprecated button factory across 8 scene files (1 import + 1 call each). Added `role`-based dynamic text color. Removed 3 constants (metal gradient/mask params) from Constants.ts.
+- Files: `index.html`, `src/main.ts`, `src/scenes/*.ts` (8 files), `src/ui/Components.ts`, `src/ui/Constants.ts`, `src/shared/SaveData.ts`
+- Branch: `dev`
+
 ## [2026-06-22] Phase — Visual Polish + Guide Text + SquadScene Polish
 - **Visual polish** merged from `feat/visual-polish`: death animation (pop-in/out), deploy click UX fix, manual glow, screen shake, hit flash, deploy pop-in, three-phase enemy attack (wind-up→launch→wind-down), player attack projectiles/swing, decision mode scaling, camera bloom/vignette removed
 - **Guide text overlay**: `guideText` field in `LevelData` type, parsed from JSON, displayed as centered white panel on dark overlay in GameScene — click to dismiss. Battle auto-start deferred until guide dismissed for tutorial levels.

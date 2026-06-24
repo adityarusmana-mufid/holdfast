@@ -56,7 +56,7 @@ export class SquadScene extends Phaser.Scene {
       ...FONTS.small, color: COLORS.text.dim,
     }).setOrigin(0.5, 0)
 
-    makeNodeButton(this, W - 150, 20, 'Auto Fill', () => this.autoFill(), { w: 110, h: 26, textSize: '11px' })
+    makeNodeButton(this, W - 150, 18, 'Auto Fill', () => this.autoFill(), { w: 110, h: 34, textSize: '12px' })
 
     const gridW = COLS * SLOT_W + (COLS - 1) * SLOT_GAP
     const gridH = ROWS * SLOT_H + (ROWS - 1) * SLOT_GAP

@@ -118,7 +118,7 @@ export class ResultScene extends Phaser.Scene {
       }).setOrigin(0.5, 0)
     }
 
-    makeNodeButton(this, W / 2 - 70, btnY + 55, 'Back to Levels', () => {
+    makeNodeButton(this, W / 2 - 70, btnY + 52, 'Back to Levels', () => {
       this.scene.start('LevelSelectScene', { chapterId: this.chapterId })
     })
   }

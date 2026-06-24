@@ -271,15 +271,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private buildPauseButton(): void {
-    this.speedButton = makeNodeButton(this, this.scale.width - 110, 6, 'x1', () => this.toggleSpeed(), {
-      w: 48, h: 28, textSize: '13px',
+    this.speedButton = makeNodeButton(this, this.scale.width - 128, 4, 'x1', () => this.toggleSpeed(), {
+      w: 56, h: 36, textSize: '13px',
     })
 
-    this.pauseButton = makeNodeButton(this, this.scale.width - 56, 6, '[ II ]', () => {
+    this.pauseButton = makeNodeButton(this, this.scale.width - 64, 4, '[ II ]', () => {
       if (!this.battleActive || this.battleEnded) return
       this.togglePause()
     }, {
-      w: 48, h: 28, textSize: '13px',
+      w: 56, h: 36, textSize: '13px',
     })
   }
 
@@ -304,7 +304,7 @@ export class GameScene extends Phaser.Scene {
 
       const mkBtn = (label: string, color: string, yOff: number, cb: () => void) => {
         const btn = makeNodeButton(this, cx, this.scale.height / 2 + yOff, label, () => { this.togglePause(); cb() }, {
-          w: 200, h: 34, textSize: FONT_SIZE.sm,
+          w: 200, h: 38, textSize: FONT_SIZE.sm,
         })
         btn.setDepth(50)
         return btn
@@ -333,20 +333,20 @@ export class GameScene extends Phaser.Scene {
   private setupInput(): void {
     this.input.mouse?.disableContextMenu()
 
-    this.inspectRetreatBtn = makeNodeButton(this, 10, this.scale.height - 160, '', () => this.retreatInspectedUnit(), {
-      w: 220, h: 20, textSize: '13px', role: 'danger',
+    this.inspectRetreatBtn = makeNodeButton(this, 10, this.scale.height - 168, '', () => this.retreatInspectedUnit(), {
+      w: 220, h: 28, textSize: '13px', role: 'danger',
     })
     this.inspectRetreatBtn.setDepth(50)
     this.inspectRetreatBtn.setAlpha(0)
 
-    this.inspectCloseBtn = makeNodeButton(this, 10, this.scale.height - 142, '[ CLOSE ]', () => this.exitDecisionMode(), {
-      w: 100, h: 20, textSize: FONT_SIZE.xs,
+    this.inspectCloseBtn = makeNodeButton(this, 10, this.scale.height - 138, '[ CLOSE ]', () => this.exitDecisionMode(), {
+      w: 100, h: 28, textSize: FONT_SIZE.xs,
     })
     this.inspectCloseBtn.setDepth(50)
     this.inspectCloseBtn.setAlpha(0)
 
-    this.facingCancelBtn = makeNodeButton(this, 10, this.scale.height - 124, '[ CANCEL ]', () => this.cancelDeployment(), {
-      w: 100, h: 20, textSize: FONT_SIZE.xs, role: 'danger',
+    this.facingCancelBtn = makeNodeButton(this, 10, this.scale.height - 108, '[ CANCEL ]', () => this.cancelDeployment(), {
+      w: 100, h: 28, textSize: FONT_SIZE.xs, role: 'danger',
     })
     this.facingCancelBtn.setDepth(50)
     this.facingCancelBtn.setAlpha(0)
@@ -1085,12 +1085,12 @@ export class GameScene extends Phaser.Scene {
       })
       const restartBtn = makeNodeButton(this, this.scale.width / 2, this.scale.height / 2 + 10, 'Restart Simulation', () => {
         if (this.levelData) this.loadLevel(this.levelData)
-      }, { w: 200, h: 32, textSize: FONT_SIZE.sm })
+      }, { w: 200, h: 36, textSize: FONT_SIZE.sm })
       restartBtn.setDepth(50)
 
       const editorBtn = makeNodeButton(this, this.scale.width / 2, this.scale.height / 2 + 46, 'Back to Editor', () => {
         this.scene.start(this.fromSquad ? 'SquadScene' : 'EditorScene')
-      }, { w: 200, h: 32, textSize: FONT_SIZE.sm })
+      }, { w: 200, h: 36, textSize: FONT_SIZE.sm })
       editorBtn.setDepth(50)
       return
     }

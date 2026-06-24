@@ -68,7 +68,7 @@ export function makeNodeButton(
   style: NodeButtonStyle = {},
 ): Phaser.GameObjects.Container {
   const W = style.w ?? 140
-  const H = style.h ?? 44
+  const H = style.h ?? 48
   const role = style.role ?? 'default'
   const colors = ROLE_COLORS[role]
   const textColor = style.textColor ?? ROLE_TEXT[role]

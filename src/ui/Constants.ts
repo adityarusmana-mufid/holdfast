@@ -56,7 +56,7 @@ export const COLORS = {
   text: {
     primary: '#1a1a2e',
     secondary: '#4a4a5a',
-    dim: '#8a8a9a',
+    dim: '#5d6d7d',
     accent: '#00a2ff',
     success: '#00c853',
     warning: '#ff9100',
@@ -64,6 +64,20 @@ export const COLORS = {
   },
   bg: COLOR_SHADE.neutral[100],
   button: { bg: 0xffffff, hover: COLOR_SHADE.primary[500], active: COLOR_SHADE.primary[600], border: COLOR_SHADE.primary[500] },
+  nodeButton: {
+    defaultTop: 0xd5dbe3,
+    defaultBottom: 0xc0c4cc,
+    defaultTopPressed: 0xc0c4cc,
+    defaultBottomPressed: 0xa8acb4,
+    primaryTop: 0x4a4a4a,
+    primaryBottom: 0x303030,
+    primaryTopPressed: 0x383838,
+    primaryBottomPressed: 0x282828,
+    dangerTop: 0x5a2020,
+    dangerBottom: 0x3a1010,
+    dangerTopPressed: 0x4a1818,
+    dangerBottomPressed: 0x2a0c0c,
+  },
   damage: { kinetic: '#1a1a2e', thermal: '#9c27b0' },
 }
 

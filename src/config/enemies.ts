@@ -57,6 +57,7 @@ export const ENEMY_CONFIGS: EnemyConfig[] = [
     attackInterval: 1.5,
     damageType: 'kinetic',
     isAerial: true,
+    attackRange: 2.5,
   },
   {
     id: 'caster',
@@ -71,5 +72,6 @@ export const ENEMY_CONFIGS: EnemyConfig[] = [
     dpOnKill: 2,
     attackInterval: 3.5,
     damageType: 'thermal',
+    attackRange: 2.5,
   },
 ]

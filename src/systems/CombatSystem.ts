@@ -31,7 +31,6 @@ interface AttackParams {
   useAoE: boolean
 }
 
-const DRONE_ATTACK_RANGE = 3
 const ENEMY_WIND_UP_DURATION = 0.4
 
 export class CombatSystem {
@@ -111,8 +110,8 @@ export class CombatSystem {
       this.enemyAttackTimers.set(enemy.id, newAcc - enemy.config.attackInterval)
 
       let target: UnitSprite | null = null
-      if (enemy.config.isAerial) {
-        target = this.findNearestRangedUnit(enemy, units)
+      if (enemy.config.attackRange && enemy.config.attackRange > 0) {
+        target = this.findNearestUnit(enemy, units, enemy.config.attackRange)
       } else if (enemy.blocked && enemy.blockerUnitKey) {
         const [r, c] = enemy.blockerUnitKey.split(',').map(Number)
         target = units.find(u => u.row === r && u.col === c && u.isAlive()) ?? null
@@ -139,15 +138,15 @@ export class CombatSystem {
     return unit.config.def
   }
 
-  private findNearestRangedUnit(enemy: EnemySprite, units: UnitSprite[]): UnitSprite | null {
+  private findNearestUnit(enemy: EnemySprite, units: UnitSprite[], range: number): UnitSprite | null {
     let best: UnitSprite | null = null
     let bestDist = Infinity
     const eTile = enemy.getCurrentTile()
     if (!eTile) return null
     for (const u of units) {
-      if (!u.isAlive() || u.config.type !== 'ranged') continue
+      if (!u.isAlive()) continue
       const dist = Math.abs(u.row - eTile.row) + Math.abs(u.col - eTile.col)
-      if (dist <= DRONE_ATTACK_RANGE && dist < bestDist) {
+      if (dist <= range && dist < bestDist) {
         bestDist = dist
         best = u
       }

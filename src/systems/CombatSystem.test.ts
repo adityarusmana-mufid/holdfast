@@ -311,12 +311,12 @@ describe('CombatSystem', () => {
       expect(dmg).toBe(150)
     })
 
-    it('aerial attack finds nearest ranged unit', () => {
-      const enemy = makeEnemy({ isAerial: true })
+    it('aerial attack finds nearest unit in range', () => {
+      const enemy = makeEnemy({ isAerial: true, attackRange: 2 })
       enemy._tileRow = 0; enemy._tileCol = 0
-      const close = makeUnit({ type: 'ranged' as const, row: 1, col: 1 })
-      const far = makeUnit({ type: 'ranged' as const, row: 9, col: 9 })
-      expect((cs as any).findNearestRangedUnit(enemy, [far, close])).toBe(close)
+      const close = makeUnit({ row: 1, col: 1 })
+      const far = makeUnit({ row: 9, col: 9 })
+      expect((cs as any).findNearestUnit(enemy, [far, close], 2)).toBe(close)
     })
   })
 
@@ -388,21 +388,21 @@ describe('CombatSystem', () => {
     })
   })
 
-  describe('findNearestRangedUnit', () => {
-    it('returns nearest ranged unit within range', () => {
+  describe('findNearestUnit', () => {
+    it('returns nearest unit within range', () => {
       const enemy = makeEnemy({ isAerial: true })
       enemy._tileRow = 3; enemy._tileCol = 3
-      const close = makeUnit({ type: 'ranged' as const, row: 3, col: 4 })
-      const far = makeUnit({ type: 'ranged' as const, row: 0, col: 0 })
-      const result = cs.findNearestRangedUnit(enemy, [far, close])
+      const close = makeUnit({ row: 3, col: 4 })
+      const far = makeUnit({ row: 0, col: 0 })
+      const result = (cs as any).findNearestUnit(enemy, [far, close], 3)
       expect(result).toBe(close)
     })
 
-    it('returns null when no ranged units in range', () => {
+    it('returns null when no units in range', () => {
       const enemy = makeEnemy({ isAerial: true })
       enemy._tileRow = 0; enemy._tileCol = 0
-      const far = makeUnit({ type: 'ranged' as const, row: 9, col: 9 })
-      expect(cs.findNearestRangedUnit(enemy, [far])).toBeNull()
+      const far = makeUnit({ row: 9, col: 9 })
+      expect((cs as any).findNearestUnit(enemy, [far], 3)).toBeNull()
     })
   })
 })

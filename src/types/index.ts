@@ -150,6 +150,7 @@ export interface EnemyConfig {
   attackInterval: number
   damageType: DamageType
   isAerial?: boolean
+  attackRange?: number
   description?: string
 }
 

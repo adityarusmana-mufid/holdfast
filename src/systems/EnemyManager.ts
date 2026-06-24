@@ -153,6 +153,7 @@ export class EnemyManager {
   private updateBlocking(): void {
     for (const enemy of this.enemies) {
       if (!enemy.alive) continue
+      if (enemy.config.isAerial) continue
       const tile = enemy.getCurrentTile()
       if (!tile) continue
       const unit = this.depSystem.getUnitAt(tile.row, tile.col)
@@ -218,7 +219,7 @@ export class EnemyManager {
       if (!enemy.alive) continue
       if (!enemy.blocked) {
         enemy.visualOffsetX = 0
-        enemy.visualOffsetY = 0
+        enemy.visualOffsetY = enemy.config.isAerial ? -40 : 0
         enemy.applyVisualPosition()
         continue
       }

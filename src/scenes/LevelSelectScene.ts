@@ -213,7 +213,9 @@ export class LevelSelectScene extends Phaser.Scene {
         bg.setInteractive(new Phaser.Geom.Rectangle(-nodeW / 2, -nodeH / 2, nodeW, nodeH), Phaser.Geom.Rectangle.Contains)
         if (bg.input) bg.input.cursor = 'pointer'
 
-        bg.on('pointerdown', () => {
+        bg.on('pointerup', (p: Phaser.Input.Pointer) => {
+          const moved = Math.abs(p.x - p.downX) + Math.abs(p.y - p.downY)
+          if (moved > 10) return
           if (this.selectedLevelId === levelId) {
             this.enterLevel(levelId, data)
           } else {
@@ -244,7 +246,14 @@ export class LevelSelectScene extends Phaser.Scene {
     scrollContainer.setMask(mask)
 
     let scrollX = 0
-    this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
+    let dragAnchor = 0
+    this.input.on('pointerdown', () => { dragAnchor = scrollX })
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!p.isDown) return
+      scrollX = Phaser.Math.Clamp(dragAnchor - (p.x - p.downX), scrollMin, scrollMax)
+      scrollContainer.x = pad - scrollX
+    })
+    this.input.on('wheel', (_p: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
       scrollX = Phaser.Math.Clamp(scrollX - dy * 0.8, scrollMin, scrollMax)
       scrollContainer.x = pad - scrollX
     })

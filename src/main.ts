@@ -23,4 +23,18 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [BootScene, ChapterSelectScene, LevelSelectScene, SquadScene, PickerScene, EditorScene, GameScene, ResultScene, LevelPreviewScene],
 }
 
-new Phaser.Game(config)
+const game = new Phaser.Game(config)
+;(window as any).__holdfastGame = game
+
+const fsBtn = document.getElementById('fs-btn')
+if (fsBtn) {
+  if (!document.fullscreenEnabled) {
+    fsBtn.style.display = 'none'
+  } else {
+    fsBtn.addEventListener('pointerup', (e) => {
+      e.stopPropagation()
+      game.scale.toggleFullscreen()
+    })
+  }
+  game.scale.on(Phaser.Scale.Events.FULLSCREEN_UNSUPPORTED, () => fsBtn.remove())
+}

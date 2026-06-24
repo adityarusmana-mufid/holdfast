@@ -109,5 +109,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 15,
-  "guideText": "When hostiles cluster together, AoE attacks hit multiple at once. Defenders hold the line while blast units clear the swarm."
+  "guideText": ["When hostiles cluster together, area-of-effect attacks damage multiple at once.", "Deploy a unit with AoE abilities. Grouped enemies take full damage from blast attacks."]
 }

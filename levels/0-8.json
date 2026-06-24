@@ -79,10 +79,10 @@
       "preludeDuration": 8
     }
   ],
-  "startingDP": 25,
+  "startingDP": 30,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": "Final assault incoming. All available units, hold the line."
+  "guideText": ["Final assault. All enemy types are inbound. Use everything you've learned — blocking, healing, facing, casters, snipers, and AoE."]
 }

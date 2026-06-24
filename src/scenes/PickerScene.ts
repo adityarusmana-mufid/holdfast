@@ -32,7 +32,7 @@ const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
 
 const SIDEBAR_W = 210
 const CARD_W = 160
-const CARD_H = 190
+const CARD_H = 220
 const CARD_GAP = 12
 const FILTER_W = 52
 const ARCHETYPE_ORDER = ['all', 'vanguard', 'guard', 'defender', 'sniper', 'caster', 'medic', 'supporter']
@@ -96,9 +96,12 @@ export class PickerScene extends Phaser.Scene {
     this.confirmBtn = this.add.container(-100, -100)
     this.confirmBtn.setVisible(false)
 
-    const cancelBtn = makeNodeButton(this, 10, this.H - 38, '< Back', () => this.closePicker(), {
-      w: SIDEBAR_W - 20, h: 34, textSize: FONT_SIZE.xs,
+    makeNodeButton(this, 16, 16, '< BACK', () => this.closePicker(), {
+      w: 72, h: 32, textSize: '11px',
     })
+    makeNodeButton(this, 94, 16, 'HOME', () => {
+      this.scene.start('ChapterSelectScene')
+    }, { w: 72, h: 32, textSize: '11px' })
 
     this.activeFilter = null
     this.startX = SIDEBAR_W + 12
@@ -196,8 +199,8 @@ export class PickerScene extends Phaser.Scene {
       if (bg.input) bg.input.cursor = 'pointer'
       this.cardScrollContainer.add(bg)
 
-      const iconSize = 72
-      const iconTop = ly + 37
+      const iconSize = 80
+      const iconTop = ly + 40
       const icon = this.add.graphics()
       if (unit.type === 'ground') {
         icon.fillStyle(unit.color, 1)
@@ -212,12 +215,12 @@ export class PickerScene extends Phaser.Scene {
       }
       this.cardScrollContainer.add(icon)
 
-      const label = this.add.text(lx + CARD_W / 2, ly + 119, unit.subtypeLabel, {
+      const label = this.add.text(lx + CARD_W / 2, ly + 132, unit.subtypeLabel, {
         fontSize: FONT_SIZE.xs, color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center', wordWrap: { width: CARD_W - 12 },
       }).setOrigin(0.5)
       this.cardScrollContainer.add(label)
 
-      const arch = this.add.text(lx + CARD_W / 2, ly + 139, unit.archetype.toUpperCase(), {
+      const arch = this.add.text(lx + CARD_W / 2, ly + 157, unit.archetype.toUpperCase(), {
         fontSize: FONT_SIZE.xs, color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5)
       this.cardScrollContainer.add(arch)
@@ -369,7 +372,7 @@ export class PickerScene extends Phaser.Scene {
 
   private showConfirm(): void {
     if (this.confirmBtn) this.confirmBtn.destroy()
-    this.confirmBtn = makeNodeButton(this, 10, 618, `Confirm (${this.pickedUnit?.subtypeLabel ?? ''})`, () => this.confirmPick(), {
+    this.confirmBtn = makeNodeButton(this, 10, this.H - 48, `Confirm (${this.pickedUnit?.subtypeLabel ?? ''})`, () => this.confirmPick(), {
       w: SIDEBAR_W - 20, h: 34, textSize: FONT_SIZE.xs, role: 'primary',
     })
   }

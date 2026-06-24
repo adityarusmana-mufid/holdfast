@@ -1,7 +1,7 @@
 {
-  "name": "Flak Zone",
-  "cols": 10,
-  "rows": 5,
+  "name": "Area Denial",
+  "cols": 12,
+  "rows": 4,
   "tiles": [
     [
       { "row": 0, "col": 0, "type": "floor" },
@@ -12,8 +12,10 @@
       { "row": 0, "col": 5, "type": "deploy_ranged" },
       { "row": 0, "col": 6, "type": "deploy_ranged" },
       { "row": 0, "col": 7, "type": "deploy_ranged" },
-      { "row": 0, "col": 8, "type": "floor" },
-      { "row": 0, "col": 9, "type": "floor" }
+      { "row": 0, "col": 8, "type": "deploy_ranged" },
+      { "row": 0, "col": 9, "type": "deploy_ranged" },
+      { "row": 0, "col": 10, "type": "floor" },
+      { "row": 0, "col": 11, "type": "floor" }
     ],
     [
       { "row": 1, "col": 0, "type": "floor" },
@@ -24,8 +26,10 @@
       { "row": 1, "col": 5, "type": "deploy_ranged" },
       { "row": 1, "col": 6, "type": "deploy_ranged" },
       { "row": 1, "col": 7, "type": "deploy_ranged" },
-      { "row": 1, "col": 8, "type": "floor" },
-      { "row": 1, "col": 9, "type": "floor" }
+      { "row": 1, "col": 8, "type": "deploy_ranged" },
+      { "row": 1, "col": 9, "type": "deploy_ranged" },
+      { "row": 1, "col": 10, "type": "floor" },
+      { "row": 1, "col": 11, "type": "floor" }
     ],
     [
       { "row": 2, "col": 0, "type": "spawn" },
@@ -37,7 +41,9 @@
       { "row": 2, "col": 6, "type": "route" },
       { "row": 2, "col": 7, "type": "route" },
       { "row": 2, "col": 8, "type": "route" },
-      { "row": 2, "col": 9, "type": "goal" }
+      { "row": 2, "col": 9, "type": "route" },
+      { "row": 2, "col": 10, "type": "route" },
+      { "row": 2, "col": 11, "type": "goal" }
     ],
     [
       { "row": 3, "col": 0, "type": "floor" },
@@ -48,20 +54,10 @@
       { "row": 3, "col": 5, "type": "deploy_ranged" },
       { "row": 3, "col": 6, "type": "deploy_ranged" },
       { "row": 3, "col": 7, "type": "deploy_ranged" },
-      { "row": 3, "col": 8, "type": "floor" },
-      { "row": 3, "col": 9, "type": "floor" }
-    ],
-    [
-      { "row": 4, "col": 0, "type": "floor" },
-      { "row": 4, "col": 1, "type": "floor" },
-      { "row": 4, "col": 2, "type": "deploy_ranged" },
-      { "row": 4, "col": 3, "type": "deploy_ranged" },
-      { "row": 4, "col": 4, "type": "deploy_ranged" },
-      { "row": 4, "col": 5, "type": "deploy_ranged" },
-      { "row": 4, "col": 6, "type": "deploy_ranged" },
-      { "row": 4, "col": 7, "type": "deploy_ranged" },
-      { "row": 4, "col": 8, "type": "floor" },
-      { "row": 4, "col": 9, "type": "floor" }
+      { "row": 3, "col": 8, "type": "deploy_ranged" },
+      { "row": 3, "col": 9, "type": "deploy_ranged" },
+      { "row": 3, "col": 10, "type": "floor" },
+      { "row": 3, "col": 11, "type": "floor" }
     ]
   ],
   "waypoints": [
@@ -74,38 +70,41 @@
     { "row": 2, "col": 6 },
     { "row": 2, "col": 7 },
     { "row": 2, "col": 8 },
-    { "row": 2, "col": 9 }
+    { "row": 2, "col": 9 },
+    { "row": 2, "col": 10 },
+    { "row": 2, "col": 11 }
   ],
   "waves": [
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 3, "spawnInterval": 3 }
+        { "enemyType": "soldier", "count": 3, "spawnInterval": 0.8 }
       ],
-      "preludeDuration": 10
+      "preludeDuration": 5
     },
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 2, "spawnInterval": 2.5 },
-        { "enemyType": "drone", "count": 2, "spawnInterval": 3 }
+        { "enemyType": "soldier", "count": 3, "spawnInterval": 1.5 }
       ],
       "preludeDuration": 8
     },
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "drone", "count": 4, "spawnInterval": 2 },
-        { "enemyType": "soldier", "count": 3, "spawnInterval": 2.5 }
+        { "enemyType": "soldier", "count": 4, "spawnInterval": 1.2 }
       ],
       "preludeDuration": 8
     }
   ],
   "tutorial": true,
-  "startingDP": 22,
-  "dpRegenRate": 1,
+  "startingDP": 50,
+  "dpRegenRate": 2,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10,
-  "guideText": ["Drones fly over ground units and cannot be blocked. Only ranged units on white tiles can attack them.", "Deploy a Sniper on a ranged tile near the route. They will automatically target aerial hostiles."]
+  "lives": 20,
+  "guideText": [
+    "Some units deal area damage. Blast Casters fire a beam hitting ALL enemies in a line. Place one on a white tile above the route facing downward.",
+    "Artillerymen and Chain Casters spread damage differently. Artilleryman shells splash near the target. Chain Caster lightning jumps between nearby foes. Try all three!"
+  ]
 }

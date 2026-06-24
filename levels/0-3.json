@@ -63,16 +63,15 @@
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 3, "spawnInterval": 2.5 },
-        { "enemyType": "trooper", "count": 1, "spawnInterval": 4 }
+        { "enemyType": "soldier", "count": 5, "spawnInterval": 2 }
       ],
       "preludeDuration": 6
     }
   ],
-  "startingDP": 20,
+  "startingDP": 24,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": "An armored APC has been spotted. You may need more than one blocker to hold it."
+  "guideText": ["Hostile scouts are flanking from multiple positions. Face your units toward the route to engage them as they pass through."]
 }

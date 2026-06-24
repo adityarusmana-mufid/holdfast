@@ -56,15 +56,22 @@
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 3, "spawnInterval": 3 }
+        { "enemyType": "soldier", "count": 2, "spawnInterval": 3 }
+      ],
+      "preludeDuration": 6
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "soldier", "count": 3, "spawnInterval": 2.5 }
       ],
       "preludeDuration": 8
     }
   ],
-  "startingDP": 15,
+  "startingDP": 20,
   "dpRegenRate": 1,
   "dpCap": 99,
-  "deploymentLimit": 8,
+  "deploymentLimit": 6,
   "lives": 10,
-  "guideText": "Scout cars approaching from the east. Deploy a ground unit on the route to block them."
+  "guideText": ["Scout cars rolling in from the east. Deploy a ground unit on the route to block, and a ranged unit on a white tile to provide covering fire."]
 }

@@ -122,6 +122,144 @@ export function showWindUp(
   }
 }
 
+export function spawnChainBolt(
+  scene: Phaser.Scene,
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+  color: number,
+  duration: number,
+): void {
+  const g = scene.add.graphics()
+  g.setDepth(30)
+
+  const base = scene.add.graphics()
+  base.lineStyle(5, 0xffffff, 0.35)
+  base.beginPath()
+  base.moveTo(fromX, fromY)
+  base.lineTo(toX, toY)
+  base.strokePath()
+  base.setDepth(29)
+
+  scene.tweens.addCounter({
+    from: 0,
+    to: 1,
+    duration: duration * 1000,
+    ease: 'Quad.easeOut',
+    onUpdate: (t) => {
+      const p = t.getValue()
+      if (p === null) return
+      g.clear()
+      g.lineStyle(3.5, color, 0.9 * (1 - p * 0.5))
+
+      const segments = 8
+      const dx = (toX - fromX) / segments
+      const dy = (toY - fromY) / segments
+      const segLen = Math.sqrt(dx * dx + dy * dy)
+      const jitter = Math.min(14, segLen * 0.5)
+
+      g.beginPath()
+      g.moveTo(fromX, fromY)
+      for (let i = 1; i < segments; i++) {
+        const t0 = i / segments
+        const bx = fromX + (toX - fromX) * t0 + (Math.random() - 0.5) * jitter * (1 - p * 0.5)
+        const by = fromY + (toY - fromY) * t0 + (Math.random() - 0.5) * jitter * (1 - p * 0.5)
+        g.lineTo(bx, by)
+      }
+      g.lineTo(toX, toY)
+      g.strokePath()
+    },
+    onComplete: () => { g.destroy(); base.destroy() },
+  })
+}
+
+export function spawnSplashRing(
+  scene: Phaser.Scene,
+  cx: number,
+  cy: number,
+  radiusPx: number,
+  color: number,
+): void {
+  const g = scene.add.graphics()
+  g.setDepth(30)
+  const fill = scene.add.graphics()
+  fill.setDepth(29)
+
+  scene.tweens.addCounter({
+    from: 0,
+    to: 1,
+    duration: 400,
+    ease: 'Quad.easeOut',
+    onUpdate: (t) => {
+      const p = t.getValue()
+      if (p === null) return
+      const r = radiusPx * p
+      g.clear()
+      g.lineStyle(3, color, 0.7 * (1 - p * 0.7))
+      g.strokeCircle(cx, cy, r)
+
+      fill.clear()
+      fill.fillStyle(color, 0.08 * (1 - p))
+      fill.fillCircle(cx, cy, r)
+    },
+    onComplete: () => { g.destroy(); fill.destroy() },
+  })
+}
+
+export function spawnBurstParticles(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  color: number,
+  count: number = 6,
+): void {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.4
+    const dist = 20 + Math.random() * 20
+    const g = scene.add.graphics()
+    g.fillStyle(color, 0.8)
+    g.fillCircle(0, 0, 2 + Math.random() * 2)
+    g.setPosition(x, y)
+    g.setDepth(30)
+    scene.tweens.add({
+      targets: g,
+      x: x + Math.cos(angle) * dist,
+      y: y + Math.sin(angle) * dist,
+      alpha: 0,
+      duration: 300 + Math.random() * 200,
+      ease: 'Quad.easeOut',
+      onComplete: () => g.destroy(),
+    })
+  }
+}
+
+export function spawnExpandRing(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  color: number,
+  maxRadius: number = 24,
+  duration: number = 300,
+): void {
+  const g = scene.add.graphics()
+  g.setDepth(28)
+  scene.tweens.addCounter({
+    from: 0,
+    to: 1,
+    duration,
+    ease: 'Quad.easeOut',
+    onUpdate: (t) => {
+      const p = t.getValue()
+      if (p === null) return
+      g.clear()
+      g.lineStyle(2, color, 0.5 * (1 - p))
+      g.strokeCircle(x, y, maxRadius * p)
+    },
+    onComplete: () => g.destroy(),
+  })
+}
+
 export function flashDamage(
   scene: Phaser.Scene,
   x: number,

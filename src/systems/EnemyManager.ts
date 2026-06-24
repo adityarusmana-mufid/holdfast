@@ -7,7 +7,7 @@ import { ENEMY_CONFIGS } from '../config/enemies'
 
 export interface EnemyManagerEvents {
   onEnemyReachedObjective: (config: EnemyConfig) => void
-  onEnemySpawned: (config: EnemyConfig) => void
+   onEnemySpawned: (config: EnemyConfig, spawnRow: number, spawnCol: number) => void
   onWavePrelude: (route: Route, wave: Wave) => void
 }
 
@@ -89,7 +89,7 @@ export class EnemyManager {
     if (path.length < 2) return
     const enemy = new EnemySprite(this.scene, this.grid, config, path)
     this.enemies.push(enemy)
-    this.events.onEnemySpawned(config)
+    this.events.onEnemySpawned(config, route.spawn.row, route.spawn.col)
   }
 
   update(delta: number): void {

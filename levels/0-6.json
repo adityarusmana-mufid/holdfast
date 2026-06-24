@@ -65,7 +65,8 @@
       "routeIndex": 0,
       "entries": [
         { "enemyType": "soldier", "count": 3, "spawnInterval": 2 },
-        { "enemyType": "trooper", "count": 2, "spawnInterval": 3 }
+        { "enemyType": "trooper", "count": 2, "spawnInterval": 3 },
+        { "enemyType": "drone", "count": 1, "spawnInterval": 3.5 }
       ],
       "preludeDuration": 6
     },
@@ -83,5 +84,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": "Enemy patrols are converging. Position your units to cover the full route length."
+  "guideText": ["Hostiles are grouping up in larger numbers. Area-of-effect attacks can damage multiple enemies at once."]
 }

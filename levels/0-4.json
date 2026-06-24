@@ -70,10 +70,10 @@
       "preludeDuration": 6
     }
   ],
-  "startingDP": 20,
+  "startingDP": 25,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": "Hostile signals are strengthening. Keep your frontline reinforced and manage your DP."
+  "guideText": ["Armored APCs are deploying with infantry. Standard bullets have trouble piercing their hulls. Use casters for thermal damage."]
 }

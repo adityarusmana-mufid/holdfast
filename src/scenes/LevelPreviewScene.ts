@@ -58,11 +58,14 @@ export class LevelPreviewScene extends Phaser.Scene {
     this.contentContainer = this.add.container(0, 0)
     this.rebuildContent()
 
-    const btnY = H - 48
-    makeNodeButton(this, 10, btnY - 17, '< Back', () => this.scene.stop(), {
-      w: 100, h: 40,
+    makeNodeButton(this, 16, 16, '< BACK', () => this.scene.stop(), {
+      w: 72, h: 32, textSize: '11px',
     })
+    makeNodeButton(this, 94, 16, 'HOME', () => {
+      this.scene.start('ChapterSelectScene')
+    }, { w: 72, h: 32, textSize: '11px' })
 
+    const btnY = H - 48
     makeNodeButton(this, W - 110, btnY - 17, 'ENTER', () => this.enterLevel(), {
       w: 100, h: 40, role: 'primary',
     })

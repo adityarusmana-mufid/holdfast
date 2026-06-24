@@ -143,6 +143,7 @@ export function positionsInRange(
 export const RANGE_PATTERNS: Record<string, number[][]> = {
   selfOnly: [[0, 0]],
   meleeFront: [[-1, 0], [0, 0]],
+  meleeWide3: [[-1, -1], [-1, 0], [-1, 1], [0, 0]],
   ranged4x3: (() => {
     const tiles: number[][] = []
     for (let r = -3; r <= 0; r++) {

@@ -83,5 +83,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": "Recon reports mixed hostiles including drones and artillery. Prepare your formation."
+  "guideText": ["Mixed hostiles inbound including drones, casters, and armored units. Every role in your squad matters. Deploy a complete formation."]
 }

@@ -1,3 +1,28 @@
+## [2026-06-24] Phase — Multi-Dialog Guide System + Text Rewrite
+- **Multi-dialog**: `guideText` changed from single string to `string[]`. Guide dialog supports multiple pages (click to advance, last page shows `[ tap to dismiss ]`). Visual-novel style sequential reveal.
+- **Text rewrite**: All 15 level guide texts rewritten as direct second-person instructions. TR tutorials get 2 pages each (teach mechanic step-by-step), story levels get 1 page (concise tactical tip).
+- Files: `src/types/index.ts`, `src/config/chapters.ts`, `src/scenes/GameScene.ts`, `levels/*.json` (15 files)
+
+## [2026-06-24] Phase — Navigation Standardization
+- **Back buttons**: Moved from bottom-left to top-left (x=16, y=16) across LevelSelectScene, SquadScene, LevelPreviewScene, PickerScene — consistent with Arknights top-left back pattern
+- **Home buttons**: Added next to Back in all navigation scenes (→ ChapterSelectScene as stand-in for future home scene)
+- **ResultScene**: Removed all buttons (Retry, Next Level, Back to Levels). Click anywhere on screen returns to LevelSelectScene. Cleaned up unused imports and data fields.
+- Files: `src/scenes/LevelSelectScene.ts`, `src/scenes/SquadScene.ts`, `src/scenes/LevelPreviewScene.ts`, `src/scenes/PickerScene.ts`, `src/scenes/ResultScene.ts`, `src/scenes/GameScene.ts`
+
+## [2026-06-24] Phase — Card Layout + Result Screen
+- **SquadScene**: SLOT_H 162→200 — taller cards fill vertical space
+- **PickerScene**: CARD_H 190→220, larger icons (72→80), repositioned text — better use of vertical space
+- **ResultScene**: Retry button removed on victory (stage clear) — only shown on defeat
+- Files: `src/scenes/SquadScene.ts`, `src/scenes/PickerScene.ts`, `src/scenes/ResultScene.ts`
+
+## [2026-06-24] Phase — Unit Death Animation
+- **Particle burst on unit death**: Units now emit 6 particles tinted to their config color on death, matching the existing enemy death effect. Uses existing `'particle'` texture. Shrink+fade tween preserved.
+- Files: `src/entities/Unit.ts`, `docs/superpowers/specs/2026-06-24-unit-death-animation.md`
+
+## [2026-06-24] Phase — Info Panel Text Overlap Fix
+- **Text overlap**: Fixed `py +=` increments to use `text.height` instead of hardcoded values. Wrapping titles (e.g., "1-3 Breach Point" at 20px bold) no longer overlap with description below.
+- Files: `src/scenes/LevelSelectScene.ts`
+
 ## [2026-06-24] Phase — Fullscreen Toggle + Contrast Fixes
 - **Fullscreen toggle**: HTML button overlay in bottom-right corner calls `game.scale.toggleFullscreen()`. Hidden on unsupported platforms (`fullscreenEnabled` check + `FULLSCREEN_UNSUPPORTED` event). Uses Phaser's built-in fullscreen API with wrapper around parent element.
 - **WCAG contrast fixes**: 15 color pairs failed audit. Fixed danger button (12.63:1), dim text (#5d6d7d, 5.32:1), locked nodes, subtitles, stars, squad placeholders, result screen stars, game scene override text.

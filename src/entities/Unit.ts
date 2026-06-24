@@ -145,8 +145,29 @@ export class UnitSprite {
   }
 
   destroy(): void {
-    if (this.container.scene) {
-      this.container.scene.tweens.add({
+    const scene = this.container.scene
+    if (scene) {
+      if (!scene.textures.exists('particle')) {
+        const g = scene.make.graphics()
+        g.fillStyle(0xffffff)
+        g.fillRect(0, 0, 8, 8)
+        g.generateTexture('particle', 8, 8)
+        g.destroy()
+      }
+
+      const emitter = scene.add.particles(this.container.x, this.container.y, 'particle', {
+        speed: { min: 40, max: 120 },
+        angle: { min: 0, max: 360 },
+        scale: { start: 2, end: 0 },
+        alpha: { start: 1, end: 0 },
+        lifespan: 350,
+        emitting: false,
+        tint: this.config.color,
+      })
+      emitter.explode(6)
+      scene.time.delayedCall(500, () => emitter.destroy())
+
+      scene.tweens.add({
         targets: this.container,
         scaleX: 0,
         scaleY: 0,

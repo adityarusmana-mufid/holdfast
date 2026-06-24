@@ -58,7 +58,7 @@ export interface LevelData {
   deploymentLimit: number
   lives: number
   tutorial?: boolean
-  guideText?: string
+  guideText?: string[]
 }
 
 export type Direction = 'up' | 'down' | 'left' | 'right'
@@ -80,12 +80,14 @@ export enum UnitTrait {
   SlowOnHit = 'slow_on_hit',
   ChainJump = 'chain_jump',
   LinearAoE = 'linear_aoe',
+  AoEMelee = 'aoe_melee',
   TargetingLowestDef = 'targeting_lowest_def',
   RangedWhenNotBlocking = 'ranged_when_not_blocking',
   RangedAoEWhenNotBlocking = 'ranged_aoe_when_not_blocking',
   ConditionalDamage120 = 'conditional_damage_120',
   TakesTrueDamage = 'takes_true_damage',
   HealAlly = 'heal_ally',
+  HealMulti = 'heal_multi',
   AttackHealsAlly = 'attack_heals_ally',
   AoEHoT = 'aoe_hot',
   LongRangeAttack = 'long_range_attack',

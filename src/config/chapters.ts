@@ -1,20 +1,22 @@
 import { LevelData } from '../types/index'
 import { validateLevelData } from '../shared/utils/LevelValidation'
-import s01json from '../../levels/0-1.json'
 import tr1json from '../../levels/TR-1.json'
+import s01json from '../../levels/0-1.json'
+import tr4json from '../../levels/TR-4.json'
 import s02json from '../../levels/0-2.json'
 import tr2json from '../../levels/TR-2.json'
 import s03json from '../../levels/0-3.json'
-import tr3json from '../../levels/TR-3.json'
-import s04json from '../../levels/0-4.json'
-import tr4json from '../../levels/TR-4.json'
-import s05json from '../../levels/0-5.json'
 import tr5json from '../../levels/TR-5.json'
-import s06json from '../../levels/0-6.json'
+import s04json from '../../levels/0-4.json'
+import tr3json from '../../levels/TR-3.json'
+import s05json from '../../levels/0-5.json'
 import tr6json from '../../levels/TR-6.json'
-import s07json from '../../levels/0-7.json'
+import s06json from '../../levels/0-6.json'
 import tr7json from '../../levels/TR-7.json'
+import s07json from '../../levels/0-7.json'
+import tr8json from '../../levels/TR-8.json'
 import s08json from '../../levels/0-8.json'
+import tr9json from '../../levels/TR-9.json'
 
 function jsonToLevelData(json: Record<string, unknown>): LevelData {
   const waypoints = json.waypoints as { row: number; col: number }[]
@@ -39,7 +41,7 @@ function jsonToLevelData(json: Record<string, unknown>): LevelData {
     deploymentLimit: json.deploymentLimit as number,
     lives: json.lives as number,
     tutorial: json.tutorial as boolean | undefined,
-    guideText: json.guideText as string | undefined,
+    guideText: (json.guideText as string[] | undefined)?.filter(s => typeof s === 'string'),
   }
   const errors = validateLevelData(data)
   if (errors.length > 0) {
@@ -56,40 +58,43 @@ export interface ChapterDef {
   nodePositions: { x: number; y: number }[]
 }
 
-// Prologue interlacing matches Arknights Episode 00 pattern:
-//   0-1 → TR-1 → 0-2 → TR-2 → 0-3 → TR-3 → 0-4 → TR-4
-//   → 0-5 → TR-5 → 0-6 → TR-6 → 0-7 → TR-7 → 0-8
+// Prologue interlacing: each TR teaches a mechanic, then the next story level tests it.
+//   TR-1 → 0-1 → TR-4 → 0-2 → TR-2 → 0-3 → TR-5 → 0-4
+//   → TR-3 → 0-5 → TR-6 → 0-6 → TR-7 → 0-7 → TR-8 → 0-8 → TR-9
 export const CHAPTERS: ChapterDef[] = [
   {
     id: 'prologue',
     title: 'Prologue',
     subtitle: 'Tactical Readiness',
     levels: [
-      '0-1', 'TR-1',
-      '0-2', 'TR-2',
-      '0-3', 'TR-3',
-      '0-4', 'TR-4',
-      '0-5', 'TR-5',
-      '0-6', 'TR-6',
-      '0-7', 'TR-7',
-      '0-8',
+      'TR-1', '0-1',
+      'TR-4', '0-2',
+      'TR-2', '0-3',
+      'TR-5', '0-4',
+      'TR-3', '0-5',
+      'TR-6', '0-6',
+      'TR-7', '0-7',
+      'TR-8', '0-8',
+      'TR-9',
     ],
     nodePositions: [
-      { x: 40, y: 0 },    // 0-1   intro
-      { x: 200, y: 0 },   // TR-1  flat (pair with 0-1)
-      { x: 360, y: -30 }, // 0-2   rise
-      { x: 520, y: -30 }, // TR-2  stay up
-      { x: 680, y: 0 },   // 0-3   mid
-      { x: 840, y: 0 },   // TR-3  stay mid
-      { x: 1000, y: 30 }, // 0-4   dip
-      { x: 1160, y: 30 }, // TR-4  stay down
-      { x: 1320, y: -30 },// 0-5   rise
-      { x: 1480, y: 0 },  // TR-5  mid
-      { x: 1640, y: 0 },  // 0-6   stay mid
-      { x: 1800, y: 30 }, // TR-6  dip
-      { x: 1960, y: -30 },// 0-7   rise
-      { x: 2120, y: -30 },// TR-7  stay up
-      { x: 2280, y: 0 },  // 0-8   flat finish
+      { x: 40, y: 0 },    // TR-1  block + heal
+      { x: 200, y: 0 },   // 0-1   basic combat
+      { x: 360, y: -30 }, // TR-4  vanguards
+      { x: 520, y: -30 }, // 0-2   DP economy
+      { x: 680, y: 0 },   // TR-2  facing
+      { x: 840, y: 0 },   // 0-3   flanking scouts
+      { x: 1000, y: 30 }, // TR-5  casters
+      { x: 1160, y: 30 }, // 0-4   armored enemy
+      { x: 1320, y: -30 },// TR-3  drones
+      { x: 1480, y: -30 },// 0-5   aerial scouts
+      { x: 1640, y: 0 },  // TR-6  AoE
+      { x: 1800, y: 0 },  // 0-6   grouped hostiles
+      { x: 1960, y: 30 }, // TR-7  full comp
+      { x: 2120, y: 30 }, // 0-7   mixed threats
+      { x: 2280, y: 0 },  // TR-8  advanced AoE
+      { x: 2440, y: 0 },  // 0-8   final assault
+      { x: 2600, y: 30 }, // TR-9  multi medic
     ],
   },
 ]
@@ -110,6 +115,8 @@ const LEVEL_MAP: Record<string, LevelData> = {
   '0-7': jsonToLevelData(s07json as Record<string, unknown>),
   'TR-7': jsonToLevelData(tr7json as Record<string, unknown>),
   '0-8': jsonToLevelData(s08json as Record<string, unknown>),
+  'TR-8': jsonToLevelData(tr8json as Record<string, unknown>),
+  'TR-9': jsonToLevelData(tr9json as Record<string, unknown>),
 }
 
 export function getLevelData(levelId: string): LevelData | undefined {

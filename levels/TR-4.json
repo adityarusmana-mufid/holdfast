@@ -83,5 +83,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": "Vanguards generate Deployment Points. Deploy them early so you can afford stronger units later."
+  "guideText": ["Vanguards generate extra DP per second while deployed. Deploy them early to afford stronger units later.", "Place a Vanguard near the route. Watch your DP gauge fill faster while it holds the line."]
 }

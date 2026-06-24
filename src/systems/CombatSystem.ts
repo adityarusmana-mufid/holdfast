@@ -14,6 +14,8 @@ export interface CombatEvents {
   onEnemyWindUp?: (enemy: EnemySprite, target: UnitSprite, attackId: number) => void
   onEnemyAttackLanded?: (enemy: EnemySprite, target: UnitSprite, damage: number) => void
   onEnemyAttackCancelled?: (attackId: number) => void
+  onChainJump?: (unit: UnitSprite, from: EnemySprite, to: EnemySprite) => void
+  onSplashAoE?: (unit: UnitSprite, center: EnemySprite, radius: number) => void
 }
 
 interface PendingAttack {
@@ -63,6 +65,16 @@ export class CombatSystem {
         this.executeAoEAttack(unit, enemies, params)
       } else if (this.hasTrait(unit, UnitTrait.LinearAoE)) {
         this.executeLinearAoEAttack(unit, enemies)
+      } else if (this.hasTrait(unit, UnitTrait.AoEMelee)) {
+        this.executeAoEMeleeAttack(unit, enemies, params)
+        if (this.hasTrait(unit, UnitTrait.HealOnAttack)) {
+          const traitConfig = unit.config.traits.find(t => t.traitId === UnitTrait.HealOnAttack)
+          const healAmount = traitConfig?.value ?? 50
+          const healed = unit.heal(healAmount)
+          if (healed > 0 && this.events.onHealApplied) {
+            this.events.onHealApplied(unit, healed, unit)
+          }
+        }
       } else {
         const target = this.findTarget(unit, enemies, params.rangePattern)
         if (!target || !target.alive) continue
@@ -201,12 +213,26 @@ export class CombatSystem {
     }
   }
 
+  private executeAoEMeleeAttack(unit: UnitSprite, enemies: EnemySprite[], params: AttackParams): void {
+    const targets = this.getEnemiesInRange(unit, enemies, params.rangePattern)
+    for (const target of targets) {
+      if (!target.alive) continue
+      this.events.onUnitAttackInitiated?.(unit, target, unit.config.damageType)
+      this.applyDamage(unit, target, params.atk)
+    }
+  }
+
   private executeSplashDamage(unit: UnitSprite, primary: EnemySprite, enemies: EnemySprite[], atkOverride?: number): void {
     const splashConfig = unit.config.splashConfig!
     const tile = primary.getCurrentTile()
     if (!tile) return
 
     const splashTargets = this.getEnemiesInRadius(tile, splashConfig.radius, enemies, primary)
+
+    if (splashTargets.length > 0 && this.events.onSplashAoE) {
+      this.events.onSplashAoE(unit, primary, splashConfig.radius)
+    }
+
     for (const target of splashTargets) {
       if (!target.alive) continue
       const baseDamage = this.calculateDamage(unit, target, atkOverride)
@@ -248,8 +274,12 @@ export class CombatSystem {
       chain.push(next)
       hitEnemies.add(next)
 
+      if (this.events.onChainJump) {
+        this.events.onChainJump(unit, last, next)
+      }
+
       const baseDmg = this.calculateDamage(unit, next, atkOverride)
-      const chainDmg = Math.max(1, Math.floor(baseDmg * Math.max(0.05, 1 - falloff * (jump + 1))))
+      const chainDmg = Math.max(1, Math.floor(baseDmg * Math.pow(falloff, jump + 1)))
       next.takeDamage(chainDmg)
       if (chainDmg > 0) {
         this.events.onDamageDealt(chainDmg, next, unit.config.damageType)
@@ -290,11 +320,13 @@ export class CombatSystem {
   }
 
   private getEnemiesInRadius(pos: Position, radius: number, enemies: EnemySprite[], exclude?: EnemySprite): EnemySprite[] {
+    const center = this.grid.tileToPixel(pos.row, pos.col)
+    const radiusPx = radius * 64
     return enemies.filter(e => {
       if (!e.alive || e === exclude) return false
-      const tile = e.getCurrentTile()
-      if (!tile) return false
-      return Math.abs(tile.row - pos.row) <= radius && Math.abs(tile.col - pos.col) <= radius
+      const dx = e.x - center.x
+      const dy = e.y - center.y
+      return dx * dx + dy * dy <= radiusPx * radiusPx
     })
   }
 

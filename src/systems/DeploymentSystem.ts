@@ -129,6 +129,10 @@ export class DeploymentSystem {
     }
   }
 
+  getDPProgress(): number {
+    return this.dpAccumulator
+  }
+
   getUnitAt(row: number, col: number): DeployedUnit | undefined {
     return this.activeUnits.get(`${row},${col}`)
   }

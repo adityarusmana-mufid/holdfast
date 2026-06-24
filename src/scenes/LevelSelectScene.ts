@@ -140,7 +140,7 @@ export class LevelSelectScene extends Phaser.Scene {
       const from = positions[i]
       const to = positions[i + 1]
       const completed = getCompletion(levelIds[i])
-      track.lineStyle(3, completed ? 0x90a4ae : 0xcfd8dc, completed ? 0.9 : 0.5)
+      track.lineStyle(4, completed ? 0x90a4ae : 0xcfd8dc, completed ? 0.9 : 0.5)
       track.lineBetween(from.x, BASE_Y + from.y, to.x, BASE_Y + to.y)
     }
     scrollContainer.add(track)
@@ -240,7 +240,7 @@ export class LevelSelectScene extends Phaser.Scene {
 
     const maskShape = this.add.graphics()
     maskShape.fillStyle(0xffffff)
-    maskShape.fillRect(pad, 0, W - pad * 2, H)
+    maskShape.fillRect(0, 0, W, H)
     const mask = maskShape.createGeometryMask()
     maskShape.setVisible(false)
     scrollContainer.setMask(mask)
@@ -265,15 +265,18 @@ export class LevelSelectScene extends Phaser.Scene {
     this.infoPanelOverlay = this.add.graphics()
     this.infoPanelOverlay.setDepth(19)
     this.infoPanelOverlay.setVisible(false)
-    this.infoPanelOverlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, 0, 0), Phaser.Geom.Rectangle.Contains)
-    this.infoPanelOverlay.on('pointerdown', () => this.hideLevelInfo())
+    // overlay is visual-only; node clicks go through to the level nodes below
 
-    makeNodeButton(this, 20, H - 52, '< Back', () => {
+    makeNodeButton(this, 16, 16, '< BACK', () => {
       this.scene.start('ChapterSelectScene')
-    }, { w: 100 })
+    }, { w: 72, h: 32, textSize: '11px' })
+    makeNodeButton(this, 94, 16, 'HOME', () => {
+      this.scene.start('ChapterSelectScene')
+    }, { w: 72, h: 32, textSize: '11px' })
   }
 
   private showLevelInfo(levelId: string): void {
+    const isSwitch = this.selectedLevelId !== null
     this.selectedLevelId = levelId
     this.infoPanel.removeAll(true)
 
@@ -296,37 +299,17 @@ export class LevelSelectScene extends Phaser.Scene {
     bg.strokePath()
     this.infoPanel.add(bg)
 
+    const closeBtn = makeNodeButton(this, this.infoPanelW - 78, 14, 'CLOSE', () => this.hideLevelInfo(), { w: 64, h: 26, textSize: '10px' })
+    this.infoPanel.add(closeBtn)
+
     let py = 100
 
-    const title = this.add.text(pad, py, data.name, {
-      ...FONTS.h3, color: COLORS.text.primary, wordWrap: { width: this.infoPanelW - pad * 2 },
-    })
-    this.infoPanel.add(title)
-
-    py += 34
-
-    const totalEnemies = data.waves.reduce((sum, w) => sum + w.entries.reduce((s, e) => s + e.count, 0), 0)
-    const summary = `${data.waves.length} wave${data.waves.length > 1 ? 's' : ''}, ${totalEnemies} total hostiles`
-    const desc = this.add.text(pad, py, summary, {
-      ...FONTS.small, color: COLORS.text.secondary, wordWrap: { width: this.infoPanelW - pad * 2 },
-    })
-    this.infoPanel.add(desc)
-
-    py += 24
-
-    const deployLine = this.add.text(pad, py, `Deploy limit: ${data.deploymentLimit}`, {
-      ...FONTS.small, color: COLORS.text.dim,
-    })
-    this.infoPanel.add(deployLine)
-
-    py += 20
-
     const completed = getCompletion(levelId)
+
     if (completed) {
-      const hexSize = 28
+      const hexSize = 34
       const hexGap = 8
-      const totalW = 3 * hexSize + 2 * hexGap
-      const startX = pad + (this.infoPanelW - pad * 2 - totalW) / 2
+      const startX = pad
       const cy = py + hexSize / 2
 
       for (let i = 0; i < 3; i++) {
@@ -344,16 +327,39 @@ export class LevelSelectScene extends Phaser.Scene {
         this.infoPanel.add(gfx)
       }
 
-      py += hexSize + 8
+      py += hexSize + 12
+    }
+
+    const title = this.add.text(pad, py, data.name, {
+      ...FONTS.h3, color: COLORS.text.primary, wordWrap: { width: this.infoPanelW - pad * 2 },
+    })
+    this.infoPanel.add(title)
+    py += title.height + 12
+
+    const totalEnemies = data.waves.reduce((sum, w) => sum + w.entries.reduce((s, e) => s + e.count, 0), 0)
+    const summary = `${data.waves.length} wave${data.waves.length > 1 ? 's' : ''}, ${totalEnemies} total hostiles`
+    const desc = this.add.text(pad, py, summary, {
+      ...FONTS.small, color: COLORS.text.secondary, wordWrap: { width: this.infoPanelW - pad * 2 },
+    })
+    this.infoPanel.add(desc)
+    py += desc.height + 10
+
+    const deployLine = this.add.text(pad, py, `Deploy limit: ${data.deploymentLimit}`, {
+      ...FONTS.small, color: COLORS.text.dim,
+    })
+    this.infoPanel.add(deployLine)
+    py += deployLine.height + 12
+
+    if (completed) {
       const enemiesTxt = this.add.text(pad, py, `Enemies defeated: ${completed.enemiesDefeated}`, {
         ...FONTS.small, color: COLORS.text.dim,
       })
       this.infoPanel.add(enemiesTxt)
-      py += 4
+      py += enemiesTxt.height + 10
     }
 
     if (data.tutorial) {
-      py += 40
+      py += 8
       const tutHint = this.add.text(pad, py, 'Tutorial level — auto squad', {
         ...FONTS.small, color: '#4a5a6a', wordWrap: { width: this.infoPanelW - pad * 2 },
       })
@@ -378,22 +384,34 @@ export class LevelSelectScene extends Phaser.Scene {
     })
     this.infoPanel.add(enterBtn)
 
-    this.infoPanel.setPosition(this.infoPanelPx, 0)
+    this.tweens.killTweensOf(this.infoPanel)
     this.infoPanel.setAlpha(1)
-    this.infoPanel.setVisible(true)
+
+    if (isSwitch) {
+      this.infoPanel.setPosition(this.infoPanelPx, 0)
+      this.infoPanel.setVisible(true)
+    } else {
+      this.infoPanel.setPosition(this.W, 0)
+      this.infoPanel.setVisible(true)
+      this.tweens.add({
+        targets: this.infoPanel,
+        x: this.infoPanelPx,
+        duration: 200,
+        ease: 'Quad.easeOut',
+      })
+    }
 
     this.infoPanelOverlay.clear()
     this.infoPanelOverlay.fillStyle(0x000000, 0.12)
     this.infoPanelOverlay.fillRect(0, 0, this.infoPanelPx, H)
-    ;(this.infoPanelOverlay.input!.hitArea as Phaser.Geom.Rectangle).width = this.infoPanelPx
     this.infoPanelOverlay.setVisible(true)
   }
 
   private hideLevelInfo(): void {
     if (!this.selectedLevelId) return
     this.selectedLevelId = null
-    ;(this.infoPanelOverlay.input!.hitArea as Phaser.Geom.Rectangle).width = 0
     this.infoPanelOverlay.setVisible(false)
+    this.tweens.killTweensOf(this.infoPanel)
     this.tweens.add({
       targets: this.infoPanel,
       x: this.W,
@@ -411,7 +429,7 @@ export class LevelSelectScene extends Phaser.Scene {
     if (!data) return
     if (data.tutorial) {
       this.scene.start('GameScene', {
-        level: data, squad: tutorialSquad(),
+        level: data, squad: tutorialSquad(levelId),
         chapterId: this.chapterId, levelId, autoStart: true,
       })
     } else {

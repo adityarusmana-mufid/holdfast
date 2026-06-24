@@ -68,10 +68,10 @@
       "preludeDuration": 6
     }
   ],
-  "startingDP": 18,
+  "startingDP": 22,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": "More hostiles incoming. Try using ranged units on the high ground tiles for support."
+  "guideText": ["More hostiles coming. Use ranged units on the white high-ground tiles for support from behind your frontline."]
 }

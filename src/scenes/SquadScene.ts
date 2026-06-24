@@ -6,7 +6,7 @@ import { makeNodeButton } from '../ui/Components'
 import { saveSquad, loadSquad } from '../shared/SaveData'
 
 const SLOT_W = 130
-const SLOT_H = 162
+const SLOT_H = 200
 const SLOT_GAP = 12
 const COLS = 6
 const ROWS = 2
@@ -88,9 +88,12 @@ export class SquadScene extends Phaser.Scene {
       ...FONTS.body, color: COLORS.text.secondary,
     }).setOrigin(0.5, 0)
 
-    makeNodeButton(this, 20, H - 48, '< Back', () => {
+    makeNodeButton(this, 16, 16, '< BACK', () => {
       this.scene.start('LevelSelectScene', { chapterId: this.chapterId })
-    }, { w: 100, h: 38 })
+    }, { w: 72, h: 32, textSize: '11px' })
+    makeNodeButton(this, 94, 16, 'HOME', () => {
+      this.scene.start('ChapterSelectScene')
+    }, { w: 72, h: 32, textSize: '11px' })
 
     makeNodeButton(this, W - 160, H - 48, 'Start Mission', () => {
       const squad = this.slots.filter((s): s is UnitConfig => s !== null)

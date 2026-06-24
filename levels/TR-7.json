@@ -127,5 +127,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 15,
-  "guideText": "All unit types have their role. Combine blockers, damage dealers, medics, and casters to handle any threat."
+  "guideText": ["All unit types have a role. Blockers hold the line, damage dealers eliminate threats, medics keep everyone alive.", "Casters handle armor. Snipers handle drones. Vanguards fund the operation. Build a complete formation."]
 }

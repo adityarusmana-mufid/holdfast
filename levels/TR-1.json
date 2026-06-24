@@ -82,5 +82,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": "Scout cars deal light damage, but they add up. Deploy a Medic behind your frontline to keep units repaired."
+  "guideText": ["Scout cars deal light damage but it adds up. Deploy a Defender on the route to block them.", "Your Defender cannot heal itself. Place a Mechanic on a nearby white ranged tile to keep it repaired."]
 }

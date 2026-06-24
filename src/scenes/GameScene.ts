@@ -11,7 +11,7 @@ import { HealingSystem } from '../systems/HealingSystem'
 import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONT_SIZE } from '../ui/Constants'
 import { makeNodeButton } from '../ui/Components'
-import { spawnProjectile, playSwing, showWindUp, flashDamage } from '../effects/CombatEffects'
+import { spawnProjectile, playSwing, showWindUp, flashDamage, spawnChainBolt, spawnSplashRing, spawnExpandRing, spawnBurstParticles } from '../effects/CombatEffects'
 import { saveCompletion } from '../shared/SaveData'
 
 export class GameScene extends Phaser.Scene {
@@ -27,6 +27,8 @@ export class GameScene extends Phaser.Scene {
   private deployedIndices: Set<number> = new Set()
   private unitCards: { container: Phaser.GameObjects.Container; squadIndex: number }[] = []
   private dpText!: Phaser.GameObjects.Text
+  private dpBarBg!: Phaser.GameObjects.Graphics
+  private dpBarFill!: Phaser.GameObjects.Graphics
   private limitText!: Phaser.GameObjects.Text
   private livesText!: Phaser.GameObjects.Text
   private waveText!: Phaser.GameObjects.Text
@@ -74,6 +76,8 @@ export class GameScene extends Phaser.Scene {
   private activeToasts: Phaser.GameObjects.Container[] = []
   private wavePreviewTween: Phaser.Tweens.Tween | null = null
   private guideActive: boolean = false
+  private guideTexts: string[] | null = null
+  private guidePageIndex: number = 0
   private selectionDiamond!: Phaser.GameObjects.Graphics
   private unitPreview!: Phaser.GameObjects.Graphics
 
@@ -135,7 +139,11 @@ export class GameScene extends Phaser.Scene {
         this.flashMessage(`DESYNC — Enemy reached objective`, 0xd32f2f)
         this.checkBattleEnd()
       },
-      onEnemySpawned: (config) => this.showEnemyToast(config),
+      onEnemySpawned: (config, row, col) => {
+        this.showEnemyToast(config)
+        const pos = this.grid.tileToPixel(row, col)
+        spawnExpandRing(this, pos.x, pos.y, 0xe0e2e5, 20, 250)
+      },
       onWavePrelude: (route) => this.showWavePreview(route),
     })
     if (this.levelData) {
@@ -211,6 +219,14 @@ export class GameScene extends Phaser.Scene {
       onEnemyAttackCancelled: (attackId: number) => {
         const entry = this.activeWindUps.get(attackId)
         if (entry) { entry.cancel(); this.activeWindUps.delete(attackId) }
+      },
+      onChainJump: (_unit: UnitSprite, from: EnemySprite, to: EnemySprite) => {
+        const speed = this.effectiveSpeed
+        spawnChainBolt(this, from.x, from.y, to.x, to.y, 0x9b59b6, 0.3 / speed)
+      },
+      onSplashAoE: (_unit: UnitSprite, center: EnemySprite, radius: number) => {
+        const speed = this.effectiveSpeed
+        spawnSplashRing(this, center.x, center.y, radius * 64, _unit.config.color)
       },
     })
 
@@ -303,7 +319,7 @@ export class GameScene extends Phaser.Scene {
       const cx = this.scale.width / 2
 
       const mkBtn = (label: string, color: string, yOff: number, cb: () => void) => {
-        const btn = makeNodeButton(this, cx, this.scale.height / 2 + yOff, label, () => { this.togglePause(); cb() }, {
+        const btn = makeNodeButton(this, cx - 100, this.scale.height / 2 + yOff, label, () => { this.togglePause(); cb() }, {
           w: 200, h: 38, textSize: FONT_SIZE.sm,
         })
         btn.setDepth(50)
@@ -685,9 +701,18 @@ export class GameScene extends Phaser.Scene {
       const sprite = new UnitSprite(this, this.grid, selected, this.pendingTile.row, this.pendingTile.col, selected.hp, this.pendingFacing)
       sprite.container.setScale(0.3)
       this.tweens.add({ targets: sprite.container, scaleX: 1, scaleY: 1, duration: 200, ease: 'Back.easeOut' })
+      sprite.container.setInteractive(new Phaser.Geom.Rectangle(-TILE_SIZE * 0.35, -TILE_SIZE * 0.35, TILE_SIZE * 0.7, TILE_SIZE * 0.7), Phaser.Geom.Rectangle.Contains)
+      if (sprite.container.input) sprite.container.input.cursor = 'pointer'
+      sprite.container.on('pointerup', (p: Phaser.Input.Pointer) => {
+        const moved = Math.abs(p.x - p.downX) + Math.abs(p.y - p.downY)
+        if (moved > 10) return
+        this.inspectUnit(sprite)
+      })
       this.unitSprites.push(sprite)
       this.deployedIndices.add(this.selectedSquadIndex)
       const cost = this.depSystem.getCurrentCost(this.selectedSquadIndex, selected)
+      const deployPos = this.grid.tileToPixel(this.pendingTile.row, this.pendingTile.col)
+      spawnExpandRing(this, deployPos.x, deployPos.y, selected.color, 28, 350)
       this.flashMessage(`DEPLOY // ${selected.name}  -${cost} DP`, selected.color)
       this.selectedSquadIndex = null
       this.rebuildCardBar()
@@ -713,11 +738,17 @@ export class GameScene extends Phaser.Scene {
   private enterInspectMode(pos: Position): void {
     const unit = this.depSystem.getUnitAt(pos.row, pos.col)
     if (!unit) return
+    this.enterInspectUnit(unit)
+  }
+
+  private enterInspectUnit(unit: DeployedUnit): void {
     this.inspectRetreatBtn.setAlpha(0)
     this.inspectCloseBtn.setAlpha(0)
     this.inspectingUnit = unit
     this.decisionMode = true
     this.showSelectionDiamond(unit.row, unit.col, 0x555555)
+    this.showRangePreview(unit.config, { row: unit.row, col: unit.col }, unit.facing)
+    this.showFacingArrow({ row: unit.row, col: unit.col }, unit.facing)
     this.updateStatsPanel(unit.config, unit)
     const isFullRefund = unit.config.traits?.some(t => t.traitId === UnitTrait.FullRefundRetreat)
     const refund = isFullRefund ? unit.dpCostPaid : Math.floor(unit.dpCostPaid / 2)
@@ -725,6 +756,11 @@ export class GameScene extends Phaser.Scene {
     this.inspectRetreatBtn.setAlpha(1)
     this.inspectCloseBtn.setAlpha(1)
     this.flashMessage(`INSPECT // ${unit.config.name}`, 0x00a2ff)
+  }
+
+  private inspectUnit(sprite: UnitSprite): void {
+    const unit = this.depSystem.getUnitAt(sprite.row, sprite.col)
+    if (unit) this.enterInspectUnit(unit)
   }
 
   private exitDecisionMode(): void {
@@ -735,6 +771,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.decisionMode = false
     this.hideSelectionDiamond()
+    this.clearRangePreview()
     this.updateStatsPanel(this.getSelectedUnit())
   }
 
@@ -743,6 +780,8 @@ export class GameScene extends Phaser.Scene {
     const { row, col, config, instanceId } = this.inspectingUnit
     const refund = this.depSystem.retreatUnit(row, col)
     if (refund > 0) {
+      const retreatPos = this.grid.tileToPixel(row, col)
+      spawnBurstParticles(this, retreatPos.x, retreatPos.y, config.color, 8)
       this.removeUnitSprite(row, col)
       this.deployedIndices.delete(instanceId)
       this.flashMessage(`RETREAT // ${config.name}  +${refund} DP`, 0x00c853)
@@ -882,18 +921,18 @@ export class GameScene extends Phaser.Scene {
     })
     dpLabel.setOrigin(0.5, 0)
 
-    const children: Phaser.GameObjects.GameObject[] = [bg, icon, nameLabel, dpLabel]
+    const cdRing = this.add.graphics()
+
+    const children: Phaser.GameObjects.GameObject[] = [bg, icon, nameLabel, dpLabel, cdRing]
 
     if (onCooldown) {
-      const overlay = this.add.graphics()
-      overlay.fillStyle(0xd32f2f, 0.12)
-      overlay.fillRoundedRect(0, 0, cardW, cardH, 6)
       const remaining = Math.max(0, this.depSystem.getCooldownRemaining(squadIndex))
+      this.drawCooldownRing(cdRing, cardW - 14, 14, 10, remaining / unit.redeployTime)
       const cdText = this.add.text(cardW / 2, cardH / 2 - 4, `${remaining.toFixed(1)}s`, {
         fontSize: '15px', color: '#d32f2f', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
       })
       cdText.setOrigin(0.5)
-      children.push(overlay, cdText)
+      children.push(cdText)
     }
 
     const container = this.add.container(cx, cy, children)
@@ -902,6 +941,18 @@ export class GameScene extends Phaser.Scene {
     if (container.input) container.input.cursor = 'pointer'
     container.on('pointerdown', () => this.selectUnit(squadIndex))
     return { container, squadIndex }
+  }
+
+  private drawCooldownRing(g: Phaser.GameObjects.Graphics, x: number, y: number, radius: number, progress: number): void {
+    g.clear()
+    g.lineStyle(3, 0x303030, 1)
+    g.strokeCircle(x, y, radius)
+    if (progress > 0) {
+      g.lineStyle(3, 0xd32f2f, 1)
+      g.beginPath()
+      g.arc(x, y, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress)
+      g.strokePath()
+    }
   }
 
   private updateCardVisuals(): void {
@@ -926,17 +977,20 @@ export class GameScene extends Phaser.Scene {
       dpLabel.setText(`DP ${cost}`)
       dpLabel.setColor(onCooldown ? COLORS.text.danger : COLORS.text.accent)
 
+      const cdRing = container.getAt(4) as Phaser.GameObjects.Graphics
       if (onCooldown) {
+        const remaining = Math.max(0, this.depSystem.getCooldownRemaining(squadIndex))
+        this.drawCooldownRing(cdRing, 96 - 14, 14, 10, remaining / unit.redeployTime)
         if (container.length >= 6) {
           const cdText = container.getAt(5) as Phaser.GameObjects.Text
-          const remaining = Math.max(0, this.depSystem.getCooldownRemaining(squadIndex))
           cdText.setText(`${remaining.toFixed(1)}s`)
           cdText.setAlpha(1)
         }
       } else {
-        for (let i = 4; i < container.length; i++) {
-          const obj = container.getAt(i) as Phaser.GameObjects.Graphics | Phaser.GameObjects.Text
-          obj.setAlpha(0)
+        cdRing.clear()
+        if (container.length >= 6) {
+          const cdText = container.getAt(5) as Phaser.GameObjects.Text
+          cdText.setAlpha(0)
         }
       }
     }
@@ -960,9 +1014,34 @@ export class GameScene extends Phaser.Scene {
       fontSize: FONT_SIZE.sm, color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
 
-    this.dpText = this.add.text(W - 10, this.scale.height - 140 - 26, '', {
-      fontSize: FONT_SIZE.lg, color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
-    }).setOrigin(1, 0)
+    const nodeW = 90
+    const nodeH = 26
+    const tagH = 12
+    const rightX = W - 10
+    const gap = 10
+    const baseY = this.scale.height - 140 - gap
+
+    const shadow = this.add.graphics()
+    shadow.fillStyle(0x000000, 0.15)
+    shadow.fillRect(rightX - nodeW + 2, baseY - nodeH + 2, nodeW, nodeH)
+    shadow.fillRect(rightX - nodeW + 2, baseY + 2, nodeW, tagH)
+
+    const dpBg = this.add.graphics()
+    dpBg.fillGradientStyle(0x4a4a4a, 0x4a4a4a, 0x383838, 0x383838, 1)
+    dpBg.fillRect(rightX - nodeW, baseY - nodeH, nodeW, nodeH)
+
+    this.dpText = this.add.text(rightX - nodeW / 2, baseY - nodeH / 2, '', {
+      fontSize: '13px', color: '#cfd8dc', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    }).setOrigin(0.5, 0.5)
+
+    this.dpBarBg = this.add.graphics()
+    this.dpBarBg.fillStyle(0x303030, 1)
+    this.dpBarBg.fillRect(rightX - nodeW, baseY, nodeW, tagH)
+    this.dpBarFill = this.add.graphics()
+    this.dpBarFill.fillStyle(0xffffff, 1)
+    this.dpBarFill.fillRect(rightX - nodeW, baseY, 0, tagH)
+    this.dpBarFill = this.add.graphics()
+    this.dpBarFill.fillStyle(0xffffff, 1)
 
     if (this.levelData) {
       this.add.text(W - 20, 10, this.levelData.name, {
@@ -1033,7 +1112,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateHUD(): void {
+    const nodeW = 90
+    const tagH = 12
+    const rightX = this.scale.width - 10
+    const baseY = this.scale.height - 140 - 10
+
     this.dpText.setText(`DP: ${Math.floor(this.depSystem.currentDP)}/${this.depSystem.dpCap}`)
+
+    this.dpBarFill.clear()
+    this.dpBarFill.fillStyle(0xffffff, 1)
+    this.dpBarFill.fillRect(rightX - nodeW, baseY, nodeW * this.depSystem.getDPProgress(), tagH)
     this.limitText.setText(`Units: ${this.depSystem.activeUnits.size}/${this.depSystem.deploymentLimit}`)
     this.livesText.setText(`Lives: ${this.enemyManager.getLives()}`)
     this.waveText.setText(`Hostiles: ${this.enemyManager.getDealtWith()}/${this.enemyManager.getTotalEnemyCount()}`)
@@ -1106,7 +1194,6 @@ export class GameScene extends Phaser.Scene {
       this.scene.start('ResultScene', {
         chapterId: this.chapterId,
         levelId: this.levelId,
-        squad: this.unitConfigs,
         outcome,
         stars,
         livesRemaining: this.enemyManager.getLives(),
@@ -1344,11 +1431,13 @@ export class GameScene extends Phaser.Scene {
     this.updateHUD()
   }
 
-  private showGuide(text: string): void {
+  private showGuide(texts: string[]): void {
     const w = this.scale.width
     const h = this.scale.height
 
     this.guideActive = true
+    this.guideTexts = texts
+    this.guidePageIndex = 0
 
     const overlay = this.add.graphics()
     overlay.setDepth(60)
@@ -1379,7 +1468,7 @@ export class GameScene extends Phaser.Scene {
 
     const tx = cx + isz + 18
     const tw = w - tx - 20
-    const guideTextObj = this.add.text(tx, pY + 16, text, {
+    const guideTextObj = this.add.text(tx, pY + 16, texts[0], {
       fontSize: '17px',
       color: '#333333',
       fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
@@ -1389,7 +1478,8 @@ export class GameScene extends Phaser.Scene {
     })
     guideTextObj.setDepth(62)
 
-    const dismissText = this.add.text(w - 16, pY + pH - 16, '[ tap to continue ]', {
+    const isLastPage = texts.length === 1
+    const dismissText = this.add.text(w - 16, pY + pH - 16, isLastPage ? '[ tap to dismiss ]' : '[ tap to continue ]', {
       fontSize: '15px',
       color: '#5a6a7a',
       fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
@@ -1397,21 +1487,31 @@ export class GameScene extends Phaser.Scene {
     dismissText.setOrigin(1, 1)
     dismissText.setDepth(62)
 
-    const dismiss = () => {
-      overlay.destroy()
-      panel.destroy()
-      icon.destroy()
-      guideTextObj.destroy()
-      dismissText.destroy()
-      this.guideActive = false
-      if (this.autoStart) {
-        this.battleActive = true
-        this.time.delayedCall(2000, () => this.enemyManager.startBattle())
-        this.flashMessage('MEMORY STREAM READY // Deploy units', 0x00c853)
+    const advance = () => {
+      if (this.guidePageIndex < texts.length - 1) {
+        this.guidePageIndex++
+        guideTextObj.setText(texts[this.guidePageIndex])
+        if (this.guidePageIndex === texts.length - 1) {
+          dismissText.setText('[ tap to dismiss ]')
+        }
+      } else {
+        overlay.destroy()
+        panel.destroy()
+        icon.destroy()
+        guideTextObj.destroy()
+        dismissText.destroy()
+        this.guideActive = false
+        this.guideTexts = null
+        this.guidePageIndex = 0
+        if (this.autoStart) {
+          this.battleActive = true
+          this.time.delayedCall(2000, () => this.enemyManager.startBattle())
+          this.flashMessage('MEMORY STREAM READY // Deploy units', 0x00c853)
+        }
       }
     }
 
-    overlay.on('pointerdown', dismiss)
+    overlay.on('pointerdown', advance)
   }
 
   private drawBgGradient(): void {

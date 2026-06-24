@@ -1,6 +1,6 @@
 {
-  "name": "Supply Run",
-  "cols": 10,
+  "name": "Shared Repairs",
+  "cols": 12,
   "rows": 3,
   "tiles": [
     [
@@ -12,8 +12,10 @@
       { "row": 0, "col": 5, "type": "deploy_ranged" },
       { "row": 0, "col": 6, "type": "deploy_ranged" },
       { "row": 0, "col": 7, "type": "deploy_ranged" },
-      { "row": 0, "col": 8, "type": "floor" },
-      { "row": 0, "col": 9, "type": "floor" }
+      { "row": 0, "col": 8, "type": "deploy_ranged" },
+      { "row": 0, "col": 9, "type": "deploy_ranged" },
+      { "row": 0, "col": 10, "type": "floor" },
+      { "row": 0, "col": 11, "type": "floor" }
     ],
     [
       { "row": 1, "col": 0, "type": "spawn" },
@@ -25,7 +27,9 @@
       { "row": 1, "col": 6, "type": "route" },
       { "row": 1, "col": 7, "type": "route" },
       { "row": 1, "col": 8, "type": "route" },
-      { "row": 1, "col": 9, "type": "goal" }
+      { "row": 1, "col": 9, "type": "route" },
+      { "row": 1, "col": 10, "type": "route" },
+      { "row": 1, "col": 11, "type": "goal" }
     ],
     [
       { "row": 2, "col": 0, "type": "floor" },
@@ -36,8 +40,10 @@
       { "row": 2, "col": 5, "type": "deploy_ranged" },
       { "row": 2, "col": 6, "type": "deploy_ranged" },
       { "row": 2, "col": 7, "type": "deploy_ranged" },
-      { "row": 2, "col": 8, "type": "floor" },
-      { "row": 2, "col": 9, "type": "floor" }
+      { "row": 2, "col": 8, "type": "deploy_ranged" },
+      { "row": 2, "col": 9, "type": "deploy_ranged" },
+      { "row": 2, "col": 10, "type": "floor" },
+      { "row": 2, "col": 11, "type": "floor" }
     ]
   ],
   "waypoints": [
@@ -50,29 +56,35 @@
     { "row": 1, "col": 6 },
     { "row": 1, "col": 7 },
     { "row": 1, "col": 8 },
-    { "row": 1, "col": 9 }
+    { "row": 1, "col": 9 },
+    { "row": 1, "col": 10 },
+    { "row": 1, "col": 11 }
   ],
   "waves": [
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 4, "spawnInterval": 2.5 }
+        { "enemyType": "soldier", "count": 4, "spawnInterval": 3 },
+        { "enemyType": "soldier", "count": 4, "spawnInterval": 3 }
       ],
       "preludeDuration": 8
     },
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "trooper", "count": 2, "spawnInterval": 3.5 },
-        { "enemyType": "drone", "count": 2, "spawnInterval": 3 }
+        { "enemyType": "trooper", "count": 4, "spawnInterval": 3 }
       ],
-      "preludeDuration": 6
+      "preludeDuration": 10
     }
   ],
-  "startingDP": 22,
+  "tutorial": true,
+  "startingDP": 45,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10,
-  "guideText": ["Aerial scouts are joining the assault. They bypass ground units entirely. Deploy ranged units on white tiles to engage them."]
+  "lives": 20,
+  "guideText": [
+    "Multi Medics heal up to 3 allies at once. Place one on a white tile above the route. Deploy two blockers on the route to see it in action.",
+    "A Standard Medic heals one ally. The Multi Medic keeps your whole front line repaired at once."
+  ]
 }

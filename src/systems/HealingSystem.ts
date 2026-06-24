@@ -22,6 +22,10 @@ export class HealingSystem {
         this.tickSingleHeal(unit, units, delta, onHeal)
       }
 
+      if (this.hasTrait(unit, UnitTrait.HealMulti)) {
+        this.tickMultiHeal(unit, units, delta, onHeal)
+      }
+
       if (this.hasTrait(unit, UnitTrait.AoEHoT)) {
         this.tickAoEHoT(unit, units, delta, onHeal)
       }
@@ -71,6 +75,35 @@ export class HealingSystem {
     const healed = target.heal(unit.config.atk)
     if (healed > 0) {
       onHeal(target, unit.config.atk, unit)
+    }
+  }
+
+  private tickMultiHeal(unit: UnitSprite, allies: UnitSprite[], delta: number, onHeal: (target: UnitSprite, amount: number, source: UnitSprite) => void): void {
+    const key = `mheal_${unit.row}_${unit.col}`
+    const dt = delta / 1000
+    const acc = (this.healAccumulators.get(key) ?? 0) + dt
+    const interval = unit.config.attackInterval
+
+    if (acc < interval) {
+      this.healAccumulators.set(key, acc)
+      return
+    }
+    this.healAccumulators.set(key, acc - interval)
+
+    const inRange = this.getAlliesInRange(unit, allies)
+    if (inRange.length === 0) return
+
+    const traitConfig = unit.config.traits.find(t => t.traitId === UnitTrait.HealMulti)
+    const maxTargets = traitConfig?.value ?? 3
+
+    const sorted = [...inRange].sort((a, b) => (a.currentHp / a.config.hp) - (b.currentHp / b.config.hp))
+    const targets = sorted.slice(0, maxTargets)
+
+    for (const target of targets) {
+      const healed = target.heal(unit.config.atk)
+      if (healed > 0) {
+        onHeal(target, unit.config.atk, unit)
+      }
     }
   }
 

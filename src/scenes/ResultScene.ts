@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
 import { COLORS, FONTS } from '../ui/Constants'
-import { makeButton } from '../ui/Components'
+import { makeNodeButton } from '../ui/Components'
 import { getLevelDef, getNextLevelId, getLevelData } from '../config/chapters'
 import { UNIT_CONFIGS } from '../config/units'
 import { LevelData, UnitConfig } from '../types/index'
@@ -61,7 +61,7 @@ export class ResultScene extends Phaser.Scene {
     if (isVictory) {
       const starStr = '★'.repeat(this.stars) + '☆'.repeat(3 - this.stars)
       this.add.text(W / 2, 210, starStr, {
-        fontSize: '36px', color: '#ffc107',
+        fontSize: '36px', color: '#b07000',
         fontFamily: 'sans-serif',
       }).setOrigin(0.5, 0)
     }
@@ -80,19 +80,19 @@ export class ResultScene extends Phaser.Scene {
     const btnY = H - 100
     const nextLevelId = isVictory ? getNextLevelId(this.levelId) : undefined
 
-    makeButton(this, W / 2 - 160, btnY, 'Retry', () => {
+    makeNodeButton(this, W / 2 - 160, btnY, 'Retry', () => {
       this.scene.start('GameScene', {
         level: getLevelData(this.levelId) as LevelData,
         squad: this.squad,
         chapterId: this.chapterId,
         levelId: this.levelId,
       })
-    }, { w: 140, h: 44 })
+    }, { w: 140 })
 
     if (isVictory && nextLevelId && getLevelData(nextLevelId)) {
       const nextData = getLevelData(nextLevelId) as LevelData
       if (nextData.tutorial) {
-        makeButton(this, W / 2 + 20, btnY, 'Next Level', () => {
+        makeNodeButton(this, W / 2 + 20, btnY, 'Next Level', () => {
           this.scene.start('GameScene', {
             level: nextData,
             squad: tutorialSquad(),
@@ -100,15 +100,15 @@ export class ResultScene extends Phaser.Scene {
             levelId: nextLevelId,
             autoStart: true,
           })
-        }, { w: 140, h: 44 })
+        }, { w: 140, role: 'primary' })
       } else {
-        makeButton(this, W / 2 + 20, btnY, 'Next Level', () => {
+        makeNodeButton(this, W / 2 + 20, btnY, 'Next Level', () => {
           this.scene.start('SquadScene', {
             levelId: nextLevelId,
             chapterId: this.chapterId,
             levelData: nextData,
           })
-        }, { w: 140, h: 44 })
+        }, { w: 140, role: 'primary' })
       }
     }
 
@@ -118,7 +118,7 @@ export class ResultScene extends Phaser.Scene {
       }).setOrigin(0.5, 0)
     }
 
-    makeButton(this, W / 2 - 70, btnY + 55, 'Back to Levels', () => {
+    makeNodeButton(this, W / 2 - 70, btnY + 55, 'Back to Levels', () => {
       this.scene.start('LevelSelectScene', { chapterId: this.chapterId })
     })
   }

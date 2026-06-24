@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 import { UnitConfig, UnitTrait } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONTS, FONT_SIZE } from '../ui/Constants'
+import { makeNodeButton } from '../ui/Components'
 
 const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
   [UnitTrait.BlocksTwo]: 'Blocks up to 2 enemies',
@@ -54,7 +55,7 @@ export class PickerScene extends Phaser.Scene {
   private cardScrollMax: number = 0
   private cardScrollContainer!: Phaser.GameObjects.Container
   private infoContainer!: Phaser.GameObjects.Container
-  private confirmBtn!: Phaser.GameObjects.Graphics
+  private confirmBtn!: Phaser.GameObjects.Container
   private cardContainers: { bg: Phaser.GameObjects.Graphics; unit: UnitConfig; lx: number; ly: number }[] = []
   private startX = 0
   private startY = 0
@@ -92,22 +93,12 @@ export class PickerScene extends Phaser.Scene {
 
     this.infoContainer = this.add.container(0, 0)
 
-    this.confirmBtn = this.add.graphics()
-    this.confirmBtn.setAlpha(0)
+    this.confirmBtn = this.add.container(-100, -100)
+    this.confirmBtn.setVisible(false)
 
-    const cancelBg = this.add.graphics()
-    cancelBg.setPosition(10, this.H - 62)
-    cancelBg.fillStyle(0xffffff, 1)
-    cancelBg.fillRoundedRect(0, 0, SIDEBAR_W - 20, 28, 4)
-    cancelBg.lineStyle(1, 0xccd0d6, 0.8)
-    cancelBg.strokeRoundedRect(0, 0, SIDEBAR_W - 20, 28, 4)
-    cancelBg.setInteractive(new Phaser.Geom.Rectangle(0, 0, SIDEBAR_W - 20, 28), Phaser.Geom.Rectangle.Contains)
-    if (cancelBg.input) cancelBg.input.cursor = 'pointer'
-    cancelBg.on('pointerup', () => this.closePicker())
-
-    this.add.text(SIDEBAR_W / 2, this.H - 48, '< Back', {
-      fontSize: FONT_SIZE.xs, color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-    }).setOrigin(0.5)
+    const cancelBtn = makeNodeButton(this, 10, this.H - 34, '< Back', () => this.closePicker(), {
+      w: SIDEBAR_W - 20, h: 28, textSize: FONT_SIZE.xs,
+    })
 
     this.activeFilter = null
     this.startX = SIDEBAR_W + 12
@@ -377,22 +368,10 @@ export class PickerScene extends Phaser.Scene {
   }
 
   private showConfirm(): void {
-    this.confirmBtn.clear()
-    this.confirmBtn.setPosition(10, 620)
-    this.confirmBtn.fillStyle(0x00c853, 0.15)
-    this.confirmBtn.fillRoundedRect(0, 0, SIDEBAR_W - 20, 32, 4)
-    this.confirmBtn.lineStyle(1, 0x00c853, 0.6)
-    this.confirmBtn.strokeRoundedRect(0, 0, SIDEBAR_W - 20, 32, 4)
-    this.confirmBtn.setInteractive(new Phaser.Geom.Rectangle(0, 0, SIDEBAR_W - 20, 32), Phaser.Geom.Rectangle.Contains)
-    if (this.confirmBtn.input) this.confirmBtn.input.cursor = 'pointer'
-    this.confirmBtn.setAlpha(1)
-    this.confirmBtn.removeAllListeners('pointerup')
-    this.confirmBtn.on('pointerup', () => this.confirmPick())
-
-    const txt = this.add.text(SIDEBAR_W / 2, 634, `Confirm (${this.pickedUnit?.subtypeLabel ?? ''})`, {
-      fontSize: FONT_SIZE.xs, color: COLORS.text.success, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
-    }).setOrigin(0.5)
-    this.infoContainer.add(txt)
+    if (this.confirmBtn) this.confirmBtn.destroy()
+    this.confirmBtn = makeNodeButton(this, 10, 622, `Confirm (${this.pickedUnit?.subtypeLabel ?? ''})`, () => this.confirmPick(), {
+      w: SIDEBAR_W - 20, h: 28, textSize: FONT_SIZE.xs, role: 'primary',
+    })
   }
 
   private confirmPick(): void {

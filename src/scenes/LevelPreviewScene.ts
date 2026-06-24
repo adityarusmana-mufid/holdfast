@@ -3,6 +3,7 @@ import { LevelData, EnemyConfig } from '../types/index'
 import { Grid, TILE_SIZE, GRID_OFFSET_Y } from '../entities/Grid'
 import { ENEMY_CONFIGS } from '../config/enemies'
 import { COLORS, FONTS, FONT_SIZE } from '../ui/Constants'
+import { makeNodeButton } from '../ui/Components'
 import { tutorialSquad } from '../shared/utils/levelHelpers'
 
 export class LevelPreviewScene extends Phaser.Scene {
@@ -47,34 +48,24 @@ export class LevelPreviewScene extends Phaser.Scene {
       { key: 'intel', x: W / 2 + 80 },
     ]
     for (const tab of tabs) {
-      const isActive = this.activeTab === tab.key
-      const t = this.add.text(tab.x, tabY, tab.key === 'map' ? 'MAP' : 'ENEMY INTEL', {
-        ...FONTS.bodyBold, color: isActive ? '#4fc3f7' : COLORS.text.dim,
-      }).setOrigin(0.5, 0)
-      t.setInteractive({ cursor: 'pointer' })
-      t.on('pointerdown', () => {
+      const label = tab.key === 'map' ? 'MAP' : 'ENEMY INTEL'
+      makeNodeButton(this, tab.x - 70, tabY, label, () => {
         this.activeTab = tab.key
         this.rebuildContent()
-      })
+      }, { w: 140, h: 28, textSize: FONT_SIZE.sm })
     }
 
     this.contentContainer = this.add.container(0, 0)
     this.rebuildContent()
 
     const btnY = H - 48
-    const backBtn = this.add.text(20, btnY, '< Back', {
-      ...FONTS.body, color: COLORS.text.secondary,
+    makeNodeButton(this, 10, btnY - 17, '< Back', () => this.scene.stop(), {
+      w: 100, h: 34,
     })
-    backBtn.setOrigin(0, 0.5)
-    backBtn.setInteractive({ cursor: 'pointer' })
-    backBtn.on('pointerdown', () => this.scene.stop())
 
-    const enterBtn = this.add.text(W - 20, btnY, 'ENTER', {
-      ...FONTS.bodyBold, color: '#4fc3f7',
+    makeNodeButton(this, W - 110, btnY - 17, 'ENTER', () => this.enterLevel(), {
+      w: 100, h: 34, role: 'primary',
     })
-    enterBtn.setOrigin(1, 0.5)
-    enterBtn.setInteractive({ cursor: 'pointer' })
-    enterBtn.on('pointerdown', () => this.enterLevel())
   }
 
   private rebuildContent(): void {

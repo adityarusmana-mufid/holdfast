@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
 import { COLORS, FONTS } from '../ui/Constants'
-import { makeButton } from '../ui/Components'
+import { makeNodeButton } from '../ui/Components'
 import { CHAPTERS } from '../config/chapters'
 
 export class ChapterSelectScene extends Phaser.Scene {
@@ -49,7 +49,7 @@ export class ChapterSelectScene extends Phaser.Scene {
 
     const isDev = new URLSearchParams(window.location.search).has('dev')
     if (isDev) {
-      makeButton(this, 20, H - 52, 'Editor', () => {
+      makeNodeButton(this, 20, H - 52, 'Editor', () => {
         this.scene.start('EditorScene')
       }, { w: 100 })
     }

@@ -2,7 +2,8 @@ import Phaser from 'phaser'
 import { UnitConfig, LevelData } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONTS, FONT_SIZE } from '../ui/Constants'
-import { makeButton } from '../ui/Components'
+import { makeNodeButton } from '../ui/Components'
+import { saveSquad, loadSquad } from '../shared/SaveData'
 
 const SLOT_W = 130
 const SLOT_H = 162
@@ -28,10 +29,18 @@ export class SquadScene extends Phaser.Scene {
     this.chapterId = data.chapterId
     this.levelData = data.levelData
     this.slots = new Array(12).fill(null)
-    const defaultIds = ['pioneer', 'charger', 'protector', 'fighter', 'sniper', 'core_caster', 'medic_st']
-    for (let i = 0; i < defaultIds.length; i++) {
-      const unit = UNIT_CONFIGS.find(u => u.id === defaultIds[i])
-      if (unit) this.slots[i] = unit
+    const saved = loadSquad(this.levelId)
+    if (saved) {
+      for (let i = 0; i < 12; i++) {
+        const id = saved[i]
+        if (id) this.slots[i] = UNIT_CONFIGS.find(u => u.id === id) ?? null
+      }
+    } else {
+      const defaultIds = ['pioneer', 'charger', 'protector', 'fighter', 'sniper', 'core_caster', 'medic_st']
+      for (let i = 0; i < defaultIds.length; i++) {
+        const unit = UNIT_CONFIGS.find(u => u.id === defaultIds[i])
+        if (unit) this.slots[i] = unit
+      }
     }
   }
 
@@ -47,7 +56,7 @@ export class SquadScene extends Phaser.Scene {
       ...FONTS.small, color: COLORS.text.dim,
     }).setOrigin(0.5, 0)
 
-    makeButton(this, W - 150, 20, 'Auto Fill', () => this.autoFill(), { w: 110, h: 26, textSize: '11px' })
+    makeNodeButton(this, W - 150, 20, 'Auto Fill', () => this.autoFill(), { w: 110, h: 26, textSize: '11px' })
 
     const gridW = COLS * SLOT_W + (COLS - 1) * SLOT_GAP
     const gridH = ROWS * SLOT_H + (ROWS - 1) * SLOT_GAP
@@ -79,11 +88,11 @@ export class SquadScene extends Phaser.Scene {
       ...FONTS.body, color: COLORS.text.secondary,
     }).setOrigin(0.5, 0)
 
-    makeButton(this, 20, H - 48, '< Back', () => {
+    makeNodeButton(this, 20, H - 48, '< Back', () => {
       this.scene.start('LevelSelectScene', { chapterId: this.chapterId })
-    }, { w: 100, h: 30 })
+    }, { w: 100, h: 38 })
 
-    makeButton(this, W - 160, H - 48, 'Start Mission', () => {
+    makeNodeButton(this, W - 160, H - 48, 'Start Mission', () => {
       const squad = this.slots.filter((s): s is UnitConfig => s !== null)
       if (squad.length === 0) return
       if (!this.levelData) return
@@ -94,7 +103,7 @@ export class SquadScene extends Phaser.Scene {
         levelId: this.levelId,
         autoStart: true,
       })
-    }, { w: 140, h: 30 })
+    }, { w: 140, h: 38, role: 'primary' })
   }
 
   private drawSlot(c: Phaser.GameObjects.Container, unit: UnitConfig | null): void {
@@ -142,11 +151,15 @@ export class SquadScene extends Phaser.Scene {
       bg.strokeRoundedRect(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H, 6)
 
       const empty = this.add.text(0, 0, '+', {
-        fontSize: '32px', color: '#ccd0d6', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        fontSize: '32px', color: '#5a6a7a', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       }).setOrigin(0.5)
 
       c.add([bg, empty])
     }
+  }
+
+  private persistSquad(): void {
+    saveSquad(this.levelId, this.slots.map(s => s?.id ?? null))
   }
 
   private onSlotClick(index: number): void {
@@ -154,6 +167,7 @@ export class SquadScene extends Phaser.Scene {
       this.slots[index] = null
       this.drawSlot(this.slotContainers[index], null)
       this.updateSquadLabel()
+      this.persistSquad()
       return
     }
 
@@ -165,6 +179,7 @@ export class SquadScene extends Phaser.Scene {
     this.slots[slotIndex] = unit
     this.drawSlot(this.slotContainers[slotIndex], unit)
     this.updateSquadLabel()
+    this.persistSquad()
   }
 
   private autoFill(): void {
@@ -188,6 +203,7 @@ export class SquadScene extends Phaser.Scene {
       this.drawSlot(this.slotContainers[i], unit)
     }
     this.updateSquadLabel()
+    this.persistSquad()
   }
 
   private updateSquadLabel(): void {

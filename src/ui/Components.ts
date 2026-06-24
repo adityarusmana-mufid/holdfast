@@ -1,66 +1,138 @@
 import Phaser from 'phaser'
-import { COLORS, FONTS, FONT_SIZE, SPACING, hex } from './Constants'
+import { COLORS, FONT_SIZE } from './Constants'
 
-export interface ButtonStyle {
+export type NodeButtonRole = 'default' | 'primary' | 'danger' | 'disabled'
+
+export interface NodeButtonStyle {
   w?: number
   h?: number
-  bgColor?: number
-  borderColor?: number
+  role?: NodeButtonRole
   textColor?: string
   textSize?: string
 }
 
-export function makeButton(
+function drawShadow(g: Phaser.GameObjects.Graphics, w: number, h: number): void {
+  const layers = [
+    { off: 2, a: 0.08 },
+    { off: 4, a: 0.06 },
+    { off: 6, a: 0.04 },
+    { off: 8, a: 0.03 },
+    { off: 10, a: 0.02 },
+    { off: 12, a: 0.01 },
+  ]
+  for (const l of layers) {
+    g.fillStyle(0x000000, l.a)
+    g.fillRect(l.off, l.off, w, h)
+  }
+}
+
+const ROLE_COLORS: Record<string, { top: number; bottom: number; topPressed: number; bottomPressed: number }> = {
+  default: {
+    top: COLORS.nodeButton.defaultTop,
+    bottom: COLORS.nodeButton.defaultBottom,
+    topPressed: COLORS.nodeButton.defaultTopPressed,
+    bottomPressed: COLORS.nodeButton.defaultBottomPressed,
+  },
+  primary: {
+    top: COLORS.nodeButton.primaryTop,
+    bottom: COLORS.nodeButton.primaryBottom,
+    topPressed: COLORS.nodeButton.primaryTopPressed,
+    bottomPressed: COLORS.nodeButton.primaryBottomPressed,
+  },
+  danger: {
+    top: COLORS.nodeButton.dangerTop,
+    bottom: COLORS.nodeButton.dangerBottom,
+    topPressed: COLORS.nodeButton.dangerTopPressed,
+    bottomPressed: COLORS.nodeButton.dangerBottomPressed,
+  },
+  disabled: {
+    top: COLORS.nodeButton.defaultTop,
+    bottom: COLORS.nodeButton.defaultBottom,
+    topPressed: COLORS.nodeButton.defaultTopPressed,
+    bottomPressed: COLORS.nodeButton.defaultBottomPressed,
+  },
+}
+
+const ROLE_TEXT: Record<string, string> = {
+  default: COLORS.text.primary,
+  primary: '#ffffff',
+  danger: '#ffffff',
+  disabled: '#b0b8c4',
+}
+
+export function makeNodeButton(
   scene: Phaser.Scene,
   x: number, y: number,
   label: string,
   onClick: () => void,
-  style: ButtonStyle = {},
-): Phaser.GameObjects.Graphics {
-  const w = style.w ?? 140
-  const h = style.h ?? 44
-  const bgColor = style.bgColor ?? COLORS.button.bg
-  const borderColor = style.borderColor ?? COLORS.button.border
-  const textColor = style.textColor ?? COLORS.text.accent
-  const textSize = style.textSize ?? FONT_SIZE.xs
-  const radius = SPACING.xs
+  style: NodeButtonStyle = {},
+): Phaser.GameObjects.Container {
+  const W = style.w ?? 140
+  const H = style.h ?? 44
+  const role = style.role ?? 'default'
+  const colors = ROLE_COLORS[role]
+  const textColor = style.textColor ?? ROLE_TEXT[role]
+  const textSize = style.textSize ?? FONT_SIZE.sm
 
+  const c = scene.add.container(x, y)
+  const shadow = scene.add.graphics()
   const bg = scene.add.graphics()
-  bg.setPosition(x, y)
-  bg.fillStyle(bgColor, 1)
-  bg.fillRoundedRect(0, 0, w, h, radius)
-  bg.lineStyle(1, borderColor, 0.8)
-  bg.setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains)
-  if (bg.input) bg.input.cursor = 'pointer'
 
-  const txt = scene.add.text(x + w / 2, y + h / 2, label, {
-    fontSize: textSize, color: textColor, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-  })
-  txt.setOrigin(0.5)
+  let isPressed = false
 
-  bg.on('pointerover', () => {
+  function draw(top: number, bottom: number, pressed: boolean): void {
+    shadow.clear()
     bg.clear()
-    bg.fillStyle(COLORS.button.hover, 1)
-    bg.fillRoundedRect(0, 0, w, h, radius)
-    bg.lineStyle(1, 0x00a2ff, 1)
-    txt.setColor('#ffffff')
-  })
-  bg.on('pointerout', () => {
-    bg.clear()
-    bg.fillStyle(bgColor, 1)
-    bg.fillRoundedRect(0, 0, w, h, radius)
-    bg.lineStyle(1, borderColor, 0.8)
-    txt.setColor(textColor)
-  })
-  bg.on('pointerdown', () => {
-    bg.clear()
-    bg.fillStyle(COLORS.button.active, 1)
-    bg.fillRoundedRect(0, 0, w, h, radius)
-    bg.lineStyle(1, borderColor, 1)
-  })
-  bg.on('pointerup', () => onClick())
 
-  return bg
+    if (!pressed) {
+      drawShadow(shadow, W, H)
+    } else {
+      // pressed: fewer shadow layers for shallower depth
+      shadow.fillStyle(0x000000, 0.06)
+      shadow.fillRect(2, 2, W, H)
+      shadow.fillStyle(0x000000, 0.03)
+      shadow.fillRect(4, 4, W, H)
+    }
+
+    bg.fillGradientStyle(top, top, bottom, bottom)
+    bg.fillRect(0, 0, W, H)
+  }
+
+  draw(colors.top, colors.bottom, false)
+
+  const txt = scene.add.text(W / 2, H / 2, label, {
+    fontSize: textSize,
+    color: textColor,
+    fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+  }).setOrigin(0.5)
+
+  c.add([shadow, bg, txt])
+  c.setSize(W, H)
+  c.setInteractive(new Phaser.Geom.Rectangle(0, 0, W, H), Phaser.Geom.Rectangle.Contains)
+  if (c.input) c.input.cursor = 'pointer'
+
+  c.on('pointerdown', () => {
+    isPressed = true
+    draw(colors.topPressed, colors.bottomPressed, true)
+    c.setPosition(x + 2, y + 2)
+  })
+
+  c.on('pointerup', () => {
+    if (!isPressed) return
+    isPressed = false
+    draw(colors.top, colors.bottom, false)
+    c.setPosition(x, y)
+    onClick()
+  })
+
+  c.on('pointerout', () => {
+    if (!isPressed) return
+    isPressed = false
+    draw(colors.top, colors.bottom, false)
+    c.setPosition(x, y)
+  })
+
+  return c
 }
 
 export function makeLabel(
@@ -73,133 +145,4 @@ export function makeLabel(
   return scene.add.text(x, y, text, {
     fontSize: size, color, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
   })
-}
-
-export interface EditableValueConfig {
-  label: string
-  value: string
-  color?: string
-  onClick: () => void
-}
-
-export function makeEditableValue(
-  scene: Phaser.Scene,
-  x: number, y: number,
-  config: EditableValueConfig,
-): Phaser.GameObjects.Text {
-  const text = scene.add.text(x, y, `${config.label}: ${config.value}`, {
-    fontSize: FONT_SIZE.xs, color: config.color ?? COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-  })
-  text.setInteractive({ cursor: 'pointer' })
-  text.on('pointerover', () => text.setColor(COLORS.text.accent))
-  text.on('pointerout', () => text.setColor(config.color ?? COLORS.text.secondary))
-  text.on('pointerdown', () => config.onClick())
-  return text
-}
-
-export function makeSectionHeader(
-  scene: Phaser.Scene,
-  x: number, y: number,
-  label: string,
-  expanded: boolean,
-  count?: number,
-  onToggle?: () => void,
-  onAction?: () => void,
-): { text: Phaser.GameObjects.Text; plusBtn?: Phaser.GameObjects.Text } {
-  const suffix = expanded ? ' [hide]' : count !== undefined ? ` [${count}] [show]` : ''
-  const header = scene.add.text(x, y, `${label}${suffix}`, {
-    ...FONTS.h4, color: COLORS.text.accent,
-  })
-  header.setInteractive({ cursor: 'pointer' })
-  if (onToggle) header.on('pointerdown', onToggle)
-
-  let plusBtn: Phaser.GameObjects.Text | undefined
-  if (expanded && onAction) {
-    plusBtn = scene.add.text(x, y, '[+]', {
-      ...FONTS.h4, color: COLORS.text.success,
-    })
-    plusBtn.setInteractive({ cursor: 'pointer' })
-    plusBtn.on('pointerdown', onAction)
-  }
-
-  return { text: header, plusBtn }
-}
-
-export function makeCycleLabel(
-  scene: Phaser.Scene,
-  x: number, y: number,
-  items: string[],
-  currentIndex: number,
-  displayFn: (item: string) => string,
-  onChange: (newIndex: number) => void,
-): Phaser.GameObjects.Text {
-  const txt = scene.add.text(x, y, displayFn(items[currentIndex]), {
-    fontSize: FONT_SIZE.xs, color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
-  })
-  txt.setInteractive({ cursor: 'pointer' })
-  txt.on('pointerdown', () => {
-    const next = (currentIndex + 1) % items.length
-    txt.setText(displayFn(items[next]))
-    onChange(next)
-  })
-  return txt
-}
-
-export function makeDelLabel(
-  scene: Phaser.Scene,
-  x: number, y: number,
-  onClick: () => void,
-): Phaser.GameObjects.Text {
-  const txt = scene.add.text(x, y, '[del]', {
-    fontSize: FONT_SIZE.xs, color: COLORS.text.danger, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-  })
-  txt.setInteractive({ cursor: 'pointer' })
-  txt.on('pointerdown', onClick)
-  return txt
-}
-
-export function makeAddLabel(
-  scene: Phaser.Scene,
-  x: number, y: number,
-  label: string,
-  onClick: () => void,
-): Phaser.GameObjects.Text {
-  const txt = scene.add.text(x, y, label, {
-    fontSize: FONT_SIZE.xs, color: COLORS.text.success, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-  })
-  txt.setInteractive({ cursor: 'pointer' })
-  txt.on('pointerdown', onClick)
-  return txt
-}
-
-export function destroyAll(elements: (Phaser.GameObjects.GameObject | undefined)[]): void {
-  for (const e of elements) {
-    if (e) e.destroy()
-  }
-}
-
-export function promptNumber(
-  scene: Phaser.Scene,
-  label: string,
-  current: number,
-  onChange: (val: number) => void,
-): void {
-  const val = prompt(`${label}:`, String(current))
-  if (val !== null) {
-    const n = parseInt(val, 10)
-    if (!isNaN(n) && n > 0) onChange(n)
-  }
-}
-
-export function promptFloat(
-  scene: Phaser.Scene,
-  label: string,
-  current: number,
-  onChange: (val: number) => void,
-): void {
-  const val = prompt(`${label}:`, String(current))
-  if (val !== null) {
-    const n = parseFloat(val)
-    if (!isNaN(n) && n > 0) onChange(n)
-  }
 }

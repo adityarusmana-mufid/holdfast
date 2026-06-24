@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
 import { FONTS, FONT_SIZE, COLORS } from '../ui/Constants'
-import { makeMetalButton } from '../ui/Components'
+import { makeNodeButton } from '../ui/Components'
 import { getLevelIdsForChapter, getLevelData, CHAPTERS } from '../config/chapters'
 import { isLevelUnlocked, getCompletion } from '../shared/SaveData'
 import { tutorialSquad } from '../shared/utils/levelHelpers'
@@ -120,7 +120,7 @@ export class LevelSelectScene extends Phaser.Scene {
     }).setOrigin(0.5, 0)
 
     this.add.text(W / 2, 66, ch?.subtitle ?? '', {
-      ...FONTS.body, color: '#6a7a8a',
+      ...FONTS.body, color: '#4a5a6a',
     }).setOrigin(0.5, 0)
 
     const positions = ch?.nodePositions ?? []
@@ -162,7 +162,7 @@ export class LevelSelectScene extends Phaser.Scene {
       drawNodeCard(bg, nodeW, nodeH, cardType, isTr)
       nodeContainer.add(bg)
 
-      const textColor = !unlocked ? '#b0b8c4' : isTr ? '#cfd8dc' : '#1a1a2e'
+      const textColor = !unlocked ? '#4a5a6a' : isTr ? '#cfd8dc' : '#1a1a2e'
       const idText = this.add.text(0, 0, levelId, {
         fontSize: isTr ? '14px' : '16px', color: textColor,
         fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
@@ -259,7 +259,7 @@ export class LevelSelectScene extends Phaser.Scene {
     this.infoPanelOverlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, W, H), Phaser.Geom.Rectangle.Contains)
     this.infoPanelOverlay.on('pointerdown', () => this.hideLevelInfo())
 
-    makeMetalButton(this, 20, H - 52, '< Back', () => {
+    makeNodeButton(this, 20, H - 52, '< Back', () => {
       this.scene.start('ChapterSelectScene')
     }, { w: 100 })
   }
@@ -316,7 +316,7 @@ export class LevelSelectScene extends Phaser.Scene {
     if (completed) {
       const starStr = '★'.repeat(completed.stars) + '☆'.repeat(3 - completed.stars)
       const starsTxt = this.add.text(pad, py, starStr, {
-        fontSize: '18px', color: '#90a4ae',
+        fontSize: '18px', color: '#6a7a8a',
         fontFamily: 'sans-serif',
       })
       this.infoPanel.add(starsTxt)
@@ -331,7 +331,7 @@ export class LevelSelectScene extends Phaser.Scene {
     if (data.tutorial) {
       py += 40
       const tutHint = this.add.text(pad, py, 'Tutorial level — auto squad', {
-        ...FONTS.small, color: '#90a4ae', wordWrap: { width: this.infoPanelW - pad * 2 },
+        ...FONTS.small, color: '#4a5a6a', wordWrap: { width: this.infoPanelW - pad * 2 },
       })
       this.infoPanel.add(tutHint)
     }
@@ -342,15 +342,15 @@ export class LevelSelectScene extends Phaser.Scene {
     const intelBtnX = pad
     const enterBtnX = pad + btnW / 2 + 4
 
-    const intelBtn = makeMetalButton(this, intelBtnX, btnY, 'INTEL', () => {
+    const intelBtn = makeNodeButton(this, intelBtnX, btnY, 'INTEL', () => {
       this.scene.launch('LevelPreviewScene', {
         levelId, chapterId: this.chapterId, levelData: data,
       })
-    }, { w: btnW / 2 - 4, h: btnH, skew: 6, textSize: FONT_SIZE.xs, textColor: '#78909c' })
+    }, { w: btnW / 2 - 4, h: btnH, textSize: FONT_SIZE.xs })
     this.infoPanel.add(intelBtn)
 
-    const enterBtn = makeMetalButton(this, enterBtnX, btnY, 'ENTER', () => this.enterLevel(levelId, data), {
-      w: btnW / 2 - 4, h: btnH, skew: 6, textSize: FONT_SIZE.sm, textColor: '#546e7a',
+    const enterBtn = makeNodeButton(this, enterBtnX, btnY, 'ENTER', () => this.enterLevel(levelId, data), {
+      w: btnW / 2 - 4, h: btnH, role: 'primary', textSize: FONT_SIZE.sm,
     })
     this.infoPanel.add(enterBtn)
 

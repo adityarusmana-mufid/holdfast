@@ -10,6 +10,7 @@ import { CombatSystem } from '../systems/CombatSystem'
 import { HealingSystem } from '../systems/HealingSystem'
 import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONT_SIZE } from '../ui/Constants'
+import { makeNodeButton } from '../ui/Components'
 import { spawnProjectile, playSwing, showWindUp, flashDamage } from '../effects/CombatEffects'
 import { saveCompletion } from '../shared/SaveData'
 
@@ -50,9 +51,9 @@ export class GameScene extends Phaser.Scene {
 
   private decisionMode: boolean = false
   private inspectingUnit: DeployedUnit | null = null
-  private inspectRetreatBtn!: Phaser.GameObjects.Text
-  private inspectCloseBtn!: Phaser.GameObjects.Text
-  private facingCancelBtn!: Phaser.GameObjects.Text
+  private inspectRetreatBtn!: Phaser.GameObjects.Container
+  private inspectCloseBtn!: Phaser.GameObjects.Container
+  private facingCancelBtn!: Phaser.GameObjects.Container
 
   private unitConfigs: UnitConfig[] = UNIT_CONFIGS
   private fromSquad: boolean = false
@@ -62,12 +63,12 @@ export class GameScene extends Phaser.Scene {
   private enemiesDefeated: number = 0
 
   private speedMultiplier: number = 1
-  private speedButton!: Phaser.GameObjects.Text
+  private speedButton!: Phaser.GameObjects.Container
   private isPaused: boolean = false
   private pauseOverlay!: Phaser.GameObjects.Graphics
   private pauseText!: Phaser.GameObjects.Text
-  private pauseButton!: Phaser.GameObjects.Text
-  private pauseButtons: Phaser.GameObjects.Text[] = []
+  private pauseButton!: Phaser.GameObjects.Container
+  private pauseButtons: Phaser.GameObjects.Container[] = []
   private wavePreviewLine!: Phaser.GameObjects.Graphics
   private encounteredTypes: Set<string> = new Set()
   private activeToasts: Phaser.GameObjects.Container[] = []
@@ -270,26 +271,23 @@ export class GameScene extends Phaser.Scene {
   }
 
   private buildPauseButton(): void {
-    this.speedButton = this.add.text(this.scale.width - 110, 10, 'x1', {
-      fontSize: FONT_SIZE.sm, color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    this.speedButton = makeNodeButton(this, this.scale.width - 110, 6, 'x1', () => this.toggleSpeed(), {
+      w: 48, h: 28, textSize: '13px',
     })
-    this.speedButton.setInteractive({ cursor: 'pointer' })
-    this.speedButton.on('pointerdown', () => this.toggleSpeed())
 
-    this.pauseButton = this.add.text(this.scale.width - 55, 10, '[ II ]', {
-      fontSize: FONT_SIZE.lg, color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
-    })
-    this.pauseButton.setInteractive({ cursor: 'pointer' })
-    this.pauseButton.on('pointerdown', () => {
+    this.pauseButton = makeNodeButton(this, this.scale.width - 56, 6, '[ II ]', () => {
       if (!this.battleActive || this.battleEnded) return
       this.togglePause()
+    }, {
+      w: 48, h: 28, textSize: '13px',
     })
   }
 
   private toggleSpeed(): void {
     this.speedMultiplier = this.speedMultiplier === 1 ? 2 : 1
-    this.speedButton.setText(`x${this.speedMultiplier}`)
-    this.speedButton.setColor(this.speedMultiplier > 1 ? '#4fc3f7' : COLORS.text.dim)
+    const txt = this.speedButton.getAt(2) as Phaser.GameObjects.Text
+    txt.setText(`x${this.speedMultiplier}`)
+    txt.setColor(this.speedMultiplier > 1 ? '#4fc3f7' : COLORS.text.dim)
   }
 
   private togglePause(): void {
@@ -300,20 +298,16 @@ export class GameScene extends Phaser.Scene {
       this.pauseOverlay.fillRect(0, 0, this.scale.width, this.scale.height)
       this.pauseOverlay.setAlpha(1)
       this.pauseText.setAlpha(1)
-      this.pauseButton.setColor(COLORS.text.accent)
+      ;(this.pauseButton.getAt(2) as Phaser.GameObjects.Text).setColor(COLORS.text.accent)
 
       const cx = this.scale.width / 2
-      const cy = this.scale.height / 2
 
       const mkBtn = (label: string, color: string, yOff: number, cb: () => void) => {
-        const t = this.add.text(cx, cy + yOff, label, {
-          fontSize: FONT_SIZE.lg, color, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+        const btn = makeNodeButton(this, cx, this.scale.height / 2 + yOff, label, () => { this.togglePause(); cb() }, {
+          w: 200, h: 34, textSize: FONT_SIZE.sm,
         })
-        t.setOrigin(0.5)
-        t.setDepth(50)
-        t.setInteractive({ cursor: 'pointer' })
-        t.on('pointerdown', () => { this.togglePause(); cb() })
-        return t
+        btn.setDepth(50)
+        return btn
       }
 
       const backBtn = mkBtn('[ Back to Squad ]', COLORS.text.secondary, 50, () => {
@@ -325,7 +319,7 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.pauseOverlay.setAlpha(0)
       this.pauseText.setAlpha(0)
-      this.pauseButton.setColor(COLORS.text.dim)
+      ;(this.pauseButton.getAt(2) as Phaser.GameObjects.Text).setColor(COLORS.text.dim)
       this.pauseButtons?.forEach(b => b.destroy())
       this.pauseButtons = []
     }
@@ -339,36 +333,23 @@ export class GameScene extends Phaser.Scene {
   private setupInput(): void {
     this.input.mouse?.disableContextMenu()
 
-    this.inspectRetreatBtn = this.add.text(10, this.scale.height - 160, '', {
-      fontSize: '15px',
-      color: COLORS.text.danger,
-      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-      fontStyle: 'bold',
+    this.inspectRetreatBtn = makeNodeButton(this, 10, this.scale.height - 160, '', () => this.retreatInspectedUnit(), {
+      w: 220, h: 20, textSize: '13px', role: 'danger',
     })
     this.inspectRetreatBtn.setDepth(50)
     this.inspectRetreatBtn.setAlpha(0)
-    this.inspectRetreatBtn.setInteractive({ cursor: 'pointer' })
-    this.inspectRetreatBtn.on('pointerdown', () => this.retreatInspectedUnit())
 
-    this.inspectCloseBtn = this.add.text(10, this.scale.height - 142, '[ CLOSE ]', {
-      fontSize: FONT_SIZE.xs,
-      color: COLORS.text.secondary,
-      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    this.inspectCloseBtn = makeNodeButton(this, 10, this.scale.height - 142, '[ CLOSE ]', () => this.exitDecisionMode(), {
+      w: 100, h: 20, textSize: FONT_SIZE.xs,
     })
     this.inspectCloseBtn.setDepth(50)
     this.inspectCloseBtn.setAlpha(0)
-    this.inspectCloseBtn.setInteractive({ cursor: 'pointer' })
-    this.inspectCloseBtn.on('pointerdown', () => this.exitDecisionMode())
 
-    this.facingCancelBtn = this.add.text(10, this.scale.height - 124, '[ CANCEL ]', {
-      fontSize: FONT_SIZE.xs,
-      color: COLORS.text.danger,
-      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    this.facingCancelBtn = makeNodeButton(this, 10, this.scale.height - 124, '[ CANCEL ]', () => this.cancelDeployment(), {
+      w: 100, h: 20, textSize: FONT_SIZE.xs, role: 'danger',
     })
     this.facingCancelBtn.setDepth(50)
     this.facingCancelBtn.setAlpha(0)
-    this.facingCancelBtn.setInteractive({ cursor: 'pointer' })
-    this.facingCancelBtn.on('pointerdown', () => this.cancelDeployment())
 
     let facingDragActive = false
     let facingDragStartX = 0
@@ -740,7 +721,7 @@ export class GameScene extends Phaser.Scene {
     this.updateStatsPanel(unit.config, unit)
     const isFullRefund = unit.config.traits?.some(t => t.traitId === UnitTrait.FullRefundRetreat)
     const refund = isFullRefund ? unit.dpCostPaid : Math.floor(unit.dpCostPaid / 2)
-    this.inspectRetreatBtn.setText(`RETREAT  [+${refund} DP]`)
+    ;(this.inspectRetreatBtn.getAt(2) as Phaser.GameObjects.Text).setText(`RETREAT  [+${refund} DP]`)
     this.inspectRetreatBtn.setAlpha(1)
     this.inspectCloseBtn.setAlpha(1)
     this.flashMessage(`INSPECT // ${unit.config.name}`, 0x00a2ff)
@@ -985,7 +966,7 @@ export class GameScene extends Phaser.Scene {
 
     if (this.levelData) {
       this.add.text(W - 20, 10, this.levelData.name, {
-        fontSize: FONT_SIZE.base, color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        fontSize: FONT_SIZE.base, color: '#5a6a7a', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       }).setOrigin(1, 0)
     }
   }
@@ -1102,22 +1083,15 @@ export class GameScene extends Phaser.Scene {
         repeat: -1,
         ease: 'Sine.easeInOut',
       })
-      const restartBtn = this.add.text(this.scale.width / 2, this.scale.height / 2 + 10, '[ Restart Simulation ]', {
-        fontSize: FONT_SIZE.sm, color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-      })
-      restartBtn.setOrigin(0.5)
-      restartBtn.setDepth(50)
-      restartBtn.setInteractive({ cursor: 'pointer' })
-      restartBtn.on('pointerdown', () => {
+      const restartBtn = makeNodeButton(this, this.scale.width / 2, this.scale.height / 2 + 10, 'Restart Simulation', () => {
         if (this.levelData) this.loadLevel(this.levelData)
-      })
-      const editorBtn = this.add.text(this.scale.width / 2, this.scale.height / 2 + 36, '[ Back to Editor ]', {
-        fontSize: FONT_SIZE.sm, color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-      })
-      editorBtn.setOrigin(0.5)
+      }, { w: 200, h: 32, textSize: FONT_SIZE.sm })
+      restartBtn.setDepth(50)
+
+      const editorBtn = makeNodeButton(this, this.scale.width / 2, this.scale.height / 2 + 46, 'Back to Editor', () => {
+        this.scene.start(this.fromSquad ? 'SquadScene' : 'EditorScene')
+      }, { w: 200, h: 32, textSize: FONT_SIZE.sm })
       editorBtn.setDepth(50)
-      editorBtn.setInteractive({ cursor: 'pointer' })
-      editorBtn.on('pointerdown', () => this.scene.start(this.fromSquad ? 'SquadScene' : 'EditorScene'))
       return
     }
 
@@ -1417,7 +1391,7 @@ export class GameScene extends Phaser.Scene {
 
     const dismissText = this.add.text(w - 16, pY + pH - 16, '[ tap to continue ]', {
       fontSize: '15px',
-      color: '#888888',
+      color: '#5a6a7a',
       fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
     dismissText.setOrigin(1, 1)

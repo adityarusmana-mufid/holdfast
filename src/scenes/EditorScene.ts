@@ -5,7 +5,7 @@ import { tileColor, ROUTE_COLORS, validateRoutePath } from '../shared/utils/Grid
 import { exportLevelToFile, importLevelFromFile } from '../editor/LevelSerializer'
 import { ENEMY_CONFIGS } from '../config/enemies'
 import { COLORS, FONTS, FONT_SIZE } from '../ui/Constants'
-import { makeButton, makeLabel } from '../ui/Components'
+import { makeNodeButton, makeLabel } from '../ui/Components'
 import { TEST_LEVEL } from '../levels/testLevel'
 
 injectEditorStyles()
@@ -31,7 +31,7 @@ export class EditorScene extends Phaser.Scene {
   private waypointMode: boolean = false
   private paletteButtons: Phaser.GameObjects.Container[] = []
   private statusText!: Phaser.GameObjects.Text
-  private addEraseBtn!: Phaser.GameObjects.Text
+  private addEraseBtn!: Phaser.GameObjects.Container
 
   private configPanel!: ConfigPanel
   private wavePanel!: WavePanel
@@ -85,8 +85,9 @@ export class EditorScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-E', () => {
       this.editMode = this.editMode === EditMode.Erase ? EditMode.Paint : EditMode.Erase
       this.setStatus(this.editMode === EditMode.Erase ? 'Erase mode' : 'Paint mode')
-      this.addEraseBtn.setText(this.editMode === EditMode.Erase ? '[■ Erase]' : '[ Erase ]')
-      this.addEraseBtn.setColor(this.editMode === EditMode.Erase ? COLORS.text.success : COLORS.text.danger)
+      const txt = this.addEraseBtn.getAt(2) as Phaser.GameObjects.Text
+      txt.setText(this.editMode === EditMode.Erase ? '[■ Erase]' : '[ Erase ]')
+      txt.setColor(this.editMode === EditMode.Erase ? COLORS.text.success : COLORS.text.danger)
     })
     this.input.keyboard?.on('keydown-S', () => {
       this.exportLevel()
@@ -137,54 +138,53 @@ export class EditorScene extends Phaser.Scene {
 
     makeLabel(this, px, y, 'GRID', COLORS.text.secondary, '12px')
     y += 18
-    makeButton(this, px, y, 'Clear Grid', () => { this.grid.resize(this.grid.cols, this.grid.rows); this.setStatus('Grid cleared'); this.isDirty = true }, { w: btnW, h: 28 })
-    y += 28
-    makeButton(this, px, y, 'Export JSON', () => { this.exportLevel() }, { w: btnW, h: 28 })
-    y += 28
-    makeButton(this, px, y, 'Import JSON', () => { this.importLevel() }, { w: btnW, h: 28 })
+    makeNodeButton(this, px, y, 'Clear Grid', () => { this.grid.resize(this.grid.cols, this.grid.rows); this.setStatus('Grid cleared'); this.isDirty = true }, { w: btnW, h: 26, textSize: '12px' })
+    y += 26
+    makeNodeButton(this, px, y, 'Export JSON', () => { this.exportLevel() }, { w: btnW, h: 26, textSize: '12px' })
+    y += 26
+    makeNodeButton(this, px, y, 'Import JSON', () => { this.importLevel() }, { w: btnW, h: 26, textSize: '12px' })
 
     makeLabel(this, px, y + 8, 'ROUTES', COLORS.text.secondary, '12px')
     y += 26
 
-    makeButton(this, px, y, 'Waypoints', () => {
+    const waypointsBtn = makeNodeButton(this, px, y, 'Waypoints', () => {
       if (this.selectedRouteIndex < 0) {
         this.setStatus('Select a route first')
         return
       }
       this.waypointMode = !this.waypointMode
       this.setStatus(this.waypointMode ? 'Waypoint mode: click to add/remove' : 'Paint mode')
-    }, { w: btnW, h: 24, textColor: this.waypointMode ? COLORS.text.success : COLORS.text.accent })
-    y += 28
+      const txt = waypointsBtn.getAt(2) as Phaser.GameObjects.Text
+      txt.setColor(this.waypointMode ? COLORS.text.success : COLORS.text.accent)
+    }, { w: btnW, h: 24, textSize: '12px' })
+    y += 26
 
-    makeButton(this, px, y, 'Clear Waypoints', () => {
+    makeNodeButton(this, px, y, 'Clear Waypoints', () => {
       const route = this.routes[this.selectedRouteIndex]
       if (!route) { this.setStatus('Select a route first'); return }
       route.waypoints = []
       this.renderRouteList()
       this.drawRoutePreview()
       this.setStatus('Waypoints cleared')
-    }, { w: btnW, h: 24, textColor: COLORS.text.danger })
-    y += 28
+    }, { w: btnW, h: 24, textSize: '12px', role: 'danger' })
+    y += 26
 
     makeLabel(this, px, y + 8, 'TOOLS', COLORS.text.secondary, '12px')
     y += 26
-    this.addEraseBtn = this.add.text(px + 8, y + 4, '[ Erase ]', {
-      ...FONTS.small, color: COLORS.text.danger,
-    })
-    this.addEraseBtn.setInteractive({ cursor: 'pointer' })
-    this.addEraseBtn.on('pointerdown', () => {
+    this.addEraseBtn = makeNodeButton(this, px, y, '[ Erase ]', () => {
       this.editMode = this.editMode === EditMode.Erase ? EditMode.Paint : EditMode.Erase
       this.setStatus(this.editMode === EditMode.Erase ? 'Erase mode' : 'Paint mode')
-      this.addEraseBtn.setText(this.editMode === EditMode.Erase ? '[■ Erase]' : '[ Erase ]')
-      this.addEraseBtn.setColor(this.editMode === EditMode.Erase ? COLORS.text.success : COLORS.text.danger)
-    })
-    y += 28
+      const txt = this.addEraseBtn.getAt(2) as Phaser.GameObjects.Text
+      txt.setText(this.editMode === EditMode.Erase ? '[■ Erase]' : '[ Erase ]')
+      txt.setColor(this.editMode === EditMode.Erase ? COLORS.text.success : COLORS.text.danger)
+    }, { w: btnW, h: 24, textSize: '12px', role: 'danger' })
+    y += 26
 
     makeLabel(this, px, y + 8, 'PLAY', COLORS.text.secondary, '12px')
     y += 26
-    makeButton(this, px, y, '▶ Play', () => { this.playLevel() }, { w: btnW, h: 28, textColor: COLORS.text.success })
-    y += 28
-    makeButton(this, px, y, 'Test Combat', () => { this.playTestLevel() }, { w: btnW, h: 28, textColor: COLORS.text.warning })
+    makeNodeButton(this, px, y, '▶ Play', () => { this.playLevel() }, { w: btnW, h: 26, textSize: '12px', role: 'primary' })
+    y += 26
+    makeNodeButton(this, px, y, 'Test Combat', () => { this.playTestLevel() }, { w: btnW, h: 26, textSize: '12px', role: 'danger' })
 
     y += 8
     makeLabel(this, px, y, 'SIZE', COLORS.text.secondary, '12px')
@@ -197,8 +197,8 @@ export class EditorScene extends Phaser.Scene {
       { label: '16×10', cols: 16, rows: 10 },
     ]
     sizes.forEach((s) => {
-      makeButton(this, px, y, s.label, () => { this.grid.resize(s.cols, s.rows); this.isDirty = true }, { w: 68, h: 28, textSize: '11px', textColor: COLORS.text.secondary })
-      y += 28
+      makeNodeButton(this, px, y, s.label, () => { this.grid.resize(s.cols, s.rows); this.isDirty = true }, { w: 68, h: 26, textSize: '11px' })
+      y += 26
     })
   }
 
@@ -343,8 +343,9 @@ export class EditorScene extends Phaser.Scene {
     this.selectedType = type
     this.editMode = EditMode.Paint
     if (this.addEraseBtn) {
-      this.addEraseBtn.setText('[ Erase ]')
-      this.addEraseBtn.setColor(COLORS.text.danger)
+      const txt = this.addEraseBtn.getAt(2) as Phaser.GameObjects.Text
+      txt.setText('[ Erase ]')
+      txt.setColor(COLORS.text.danger)
     }
     this.paletteButtons.forEach((btn, i) => {
       const bg = btn.getAt(0) as Phaser.GameObjects.Rectangle

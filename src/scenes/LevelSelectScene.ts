@@ -323,13 +323,28 @@ export class LevelSelectScene extends Phaser.Scene {
 
     const completed = getCompletion(levelId)
     if (completed) {
-      const starStr = '★'.repeat(completed.stars) + '☆'.repeat(3 - completed.stars)
-      const starsTxt = this.add.text(pad, py, starStr, {
-        fontSize: '18px', color: '#6a7a8a',
-        fontFamily: 'sans-serif',
-      })
-      this.infoPanel.add(starsTxt)
-      py += 8
+      const hexSize = 28
+      const hexGap = 8
+      const totalW = 3 * hexSize + 2 * hexGap
+      const startX = pad + (this.infoPanelW - pad * 2 - totalW) / 2
+      const cy = py + hexSize / 2
+
+      for (let i = 0; i < 3; i++) {
+        const cx = startX + i * (hexSize + hexGap) + hexSize / 2
+        const gfx = this.add.graphics()
+
+        drawPointyHexagon(gfx, cx + 2, cy + 2, hexSize, 0x000000, 0.08)
+        drawPointyHexagon(gfx, cx, cy, hexSize, 0xffffff, 1)
+        const insetH = hexSize - 7
+        drawPointyHexagon(gfx, cx, cy, insetH, 0x424242, 1)
+        if (i < completed.stars) {
+          drawPointyHexagon(gfx, cx, cy, insetH, 0x00bcd4, 1)
+        }
+
+        this.infoPanel.add(gfx)
+      }
+
+      py += hexSize + 8
       const enemiesTxt = this.add.text(pad, py, `Enemies defeated: ${completed.enemiesDefeated}`, {
         ...FONTS.small, color: COLORS.text.dim,
       })

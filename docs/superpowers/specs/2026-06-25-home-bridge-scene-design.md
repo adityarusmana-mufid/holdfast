@@ -71,19 +71,24 @@ Three trapezoid-shaped buttons right-aligned, stacked vertically and centered as
 - SQUAD PRESET y: 272 + 86 + 16 = 374
 - LEVEL EDITOR y: 374 (same row as SQUAD)
 
-### Hover Interaction
+### Perspective Foreshortening (1-Point Perspective)
 
-**Default state**: Trapezoid with right edge +8px taller than left edge.
+Each button uses **1-point perspective foreshortening** to simulate depth — the right edge is taller than the left, as if the buttons sit on a plane receding toward a vanishing point off-screen left.
 
-**On hover (pointerover + pointermove)**:
-1. Determine which half of the button the cursor is in (left half vs right half)
-2. Compress the height on that side by 5px (making it "move further from us"):
-   - Cursor in left half → left edge height decreases by 5px over 100ms tween
-   - Cursor in right half → right edge height decreases by 5px over 100ms tween
-3. The polygon is redrawn via Graphics.clear() + Graphics.fillPath() in the tween's onUpdate callback
+**Physics**: In perspective projection, apparent size is inversely proportional to distance. An object at distance `d` subtends an angle `θ ≈ h/d`. As the plane recedes to the left, the left side is farther (smaller), the right side is closer (larger). Both edges share a vertical midpoint, so the right edge extends equally above and below the left edge — this centers the perspective shift, making the button appear to tilt toward the viewer on the right side.
 
-**On hover-out (pointerout)**:
-- Both edges tween back to their default heights (left: leftH, right: leftH + 8) over 100ms
+**Implementation** (`drawTrapezoid`):
+- Left edge: `(x, y)` → `(x, y + leftH)` — reference edge
+- Right edge: `(x + w, y + leftH/2 - rightH/2)` → `(x + w, y + leftH/2 + rightH/2)` — centered around same midpoint, actual height = `rightH`
+- Shadow: offset by `bboxTop = leftH/2 - rightH/2` so the multi-layer shadow follows the bounding box
+
+**Intensity**:
+| Button | leftH | rightH | Increase |
+|--------|-------|--------|----------|
+| TERMINAL | 86px | 110px | +28% |
+| SQUAD/EDITOR | 74px | 94px | +27% |
+
+**Hover interaction**: On pointerover, the perspective rate amplifies — rightH tweens from its default to a higher "hover" value (TERMINAL: 110→126, SQUAD/EDITOR: 94→108) over 150ms, making the button lean further toward the viewer. On pointerout, rightH tweens back to default over 150ms.
 
 **Cursor**: `pointer` cursor on all buttons.
 

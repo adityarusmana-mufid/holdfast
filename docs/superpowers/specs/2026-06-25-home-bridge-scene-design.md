@@ -38,9 +38,9 @@ Three trapezoid-shaped buttons right-aligned, stacked vertically and centered as
 
 | Button | Width | Height (left) | Right edge extra | Gap below |
 |--------|-------|--------------|-----------------|-----------|
-| TERMINAL | 300px | 86px | +8px (94px total right) | 16px |
-| SQUAD PRESET | 260px | 74px | +8px (82px total right) | 16px |
-| LEVEL EDITOR | 260px | 74px | +8px (82px total right) | — |
+| TERMINAL | 450px | 86px | +8px (94px total right) | 16px |
+| SQUAD PRESET | 390px | 74px | +8px (82px total right) | 16px |
+| LEVEL EDITOR | 390px | 74px | +8px (82px total right) | — |
 
 **Button styling** — follows existing `makeNodeButton` aesthetic (gradient fills, multi-layer shadow, pressed state):
 
@@ -57,7 +57,7 @@ Three trapezoid-shaped buttons right-aligned, stacked vertically and centered as
 **Border**: 1px `#a0a4ac` (TERMINAL uses darker border `#383838`) drawn as trapezoid outline.
 
 **Text styling** (all buttons):
-- `fontSize: '18px'` (TERMINAL), `'16px'` (others)
+- `fontSize: '20px'` (TERMINAL), `'18px'` (others)
 - `fontFamily: '"Share Tech Mono", "Roboto Mono", monospace'`
 - `fontStyle: 'bold'`
 - Centered in the button bounding box

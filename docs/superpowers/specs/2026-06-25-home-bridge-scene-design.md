@@ -34,13 +34,13 @@ Three trapezoid-shaped buttons right-aligned, stacked vertically and centered as
 - Border: 1px semi-transparent darker shade of the fill color
 - Corner radius: none (sharp trapezoid edges)
 
-**Mobile-friendly sizing**: Button stack is sized to cover ≥60% of landscape viewport height on common mobile devices. Stack total = 266px, covering 62% of 430px (iPhone Pro Max) to 74% of 360px (small Android).
+**Mobile-friendly sizing**: Button stack is sized to cover ≥60% of landscape viewport height on common mobile devices. Stack total = 176px (2 rows now), covering 41% of 430px to 49% of 360px.
 
 | Button | Width | Height (left) | Right edge extra | Gap below |
 |--------|-------|--------------|-----------------|-----------|
 | TERMINAL | 450px | 86px | +8px (94px total right) | 16px |
-| SQUAD PRESET | 390px | 74px | +8px (82px total right) | 16px |
-| LEVEL EDITOR | 390px | 74px | +8px (82px total right) | — |
+| SQUAD PRESET | 218px | 74px | +8px (82px total right) | — (same row as EDITOR) |
+| LEVEL EDITOR | 218px | 74px | +8px (82px total right) | — |
 
 **Button styling** — follows existing `makeNodeButton` aesthetic (gradient fills, multi-layer shadow, pressed state):
 
@@ -62,16 +62,14 @@ Three trapezoid-shaped buttons right-aligned, stacked vertically and centered as
 - `fontStyle: 'bold'`
 - Centered in the button bounding box
 
-**Right alignment**: All buttons right-aligned with 20px margin from the right edge of the canvas. So:
-- TERMINAL: x = 1280 - 20 - 300 = 960
-- Others: x = 1280 - 20 - 260 = 1000
+**Alignment**: TERMINAL is right-aligned with 20px margin (x = 1280 - 20 - 450 = 810). SQUAD and EDITOR sit side-by-side in a second row, spanning the same 450px width as TERMINAL for visual balance.
 
-**Vertical centering**: The group of 3 buttons is centered vertically:
-- Total stack height: 86 + 16 + 74 + 16 + 74 = 266px
-- Stack top: (720 - 266) / 2 = 227
-- TERMINAL y: 227
-- SQUAD PRESET y: 227 + 86 + 16 = 329
-- LEVEL EDITOR y: 329 + 74 + 16 = 419
+**Vertical centering**: 2-row layout centered vertically:
+- Total stack height: 86 + 16 + 74 = 176px
+- Stack top: (720 - 176) / 2 = 272
+- TERMINAL y: 272
+- SQUAD PRESET y: 272 + 86 + 16 = 374
+- LEVEL EDITOR y: 374 (same row as SQUAD)
 
 ### Hover Interaction
 

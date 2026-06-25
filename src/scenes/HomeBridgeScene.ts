@@ -21,9 +21,9 @@ const ROLE_TEXT: Record<string, string> = {
 const BTN_DEFS: {
   key: string; label: string; x: number; y: number; w: number; leftH: number; rightH: number; fontSize: string;
 }[] = [
-  { key: 'terminal', label: 'TERMINAL', x: 810, y: 272, w: 450, leftH: 86, rightH: 98, fontSize: '20px' },
-  { key: 'squad', label: 'SQUAD PRESET', x: 810, y: 374, w: 218, leftH: 74, rightH: 86, fontSize: '18px' },
-  { key: 'editor', label: 'LEVEL EDITOR', x: 1042, y: 374, w: 218, leftH: 74, rightH: 86, fontSize: '18px' },
+  { key: 'terminal', label: 'TERMINAL', x: 810, y: 272, w: 450, leftH: 86, rightH: 120, fontSize: '20px' },
+  { key: 'squad', label: 'SQUAD PRESET', x: 810, y: 374, w: 218, leftH: 74, rightH: 104, fontSize: '18px' },
+  { key: 'editor', label: 'LEVEL EDITOR', x: 1042, y: 389, w: 218, leftH: 74, rightH: 104, fontSize: '18px' },
 ]
 
 function drawShadow(g: Phaser.GameObjects.Graphics, w: number, h: number): void {

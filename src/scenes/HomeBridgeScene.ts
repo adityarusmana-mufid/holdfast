@@ -21,9 +21,9 @@ const ROLE_TEXT: Record<string, string> = {
 const BTN_DEFS: {
   key: string; label: string; x: number; y: number; w: number; leftH: number; rightH: number; fontSize: string;
 }[] = [
-  { key: 'terminal', label: 'TERMINAL', x: 960, y: 270, w: 300, leftH: 56, rightH: 64, fontSize: '16px' },
-  { key: 'squad', label: 'SQUAD PRESET', x: 1000, y: 340, w: 260, leftH: 48, rightH: 56, fontSize: '14px' },
-  { key: 'editor', label: 'LEVEL EDITOR', x: 1000, y: 402, w: 260, leftH: 48, rightH: 56, fontSize: '14px' },
+  { key: 'terminal', label: 'TERMINAL', x: 960, y: 227, w: 300, leftH: 86, rightH: 98, fontSize: '18px' },
+  { key: 'squad', label: 'SQUAD PRESET', x: 1000, y: 329, w: 260, leftH: 74, rightH: 86, fontSize: '16px' },
+  { key: 'editor', label: 'LEVEL EDITOR', x: 1000, y: 419, w: 260, leftH: 74, rightH: 86, fontSize: '16px' },
 ]
 
 function drawShadow(g: Phaser.GameObjects.Graphics, w: number, h: number): void {
@@ -107,6 +107,7 @@ export class HomeBridgeScene extends Phaser.Scene {
       let isPressed = false
       let currentLeftH = def.leftH
       let currentRightH = def.rightH
+      let hoverTween: Phaser.Tweens.Tween | null = null
 
       const draw = (pressed: boolean, leftH: number, rightH: number): void => {
         shadow.clear()
@@ -161,8 +162,8 @@ export class HomeBridgeScene extends Phaser.Scene {
         if (targetLeft !== currentLeftH || targetRight !== currentRightH) {
           currentLeftH = targetLeft
           currentRightH = targetRight
-          this.tweens.killTweensOf(this, '')
-          this.tweens.add({
+          if (hoverTween) hoverTween.stop()
+          hoverTween = this.tweens.add({
             targets: {},
             duration: 100,
             onUpdate: () => draw(isPressed, currentLeftH, currentRightH),
@@ -171,10 +172,13 @@ export class HomeBridgeScene extends Phaser.Scene {
       })
 
       c.on('pointerout', () => {
+        const wasPressed = isPressed
+        isPressed = false
         currentLeftH = def.leftH
         currentRightH = def.rightH
-        this.tweens.killTweensOf(this, '')
-        if (!isPressed) draw(false, def.leftH, def.rightH)
+        if (hoverTween) hoverTween.stop()
+        draw(false, def.leftH, def.rightH)
+        if (wasPressed) c.setPosition(def.x, def.y)
       })
 
       c.on('pointerdown', () => {
@@ -193,13 +197,6 @@ export class HomeBridgeScene extends Phaser.Scene {
           case 'squad': this.scene.start('SquadScene', { levelId: 'menu', chapterId: 'menu', levelData: null }); break
           case 'editor': this.scene.start('EditorScene'); break
         }
-      })
-
-      c.on('pointerout', () => {
-        if (!isPressed) return
-        isPressed = false
-        draw(false, currentLeftH, currentRightH)
-        c.setPosition(def.x, def.y)
       })
 
       const targetX = def.x

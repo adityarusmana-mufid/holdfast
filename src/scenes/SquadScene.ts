@@ -3,7 +3,7 @@ import { UnitConfig, LevelData } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONTS, FONT_SIZE } from '../ui/Constants'
 import { makeNodeButton } from '../ui/Components'
-import { saveSquad, loadSquad } from '../shared/SaveData'
+import { saveSquad, loadSquad, savePickedSkills, loadPickedSkills } from '../shared/SaveData'
 
 const SLOT_W = 130
 const SLOT_H = 200
@@ -13,6 +13,7 @@ const ROWS = 2
 
 export class SquadScene extends Phaser.Scene {
   private slots: (UnitConfig | null)[] = []
+  private pickedSkills: Record<number, string> = {}
   private slotContainers: Phaser.GameObjects.Container[] = []
   private squadLabel!: Phaser.GameObjects.Text
 
@@ -29,13 +30,19 @@ export class SquadScene extends Phaser.Scene {
     this.chapterId = data.chapterId
     this.levelData = data.levelData
     this.slots = new Array(12).fill(null)
-    const saved = loadSquad(this.levelId)
+    const squadKey = this.levelId === 'menu' ? 'menu_squad' : this.levelId
+    const saved = loadSquad(squadKey)
     if (saved) {
       for (let i = 0; i < 12; i++) {
         const id = saved[i]
         if (id) this.slots[i] = UNIT_CONFIGS.find(u => u.id === id) ?? null
       }
-    } else {
+    }
+    const savedSkills = loadPickedSkills(squadKey)
+    if (savedSkills) {
+      this.pickedSkills = savedSkills
+    }
+    if (!saved) {
       const defaultIds = ['pioneer', 'charger', 'protector', 'fighter', 'sniper', 'core_caster', 'medic_st']
       for (let i = 0; i < defaultIds.length; i++) {
         const unit = UNIT_CONFIGS.find(u => u.id === defaultIds[i])
@@ -52,7 +59,10 @@ export class SquadScene extends Phaser.Scene {
       ...FONTS.h2, color: COLORS.text.primary,
     }).setOrigin(0.5, 0)
 
-    this.add.text(W / 2, 44, `Tap an empty slot to pick a unit. Pre-filled squad is ready to deploy.`, {
+    const subtitle = this.levelId === 'menu'
+      ? 'Build and save your squad preset. Used as default for new levels.'
+      : 'Tap an empty slot to pick a unit. Pre-filled squad is ready to deploy.'
+    this.add.text(W / 2, 44, subtitle, {
       ...FONTS.small, color: COLORS.text.dim,
     }).setOrigin(0.5, 0)
 
@@ -88,25 +98,32 @@ export class SquadScene extends Phaser.Scene {
       ...FONTS.body, color: COLORS.text.secondary,
     }).setOrigin(0.5, 0)
 
-    makeNodeButton(this, 16, 16, '< BACK', () => {
-      this.scene.start('LevelSelectScene', { chapterId: this.chapterId })
-    }, { w: 72, h: 32, textSize: '11px' })
-    makeNodeButton(this, 94, 16, 'HOME', () => {
-      this.scene.start('ChapterSelectScene')
-    }, { w: 72, h: 32, textSize: '11px' })
+    if (this.levelId === 'menu') {
+      makeNodeButton(this, 16, 16, '< BACK', () => {
+        this.scene.start('HomeBridgeScene')
+      }, { w: 72, h: 32, textSize: '11px' })
+    } else {
+      makeNodeButton(this, 16, 16, '< BACK', () => {
+        this.scene.start('LevelSelectScene', { chapterId: this.chapterId })
+      }, { w: 72, h: 32, textSize: '11px' })
+      makeNodeButton(this, 94, 16, 'HOME', () => {
+        this.scene.start('ChapterSelectScene')
+      }, { w: 72, h: 32, textSize: '11px' })
 
-    makeNodeButton(this, W - 160, H - 48, 'Start Mission', () => {
-      const squad = this.slots.filter((s): s is UnitConfig => s !== null)
-      if (squad.length === 0) return
-      if (!this.levelData) return
-      this.scene.start('GameScene', {
-        level: this.levelData,
-        squad,
-        chapterId: this.chapterId,
-        levelId: this.levelId,
-        autoStart: true,
-      })
-    }, { w: 140, h: 38, role: 'primary' })
+      makeNodeButton(this, W - 160, H - 48, 'Start Mission', () => {
+        const squad = this.slots.filter((s): s is UnitConfig => s !== null)
+        if (squad.length === 0) return
+        if (!this.levelData) return
+        this.scene.start('GameScene', {
+          level: this.levelData,
+          squad,
+          pickedSkills: this.pickedSkills,
+          chapterId: this.chapterId,
+          levelId: this.levelId,
+          autoStart: true,
+        })
+      }, { w: 140, h: 38, role: 'primary' })
+    }
   }
 
   private drawSlot(c: Phaser.GameObjects.Container, unit: UnitConfig | null): void {
@@ -162,12 +179,15 @@ export class SquadScene extends Phaser.Scene {
   }
 
   private persistSquad(): void {
-    saveSquad(this.levelId, this.slots.map(s => s?.id ?? null))
+    const key = this.levelId === 'menu' ? 'menu_squad' : this.levelId
+    saveSquad(key, this.slots.map(s => s?.id ?? null))
+    savePickedSkills(key, this.pickedSkills)
   }
 
   private onSlotClick(index: number): void {
     if (this.slots[index] !== null) {
       this.slots[index] = null
+      delete this.pickedSkills[index]
       this.drawSlot(this.slotContainers[index], null)
       this.updateSquadLabel()
       this.persistSquad()
@@ -177,9 +197,10 @@ export class SquadScene extends Phaser.Scene {
     this.scene.launch('PickerScene', { slotIndex: index, squad: this.slots })
   }
 
-  receivePickedUnit(unit: UnitConfig, slotIndex: number): void {
+  receivePickedUnit(unit: UnitConfig, slotIndex: number, skillId?: string): void {
     if (slotIndex < 0 || slotIndex >= this.slots.length) return
     this.slots[slotIndex] = unit
+    if (skillId) this.pickedSkills[slotIndex] = skillId
     this.drawSlot(this.slotContainers[slotIndex], unit)
     this.updateSquadLabel()
     this.persistSquad()
@@ -203,6 +224,7 @@ export class SquadScene extends Phaser.Scene {
     for (let i = 0; i < 12; i++) {
       const unit = UNIT_CONFIGS.find(u => u.id === picks[i]) ?? null
       this.slots[i] = unit
+      if (unit?.skills?.[0]) this.pickedSkills[i] = unit.skills[0].id
       this.drawSlot(this.slotContainers[i], unit)
     }
     this.updateSquadLabel()

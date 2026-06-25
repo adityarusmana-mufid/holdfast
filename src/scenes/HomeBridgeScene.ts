@@ -21,9 +21,9 @@ const ROLE_TEXT: Record<string, string> = {
 const BTN_DEFS: {
   key: string; label: string; x: number; y: number; w: number; leftH: number; rightH: number; fontSize: string;
 }[] = [
-  { key: 'terminal', label: 'TERMINAL', x: 810, y: 272, w: 450, leftH: 86, rightH: 110, fontSize: '20px' },
-  { key: 'squad', label: 'SQUAD PRESET', x: 810, y: 374, w: 218, leftH: 74, rightH: 94, fontSize: '18px' },
-  { key: 'editor', label: 'LEVEL EDITOR', x: 1042, y: 374, w: 218, leftH: 74, rightH: 94, fontSize: '18px' },
+  { key: 'terminal', label: 'TERMINAL', x: 810, y: 272, w: 450, leftH: 86, rightH: 98, fontSize: '20px' },
+  { key: 'squad', label: 'SQUAD PRESET', x: 810, y: 374, w: 218, leftH: 74, rightH: 84, fontSize: '18px' },
+  { key: 'editor', label: 'LEVEL EDITOR', x: 1042, y: 374, w: 218, leftH: 74, rightH: 84, fontSize: '18px' },
 ]
 
 function drawShadow(g: Phaser.GameObjects.Graphics, w: number, h: number, topOffset: number): void {
@@ -122,7 +122,7 @@ export class HomeBridgeScene extends Phaser.Scene {
 
       let isPressed = false
       let hoverTween: Phaser.Tweens.Tween | null = null
-      const hoverRightH = def.key === 'terminal' ? 126 : 108
+      const hoverLeftH = def.key === 'terminal' ? 94 : 80
 
       const bboxTop = (leftH: number, rightH: number): number =>
         leftH / 2 - rightH / 2
@@ -166,13 +166,14 @@ export class HomeBridgeScene extends Phaser.Scene {
       c.on('pointerover', () => {
         if (isPressed) return
         if (hoverTween) hoverTween.stop()
+        const p = { v: 0 }
         hoverTween = this.tweens.add({
-          targets: {},
+          targets: p,
+          v: 1,
           duration: 150,
-          onUpdate: (tween) => {
-            const t = tween.progress
-            const rh = def.rightH + (hoverRightH - def.rightH) * t
-            draw(isPressed, def.leftH, rh)
+          onUpdate: () => {
+            const lh = def.leftH + (hoverLeftH - def.leftH) * p.v
+            draw(isPressed, lh, def.rightH)
           },
         })
       })
@@ -181,13 +182,14 @@ export class HomeBridgeScene extends Phaser.Scene {
         const wasPressed = isPressed
         isPressed = false
         if (hoverTween) hoverTween.stop()
+        const p = { v: 0 }
         hoverTween = this.tweens.add({
-          targets: {},
+          targets: p,
+          v: 1,
           duration: 150,
-          onUpdate: (tween) => {
-            const t = tween.progress
-            const rh = hoverRightH + (def.rightH - hoverRightH) * t
-            draw(false, def.leftH, rh)
+          onUpdate: () => {
+            const lh = hoverLeftH + (def.leftH - hoverLeftH) * p.v
+            draw(false, lh, def.rightH)
           },
         })
         if (wasPressed) c.setPosition(def.x, def.y)

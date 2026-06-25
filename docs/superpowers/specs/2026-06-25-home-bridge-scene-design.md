@@ -85,10 +85,12 @@ Each button uses **1-point perspective foreshortening** to simulate depth — th
 **Intensity**:
 | Button | leftH | rightH | Increase |
 |--------|-------|--------|----------|
-| TERMINAL | 86px | 110px | +28% |
-| SQUAD/EDITOR | 74px | 94px | +27% |
+| TERMINAL | 86px | 98px | +14% |
+| SQUAD/EDITOR | 74px | 84px | +14% |
 
-**Hover interaction**: On pointerover, the perspective rate amplifies — rightH tweens from its default to a higher "hover" value (TERMINAL: 110→126, SQUAD/EDITOR: 94→108) over 150ms, making the button lean further toward the viewer. On pointerout, rightH tweens back to default over 150ms.
+**Hover state** (inner edge manipulation): leftH animates toward rightH, reducing perspective (TERMINAL leftH→94, SQUAD/EDITOR leftH→80). The outer edge stays fixed — the effect comes from the inner edge "catching up" to the outer edge height, making the button feel like it's tilting toward the cursor.
+
+**Hover interaction**: On pointerover, the inner edge (leftH) tweens toward the outer edge (rightH) — the button flattens, simulating it lifting toward the viewer. TERMINAL: leftH 86→94 (near rightH=98), SQUAD/EDITOR: leftH 74→80 (near rightH=84). 150ms ease. On pointerout, leftH tweens back to default.
 
 **Cursor**: `pointer` cursor on all buttons.
 

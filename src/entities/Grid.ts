@@ -322,6 +322,30 @@ export class Grid {
           this.tileGraphics.lineStyle(2, 0x4488cc, 0.8)
           this.tileGraphics.strokeTriangle(cx, cy - 10, cx - 10, cy + 4, cx + 10, cy + 4)
         }
+
+        // Stun Generator — golden device with lightning bolt
+        if (tile.type === TileType.StnGen) {
+          const cx = Phaser.Math.Linear(tL.x, tR.x, 0.5)
+          const cy = (y0 + y1) / 2
+          this.tileGraphics.fillStyle(0xffd700, 0.9)
+          this.tileGraphics.fillCircle(cx, cy, 10)
+          this.tileGraphics.lineStyle(2, 0xff8f00, 1)
+          this.tileGraphics.strokeCircle(cx, cy, 10)
+          this.tileGraphics.lineStyle(2, 0xffffff, 0.9)
+          this.tileGraphics.lineBetween(cx - 3, cy - 6, cx + 2, cy - 1)
+          this.tileGraphics.lineBetween(cx + 2, cy - 1, cx - 2, cy + 1)
+          this.tileGraphics.lineBetween(cx - 2, cy + 1, cx + 3, cy + 6)
+        }
+
+        // Hole — dark pit
+        if (tile.type === TileType.Hole) {
+          const cx = Phaser.Math.Linear(tL.x, tR.x, 0.5)
+          const cy = (y0 + y1) / 2
+          this.tileGraphics.fillStyle(0x0a0020, 1)
+          this.tileGraphics.fillCircle(cx, cy, 8)
+          this.tileGraphics.lineStyle(1, 0x000000, 1)
+          this.tileGraphics.strokeCircle(cx, cy, 8)
+        }
       }
     }
 

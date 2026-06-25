@@ -16,6 +16,8 @@ export interface CombatEvents {
   onEnemyAttackCancelled?: (attackId: number) => void
   onChainJump?: (unit: UnitSprite, from: EnemySprite, to: EnemySprite) => void
   onSplashAoE?: (unit: UnitSprite, center: EnemySprite, radius: number) => void
+  effectiveUnitAttack?: (unit: UnitSprite) => { atk: number; damageType: DamageType; hitCount: number } | null
+  effectiveUnitDef?: (unit: UnitSprite) => number | null
 }
 
 interface PendingAttack {
@@ -79,7 +81,11 @@ export class CombatSystem {
         const target = this.findTarget(unit, enemies, params.rangePattern)
         if (!target || !target.alive) continue
 
-        const hitCount = this.hasTrait(unit, UnitTrait.DoubleHit) ? 2 : 1
+        let hitCount = this.hasTrait(unit, UnitTrait.DoubleHit) ? 2 : 1
+        if (this.events.effectiveUnitAttack) {
+          const eff = this.events.effectiveUnitAttack(unit)
+          if (eff) hitCount = eff.hitCount
+        }
         for (let i = 0; i < hitCount; i++) {
           if (!target.alive) break
           this.events.onUnitAttackInitiated?.(unit, target, unit.config.damageType)
@@ -143,11 +149,16 @@ export class CombatSystem {
   }
 
   private getUnitEffectiveDef(unit: UnitSprite): number {
+    let def = unit.config.def
     const tile = this.grid.getTile(unit.row, unit.col)
     if (tile && tile.type === TileType.ArmorGrid) {
-      return unit.config.def + 100
+      def += 100
     }
-    return unit.config.def
+    if (this.events.effectiveUnitDef) {
+      const eff = this.events.effectiveUnitDef(unit)
+      if (eff !== null) def = eff
+    }
+    return def
   }
 
   private findNearestUnit(enemy: EnemySprite, units: UnitSprite[], range: number): UnitSprite | null {
@@ -180,11 +191,19 @@ export class CombatSystem {
     const hasRangedMode = this.hasTrait(unit, UnitTrait.RangedWhenNotBlocking) ||
       this.hasTrait(unit, UnitTrait.RangedAoEWhenNotBlocking)
 
-    if (!hasRangedMode || isBlocking) {
-      return { rangePattern: unit.config.rangePattern, atk: unit.config.atk, useAoE: false }
+    let atk = unit.config.atk
+
+    if (this.events.effectiveUnitAttack) {
+      const eff = this.events.effectiveUnitAttack(unit)
+      if (eff) {
+        atk = eff.atk
+      }
     }
 
-    let atk = unit.config.atk
+    if (!hasRangedMode || isBlocking) {
+      return { rangePattern: unit.config.rangePattern, atk, useAoE: false }
+    }
+
     if (this.hasTrait(unit, UnitTrait.RangedAttack80)) {
       atk = Math.floor(atk * 0.8)
     }

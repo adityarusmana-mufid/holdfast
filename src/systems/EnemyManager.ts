@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { EnemyConfig, Wave, Route, Position } from '../types/index'
+import { EnemyConfig, Wave, Route, Position, TileType } from '../types/index'
 import { Grid } from '../entities/Grid'
 import { EnemySprite } from '../entities/Enemy'
 import { DeploymentSystem } from './DeploymentSystem'
@@ -157,9 +157,9 @@ export class EnemyManager {
       const tile = enemy.getCurrentTile()
       if (!tile) continue
       const unit = this.depSystem.getUnitAt(tile.row, tile.col)
-      if (unit && unit.config.type === 'ground' && unit.config.blockCount > 0) {
+      if (unit && unit.config.type === 'ground' && (unit.effectiveBlockCount ?? unit.config.blockCount) > 0) {
         const isAlreadyBlocked = unit.blocking.includes(enemy.id)
-        if (!isAlreadyBlocked && unit.blocking.length < unit.config.blockCount) {
+        if (!isAlreadyBlocked && unit.blocking.length < (unit.effectiveBlockCount ?? unit.config.blockCount)) {
           unit.blocking.push(enemy.id)
           enemy.setBlocked(true, `${tile.row},${tile.col}`)
         }
@@ -182,7 +182,7 @@ export class EnemyManager {
             const nr = tile.row + dr
             const nc = tile.col + dc
             const adjUnit = this.depSystem.getUnitAt(nr, nc)
-            if (adjUnit && adjUnit.config.type === 'ground' && adjUnit.config.blockCount > 0 && adjUnit.blocking.length < adjUnit.config.blockCount) {
+            if (adjUnit && adjUnit.config.type === 'ground' && (adjUnit.effectiveBlockCount ?? adjUnit.config.blockCount) > 0 && adjUnit.blocking.length < (adjUnit.effectiveBlockCount ?? adjUnit.config.blockCount)) {
               adjUnit.blocking.push(enemy.id)
               enemy.setBlocked(true, `${nr},${nc}`)
               transferred = true
@@ -200,6 +200,13 @@ export class EnemyManager {
   private updateObjectiveCheck(): void {
     for (const enemy of this.enemies) {
       if (!enemy.alive) continue
+      const tile = enemy.getCurrentTile()
+      if (tile && this.grid.getTile(tile.row, tile.col)?.type === TileType.Hole) {
+        enemy.alive = false
+        this.enemiesDealtWith++
+        this.scene.events.emit('enemy-killed', { enemy })
+        continue
+      }
       if (enemy.isAtObjective()) {
         this.lives--
         enemy.alive = false

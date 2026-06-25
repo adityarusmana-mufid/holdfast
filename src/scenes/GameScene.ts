@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { DeployedUnit, Direction, LevelData, UnitConfig, Position, UnitTrait, EnemyConfig, Route } from '../types/index'
+import { DeployedUnit, Direction, LevelData, UnitConfig, Position, UnitTrait, EnemyConfig, Route, TileType } from '../types/index'
 import { positionsInRange, computeFacingTowardGoal } from '../shared/utils/GridMath'
 import { Grid, TILE_SIZE, GRID_OFFSET_Y } from '../entities/Grid'
 import { UnitSprite } from '../entities/Unit'
@@ -11,7 +11,8 @@ import { HealingSystem } from '../systems/HealingSystem'
 import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONT_SIZE } from '../ui/Constants'
 import { makeNodeButton } from '../ui/Components'
-import { spawnProjectile, playSwing, showWindUp, flashDamage, spawnChainBolt, spawnSplashRing, spawnExpandRing, spawnBurstParticles } from '../effects/CombatEffects'
+import { spawnProjectile, playSwing, showWindUp, flashDamage, spawnChainBolt, spawnSplashRing, spawnExpandRing, spawnBurstParticles, spawnBuffParticles, spawnSparkHit, spawnHealCross } from '../effects/CombatEffects'
+import { SkillSystem } from '../systems/SkillSystem'
 import { saveCompletion } from '../shared/SaveData'
 
 export class GameScene extends Phaser.Scene {
@@ -20,6 +21,7 @@ export class GameScene extends Phaser.Scene {
   private enemyManager!: EnemyManager
   private combatSystem!: CombatSystem
   private healingSystem!: HealingSystem
+  private skillSystem!: SkillSystem
   private unitSprites: UnitSprite[] = []
   private cardBarScrollX: number = 0
   private cardBarContainer!: Phaser.GameObjects.Container
@@ -45,20 +47,22 @@ export class GameScene extends Phaser.Scene {
   private deployState: 'idle' | 'placing' | 'facing' = 'idle'
   private pendingTile: Position | null = null
   private pendingFacing: Direction = 'up'
-  private statsPanel!: Phaser.GameObjects.Container
-  private statsTexts!: Phaser.GameObjects.Text[]
   private rangePreview!: Phaser.GameObjects.Graphics
   private facingArrow!: Phaser.GameObjects.Graphics
   private cancelDeployIndicator!: Phaser.GameObjects.Graphics
 
   private decisionMode: boolean = false
   private inspectingUnit: DeployedUnit | null = null
-  private inspectRetreatBtn!: Phaser.GameObjects.Container
-  private inspectCloseBtn!: Phaser.GameObjects.Container
+  private inspectPanel!: Phaser.GameObjects.Container
+  private inspectPanelTexts!: Phaser.GameObjects.Text[]
+  private inspectActionSkill!: Phaser.GameObjects.Container
+  private inspectActionRetreat!: Phaser.GameObjects.Container
   private facingCancelBtn!: Phaser.GameObjects.Container
+  private _facingArrowText!: Phaser.GameObjects.Text
 
   private unitConfigs: UnitConfig[] = UNIT_CONFIGS
   private fromSquad: boolean = false
+  private pickedSkills: Record<number, string> = {}
   private chapterId: string = ''
   private levelId: string = ''
   private startingLives: number = 0
@@ -85,7 +89,7 @@ export class GameScene extends Phaser.Scene {
     super({ key: 'GameScene' })
   }
 
-  init(data: { level?: LevelData; squad?: UnitConfig[]; chapterId?: string; levelId?: string; autoStart?: boolean }): void {
+  init(data: { level?: LevelData; squad?: UnitConfig[]; chapterId?: string; levelId?: string; autoStart?: boolean; pickedSkills?: Record<number, string> }): void {
     if (data?.level) {
       this.levelData = data.level
     }
@@ -98,6 +102,7 @@ export class GameScene extends Phaser.Scene {
       this.unitConfigs = UNIT_CONFIGS
       this.fromSquad = false
     }
+    this.pickedSkills = data?.pickedSkills ?? {}
     this.autoStart = data?.autoStart ?? false
   }
 
@@ -176,6 +181,8 @@ export class GameScene extends Phaser.Scene {
         this.showHealNumber(amount, target)
       },
       onUnitDamageDealt: (damage: number, unit: UnitSprite, damageType: string) => {
+        const deployed = this.depSystem.getUnitAt(unit.row, unit.col)
+        if (deployed) this.skillSystem.defensiveSPGain(deployed)
         this.showUnitDamageNumber(damage, unit, damageType)
       },
       onUnitDeath: (unit: UnitSprite, _killer: EnemySprite) => {
@@ -187,6 +194,11 @@ export class GameScene extends Phaser.Scene {
         this.rebuildCardBar()
       },
       onUnitAttackInitiated: (unit: UnitSprite, target: EnemySprite, damageType: string) => {
+        const deployed = this.depSystem.getUnitAt(unit.row, unit.col)
+        if (deployed) this.skillSystem.offensiveSPGain(deployed)
+        const isEnhanced = deployed?.skillState?.isActive &&
+          deployed.skillState.config.effect.type === 'enhanceAttack'
+        const effType = isEnhanced ? 'true' : damageType
         const speed = this.effectiveSpeed
         const tile = target.getCurrentTile()
         if (!tile) return
@@ -194,10 +206,13 @@ export class GameScene extends Phaser.Scene {
         if (dist > 1) {
           const from = this.grid.tileToPixel(unit.row, unit.col)
           const dur = Math.min(0.4, Math.max(0.15, dist * 0.08)) / speed
-          spawnProjectile(this, from.x, from.y, target, damageType, dur)
+          spawnProjectile(this, from.x, from.y, target, effType, dur)
         } else {
           const tPos = this.grid.tileToPixel(tile.row, tile.col)
           playSwing(this, unit.container, tPos.x, tPos.y, speed)
+          if (isEnhanced) {
+            spawnSparkHit(this, tPos.x, tPos.y)
+          }
         }
       },
       onEnemyWindUp: (enemy: EnemySprite, target: UnitSprite, attackId: number) => {
@@ -228,12 +243,118 @@ export class GameScene extends Phaser.Scene {
         const speed = this.effectiveSpeed
         spawnSplashRing(this, center.x, center.y, radius * 64, _unit.config.color)
       },
+      effectiveUnitAttack: (unit: UnitSprite) => {
+        const deployed = this.depSystem.getUnitAt(unit.row, unit.col)
+        if (!deployed?.skillState?.isActive) return null
+        const effect = deployed.skillState.config.effect
+        if (effect.type !== 'enhanceAttack') return null
+        return {
+          atk: effect.atkMultiplier ? Math.floor(unit.config.atk * effect.atkMultiplier) : unit.config.atk,
+          damageType: effect.trueDamage ? 'true' as const : unit.config.damageType,
+          hitCount: effect.hitCount ?? 1,
+        }
+      },
+      effectiveUnitDef: (unit: UnitSprite) => {
+        const deployed = this.depSystem.getUnitAt(unit.row, unit.col)
+        if (!deployed?.skillState?.isActive) return null
+        const effect = deployed.skillState.config.effect
+        if (effect.type === 'statBuff' && effect.defMultiplier) {
+          return Math.floor(unit.config.def * effect.defMultiplier)
+        }
+        if (effect.type === 'statToggle' && effect.defMultiplier) {
+          return Math.floor(unit.config.def * effect.defMultiplier)
+        }
+        return null
+      },
     })
 
     this.healingSystem = new HealingSystem(this.grid)
 
-    this.buildStatsPanel()
-    this.updateStatsPanel(null)
+    this.skillSystem = new SkillSystem({
+      onSkillActivated: (unit) => {
+        const s = unit.skillState
+        if (!s) return
+        const eff = s.config.effect
+        const pos = this.grid.tileToPixel(unit.row, unit.col)
+        this.flashMessage(`SKILL // ${s.config.name}`, 0x00a2ff)
+        spawnExpandRing(this, pos.x, pos.y, 0xffd700, 40, 400)
+        if (eff.type === 'generateDP') {
+          this.depSystem.addDP(eff.amount)
+          this.flashMessage(`+${eff.amount} DP`, 0x4fc3f7)
+        }
+        if (eff.type === 'heal' || eff.type === 'buffAlly') {
+          const isHeal = eff.type === 'heal'
+          const amount = isHeal && eff.amountMultiplier ? Math.floor(unit.config.atk * eff.amountMultiplier) : 0
+          if (isHeal && amount > 0) {
+            unit.currentHp = Math.min(unit.config.hp, unit.currentHp + amount)
+            spawnHealCross(this, pos.x, pos.y)
+            this.flashMessage(`+${amount} HP`, 0x4caf50)
+          }
+          spawnBuffParticles(this, pos.x, pos.y, unit.config.color)
+        }
+        if (eff.type === 'enhanceAttack') {
+          spawnBuffParticles(this, pos.x, pos.y, 0xffd700)
+        }
+        if (eff.type === 'statBuff') {
+          spawnBuffParticles(this, pos.x, pos.y, 0x4fc3f7)
+        }
+        if (eff.type === 'statToggle') {
+          spawnBuffParticles(this, pos.x, pos.y, 0xff9100)
+        }
+        if (eff.type === 'survival') {
+          spawnBuffParticles(this, pos.x, pos.y, 0x00c853)
+          if (eff.shieldPercent) {
+            this.flashMessage(`SHIELD ${eff.shieldPercent}%`, 0x00a2ff)
+          }
+        }
+        if (eff.type === 'debuffEnemies') {
+          spawnExpandRing(this, pos.x, pos.y, 0x9c27b0, 56, 500)
+        }
+        if (eff.type === 'special' && eff.description === 'aoe_stun') {
+          const stunRadius = 2 * TILE_SIZE
+          for (const enemy of this.enemyManager.getEnemies()) {
+            if (!enemy.alive) continue
+            const ePos = { x: enemy.x, y: enemy.y }
+            const dx = ePos.x - pos.x
+            const dy = ePos.y - pos.y
+            if (Math.sqrt(dx * dx + dy * dy) <= stunRadius) {
+              enemy.applyStatusEffect({ type: 'stun', remainingDuration: 5000, factor: 0 })
+            }
+          }
+          spawnExpandRing(this, pos.x, pos.y, 0x7c4dff, stunRadius * 2, 600)
+        }
+        if (eff.type === 'displace') {
+          const dispRadius = eff.radius * TILE_SIZE
+          for (const enemy of this.enemyManager.getEnemies()) {
+            if (!enemy.alive) continue
+            if (enemy.config.isAerial) continue
+            const ePos = { x: enemy.x, y: enemy.y }
+            const dx = ePos.x - pos.x
+            const dy = ePos.y - pos.y
+            if (Math.sqrt(dx * dx + dy * dy) <= dispRadius) {
+              const eTile = enemy.getCurrentTile()
+              if (!eTile) continue
+              const dRow = eTile.row - unit.row
+              const dCol = eTile.col - unit.col
+              const dist = Math.sqrt(dRow * dRow + dCol * dCol)
+              if (dist === 0) continue
+              const sign = eff.direction === 'away' ? 1 : -1
+              const tRow = Math.round(eTile.row + (dRow / dist) * sign * eff.tiles)
+              const tCol = Math.round(eTile.col + (dCol / dist) * sign * eff.tiles)
+              const clampedRow = Math.max(0, Math.min(this.grid.rows - 1, tRow))
+              const clampedCol = Math.max(0, Math.min(this.grid.cols - 1, tCol))
+              enemy.displaceTo(clampedRow, clampedCol)
+            }
+          }
+          spawnExpandRing(this, pos.x, pos.y, 0x00bcd4, dispRadius * 2, 400)
+        }
+      },
+      onSkillDeactivated: (unit) => {
+        this.flashMessage(`SKILL END // ${unit.skillState?.config.name ?? 'END'}`, 0xff9100)
+      },
+    })
+
+    this.buildInspectPanel()
     this.buildHUD()
     this.buildCardBar()
     this.buildResultText()
@@ -349,18 +470,7 @@ export class GameScene extends Phaser.Scene {
   private setupInput(): void {
     this.input.mouse?.disableContextMenu()
 
-    this.inspectRetreatBtn = makeNodeButton(this, 10, this.scale.height - 168, '', () => this.retreatInspectedUnit(), {
-      w: 220, h: 28, textSize: '13px', role: 'danger',
-    })
-    this.inspectRetreatBtn.setDepth(50)
-    this.inspectRetreatBtn.setAlpha(0)
-
-    this.inspectCloseBtn = makeNodeButton(this, 10, this.scale.height - 138, '[ CLOSE ]', () => this.exitDecisionMode(), {
-      w: 100, h: 28, textSize: FONT_SIZE.xs,
-    })
-    this.inspectCloseBtn.setDepth(50)
-    this.inspectCloseBtn.setAlpha(0)
-
+    this.buildInspectActionIcons()
     this.facingCancelBtn = makeNodeButton(this, 10, this.scale.height - 108, '[ CANCEL ]', () => this.cancelDeployment(), {
       w: 100, h: 28, textSize: FONT_SIZE.xs, role: 'danger',
     })
@@ -403,6 +513,28 @@ export class GameScene extends Phaser.Scene {
         } else {
           this.exitDecisionMode()
         }
+        return
+      }
+
+      const clickedTile = this.grid.getTile(pos.row, pos.col)
+      if (clickedTile && clickedTile.type === TileType.StnGen && !this.decisionMode) {
+        if (this.depSystem.currentDP < 10) {
+          this.flashMessage('NEED 10 DP TO ACTIVATE', 0xff9100)
+          return
+        }
+        this.depSystem.currentDP -= 10
+        this.grid.setTile(pos.row, pos.col, TileType.Floor)
+        this.grid.render()
+        for (const enemy of this.enemyManager.getEnemies()) {
+          if (!enemy.alive) continue
+          const eTile = enemy.getCurrentTile()
+          if (!eTile) continue
+          if (Math.abs(eTile.row - pos.row) <= 1 && Math.abs(eTile.col - pos.col) <= 1) {
+            enemy.takeDamage(1000)
+            enemy.applyStatusEffect({ type: 'stun', remainingDuration: 7000, factor: 0 })
+          }
+        }
+        this.flashMessage('STUN GENERATOR ACTIVATED', 0xffd700)
         return
       }
 
@@ -698,6 +830,8 @@ export class GameScene extends Phaser.Scene {
     if (!selected) return
     const deployed = this.depSystem.deployUnit(selected, this.pendingTile.row, this.pendingTile.col, this.pendingFacing, this.selectedSquadIndex)
     if (deployed) {
+      const skillId = this.pickedSkills[this.selectedSquadIndex] ?? selected.skills[0]?.id
+      if (skillId) this.skillSystem.initSkillState(deployed, skillId)
       const sprite = new UnitSprite(this, this.grid, selected, this.pendingTile.row, this.pendingTile.col, selected.hp, this.pendingFacing)
       sprite.container.setScale(0.3)
       this.tweens.add({ targets: sprite.container, scaleX: 1, scaleY: 1, duration: 200, ease: 'Back.easeOut' })
@@ -742,20 +876,34 @@ export class GameScene extends Phaser.Scene {
   }
 
   private enterInspectUnit(unit: DeployedUnit): void {
-    this.inspectRetreatBtn.setAlpha(0)
-    this.inspectCloseBtn.setAlpha(0)
     this.inspectingUnit = unit
     this.decisionMode = true
     this.showSelectionDiamond(unit.row, unit.col, 0x555555)
     this.showRangePreview(unit.config, { row: unit.row, col: unit.col }, unit.facing)
     this.showFacingArrow({ row: unit.row, col: unit.col }, unit.facing)
-    this.updateStatsPanel(unit.config, unit)
-    const isFullRefund = unit.config.traits?.some(t => t.traitId === UnitTrait.FullRefundRetreat)
-    const refund = isFullRefund ? unit.dpCostPaid : Math.floor(unit.dpCostPaid / 2)
-    ;(this.inspectRetreatBtn.getAt(2) as Phaser.GameObjects.Text).setText(`RETREAT  [+${refund} DP]`)
-    this.inspectRetreatBtn.setAlpha(1)
-    this.inspectCloseBtn.setAlpha(1)
+    this.showInspectPanel(unit)
+    this.positionActionIcons(unit)
     this.flashMessage(`INSPECT // ${unit.config.name}`, 0x00a2ff)
+  }
+
+  private activateInspectSkill(): void {
+    if (!this.inspectingUnit) return
+    const unit = this.inspectingUnit
+    const state = unit.skillState
+    if (!state) return
+
+    if (state.isActive && state.config.activation === 'toggle') {
+      this.skillSystem.deactivateSkill(unit)
+      this.enterInspectUnit(unit)
+      this.flashMessage(`TOGGLE OFF // ${state.config.name}`, 0xff9100)
+      return
+    }
+
+    if (this.skillSystem.canActivateSkill(unit)) {
+      this.skillSystem.activateSkill(unit)
+      this.enterInspectUnit(unit)
+      this.flashMessage(`SKILL // ${state.config.name}`, 0x00c853)
+    }
   }
 
   private inspectUnit(sprite: UnitSprite): void {
@@ -765,18 +913,25 @@ export class GameScene extends Phaser.Scene {
 
   private exitDecisionMode(): void {
     if (this.inspectingUnit) {
-      this.inspectRetreatBtn.setAlpha(0)
-      this.inspectCloseBtn.setAlpha(0)
       this.inspectingUnit = null
+      this.hideActionIcons()
     }
     this.decisionMode = false
     this.hideSelectionDiamond()
     this.clearRangePreview()
-    this.updateStatsPanel(this.getSelectedUnit())
+    if (this.selectedSquadIndex !== null) {
+      const unit = this.unitConfigs[this.selectedSquadIndex]
+      if (unit) this.showCardPanel(unit, this.selectedSquadIndex)
+    } else {
+      this.hideInspectPanel()
+    }
   }
 
   private retreatInspectedUnit(): void {
     if (!this.inspectingUnit) return
+    if (this.inspectingUnit.skillState?.isActive) {
+      this.skillSystem.deactivateSkill(this.inspectingUnit)
+    }
     const { row, col, config, instanceId } = this.inspectingUnit
     const refund = this.depSystem.retreatUnit(row, col)
     if (refund > 0) {
@@ -801,7 +956,20 @@ export class GameScene extends Phaser.Scene {
     if (this.battleActive && !this.battleEnded && !this.isPaused) {
       this.depSystem.update(dt * speed)
       this.enemyManager.update(dt * speed)
-      this.combatSystem.update(delta * speed, this.unitSprites, this.enemyManager.getEnemies())
+      const enemies = this.enemyManager.getEnemies()
+      const allUnits = this.depSystem.getAllUnits()
+      this.skillSystem.update(delta * speed, allUnits)
+      for (const du of allUnits) {
+        const actEff = du.skillState?.isActive ? du.skillState.config.effect : null
+        if (actEff?.type === 'statBuff' && actEff.blockBonus) {
+          du.effectiveBlockCount = du.config.blockCount + actEff.blockBonus
+        } else if (actEff?.type === 'statToggle' && actEff.blockBonus) {
+          du.effectiveBlockCount = du.config.blockCount + actEff.blockBonus
+        } else {
+          du.effectiveBlockCount = undefined
+        }
+      }
+      this.combatSystem.update(delta * speed, this.unitSprites, enemies)
       this.healingSystem.update(delta * speed, this.unitSprites, (target, amount, source) => {
         this.showHealNumber(amount, target)
       })
@@ -809,43 +977,283 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (this.inspectingUnit) {
-      this.updateStatsPanel(this.inspectingUnit.config, this.inspectingUnit)
+      this.updateInspectPanel(this.inspectingUnit)
     }
 
     this.updateHUD()
     this.updateCardVisuals()
   }
 
-  private buildStatsPanel(): void {
-    const py = this.scale.height - 155
-    const texts: Phaser.GameObjects.Text[] = []
-    const lines = ['', '', '']
-    for (let i = 0; i < 3; i++) {
-      const t = this.add.text(16, py + i * 20, lines[i], {
-        fontSize: FONT_SIZE.xs,
-        color: COLORS.text.secondary,
-        fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+  private buildInspectPanel(): void {
+    const PANEL_W = 210
+    const H = this.scale.height
+
+    this.inspectPanel = this.add.container(0, 0)
+    this.inspectPanel.setDepth(20)
+    this.inspectPanel.setX(-PANEL_W)
+
+    const bg = this.add.graphics()
+    bg.fillStyle(0x1a1d23, 0.95)
+    bg.fillRect(0, 0, PANEL_W, H)
+    bg.lineStyle(1, 0x343a46, 0.6)
+    bg.strokeRect(0, 0, PANEL_W, H)
+    this.inspectPanel.add(bg)
+
+    const closeBtn = this.add.text(PANEL_W - 10, 6, '\u2715', {
+      fontSize: '14px', color: '#9aa4b8',
+      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    }).setOrigin(1, 0)
+    closeBtn.setInteractive(new Phaser.Geom.Rectangle(-20, -6, 40, 30), Phaser.Geom.Rectangle.Contains)
+    if (closeBtn.input) closeBtn.input.cursor = 'pointer'
+    closeBtn.on('pointerdown', () => this.exitDecisionMode())
+    this.inspectPanel.add(closeBtn)
+
+    const fs = '13px'
+    const ff = '"Share Tech Mono", "Roboto Mono", monospace'
+    const wrapW = 194
+
+    const lines: Phaser.GameObjects.Text[] = []
+    const baseY = 66
+    const lineH = 22
+    for (let i = 0; i < 9; i++) {
+      const t = this.add.text(8, baseY + i * lineH, '', {
+        fontSize: fs, fontFamily: ff, color: '#9aa4b8',
+        wordWrap: { width: wrapW },
       })
-      texts.push(t)
+      this.inspectPanel.add(t)
+      lines.push(t)
     }
-    this.statsTexts = texts
-    this.statsPanel = this.add.container(0, 0, texts)
+    this.inspectPanelTexts = lines
   }
 
-  private updateStatsPanel(unit: UnitConfig | null, deployed?: DeployedUnit): void {
-    if (!unit) { this.statsTexts.forEach(t => t.setText('')); return }
+  private showInspectPanel(unit: DeployedUnit): void {
+    this.ensurePanelVisible()
+    this.populateInspectPanel(unit)
+  }
+
+  private showCardPanel(unit: UnitConfig, squadIndex: number): void {
+    this.ensurePanelVisible()
+    const lines = this.inspectPanelTexts
+    const cWhite = '#f0f2f5'
+    const cDim = '#9aa4b8'
+
     const dmIcon = unit.damageType === 'thermal' ? '~' : unit.damageType === 'true' ? '!!' : '>'
     const typeLabel = unit.type === 'ground' ? 'GND' : 'RNG'
-    const resLabel = unit.res > 0 ? `RES:${unit.res}%` : ''
-    this.statsTexts[0].setText(`${unit.subtypeLabel} (${typeLabel})`)
-    if (deployed) {
-      const dirArrow: Record<string, string> = { up: '\u2191', down: '\u2193', left: '\u2190', right: '\u2192' }
-      this.statsTexts[1].setText(`HP: ${deployed.currentHp}/${unit.hp}  ${dirArrow[deployed.facing] ?? ''}`)
-      this.statsTexts[2].setText(`ATK:${dmIcon}${unit.atk}  DEF:${unit.def}  ${resLabel}  BLK:${unit.blockCount}`)
+
+    lines[0].setText(`${unit.subtypeLabel}  ${typeLabel}`)
+    lines[0].setColor(cWhite)
+    lines[0].setFontStyle('bold')
+
+    lines[1].setText(`HP  ${unit.hp}`)
+    lines[1].setColor(cDim)
+
+    lines[2].setText(`ATK  ${dmIcon}${unit.atk}`)
+    lines[2].setColor(cDim)
+
+    lines[3].setText(`DEF  ${unit.def}`)
+    lines[3].setColor(cDim)
+
+    lines[4].setText(`RES  ${unit.res}%`)
+    lines[4].setColor(cDim)
+
+    lines[5].setText(`BLK  ${unit.blockCount}  INT  ${unit.attackInterval.toFixed(2)}s  DP  ${unit.dpCost}`)
+    lines[5].setColor(cDim)
+
+    if (this._facingArrowText) this._facingArrowText.setText('')
+
+    const pickedSkillId = this.pickedSkills[squadIndex]
+    const skill = unit.skills?.find(s => s.id === pickedSkillId) ?? unit.skills?.[0]
+
+    if (skill) {
+      const recIcon = skill.spRecovery === 'auto' ? '\u27F3' : skill.spRecovery === 'offensive' ? '\u2694' : '\u2291'
+      const actIcon = skill.activation === 'auto' ? 'A' : skill.activation === 'manual' ? 'M' : skill.activation === 'toggle' ? 'T' : 'P'
+      lines[6].setText('\u2500\u2500\u2500 SKILL \u2500\u2500\u2500')
+      lines[6].setColor(cDim)
+      lines[7].setText(`${skill.name}  SP${skill.spCost}  ${recIcon} ${actIcon}`)
+      lines[7].setColor(cWhite)
+      lines[7].setFontStyle('bold')
+      lines[8].setText(skill.description)
+      lines[8].setColor(cDim)
     } else {
-      this.statsTexts[1].setText(`HP:${unit.hp} ATK:${dmIcon}${unit.atk} DEF:${unit.def} ${resLabel}`)
-      this.statsTexts[2].setText(`BLK:${unit.blockCount}  DP:${unit.dpCost}`)
+      lines[6].setText('')
+      lines[7].setText('')
+      lines[8].setText('')
     }
+  }
+
+  private ensurePanelVisible(): void {
+    if (this.inspectPanel.x < 0) {
+      this.inspectPanel.setX(-210)
+      this.tweens.killTweensOf(this.inspectPanel)
+      this.tweens.add({
+        targets: this.inspectPanel,
+        x: 0,
+        duration: 150,
+        ease: 'Sine.easeOut',
+      })
+    }
+  }
+
+  private hideInspectPanel(): void {
+    this.tweens.killTweensOf(this.inspectPanel)
+    this.tweens.add({
+      targets: this.inspectPanel,
+      x: -210,
+      duration: 120,
+      ease: 'Sine.easeIn',
+    })
+  }
+
+  private updateInspectPanel(unit: DeployedUnit): void {
+    this.populateInspectPanel(unit)
+  }
+
+  private getEffectiveStats(unit: DeployedUnit): { atk: number; def: number; block: number } {
+    let atk = unit.config.atk
+    let def = unit.config.def
+    let block = unit.effectiveBlockCount ?? unit.config.blockCount
+    if (unit.skillState?.isActive) {
+      const eff = unit.skillState.config.effect
+      if (eff.type === 'enhanceAttack' && eff.atkMultiplier) {
+        atk = Math.floor(unit.config.atk * eff.atkMultiplier)
+      }
+      if (eff.type === 'statBuff') {
+        if (eff.atkMultiplier) atk = Math.floor(unit.config.atk * eff.atkMultiplier)
+        if (eff.defMultiplier) def = Math.floor(unit.config.def * eff.defMultiplier)
+      }
+      if (eff.type === 'statToggle') {
+        if (eff.atkMultiplier) atk = Math.floor(unit.config.atk * eff.atkMultiplier)
+        if (eff.defMultiplier) def = Math.floor(unit.config.def * eff.defMultiplier)
+      }
+    }
+    const tile = this.grid.getTile(unit.row, unit.col)
+    if (tile && tile.type === TileType.ArmorGrid) def += 100
+    return { atk, def, block }
+  }
+
+  private populateInspectPanel(unit: DeployedUnit): void {
+    const cfg = unit.config
+    const effStats = this.getEffectiveStats(unit)
+    const lines = this.inspectPanelTexts
+    const cWhite = '#f0f2f5'
+    const cDim = '#9aa4b8'
+    const cHP = Math.round(unit.currentHp / unit.config.hp * 100) > 50 ? '#4caf50' : '#ff9100'
+
+    const dmIcon = cfg.damageType === 'thermal' ? '~' : cfg.damageType === 'true' ? '!!' : '>'
+    const typeLabel = cfg.type === 'ground' ? 'GND' : 'RNG'
+    const hpPct = Math.round(unit.currentHp / unit.config.hp * 100)
+
+    lines[0].setText(`${cfg.subtypeLabel}  ${typeLabel}`)
+    lines[0].setColor(cWhite)
+    lines[0].setFontStyle('bold')
+
+    const hpStr = `HP  ${unit.currentHp}/${unit.config.hp}  (${hpPct}%)`
+    const dirArrow: Record<string, string> = { up: '\u2191', down: '\u2193', left: '\u2190', right: '\u2192' }
+    const facingStr = dirArrow[unit.facing] ?? ''
+    lines[1].setText(facingStr ? `${hpStr}  ${facingStr}` : hpStr)
+    lines[1].setColor(cHP)
+
+    const atkBase = cfg.atk
+    const atkV = effStats.atk !== atkBase ? `${effStats.atk} (${atkBase})` : `${atkBase}`
+    lines[2].setText(`ATK  ${dmIcon}${atkV}`)
+    lines[2].setColor(cDim)
+
+    const defBase = cfg.def
+    const defV = effStats.def !== defBase ? `${effStats.def} (${defBase})` : `${defBase}`
+    lines[3].setText(`DEF  ${defV}`)
+    lines[3].setColor(cDim)
+
+    lines[4].setText(`RES  ${cfg.res}%`)
+    lines[4].setColor(cDim)
+
+    const blkBase = cfg.blockCount
+    const blkV = effStats.block !== blkBase ? `${effStats.block} (${blkBase})` : `${blkBase}`
+    lines[5].setText(`BLK  ${blkV}  INT  ${cfg.attackInterval.toFixed(2)}s`)
+    lines[5].setColor(cDim)
+
+    if (this._facingArrowText) this._facingArrowText.setText('')
+
+    const skill = unit.skillState
+    if (skill) {
+      const max = skill.config.spCost
+      const spInt = Math.floor(skill.currentSp)
+      const spBar = '\u2588'.repeat(Math.round(spInt / max * 8)).padEnd(8, '\u2591')
+      const statusMark = skill.config.activation === 'toggle'
+        ? (skill.isActive ? '[ON]' : '[OFF]')
+        : (skill.isActive ? '[ACTIVE]' : '')
+      const isReady = spInt >= max && !skill.isActive
+
+      lines[6].setText('\u2500\u2500\u2500 SKILL \u2500\u2500\u2500')
+      lines[6].setColor(cDim)
+
+      lines[7].setText(skill.config.name)
+      lines[7].setColor(isReady ? '#00c853' : cWhite)
+      lines[7].setFontStyle('bold')
+
+      const recIcon = skill.config.spRecovery === 'auto' ? '\u27F3' : skill.config.spRecovery === 'offensive' ? '\u2694' : '\u2291'
+      const actIcon = skill.config.activation === 'auto' ? 'A' : skill.config.activation === 'manual' ? 'M' : skill.config.activation === 'toggle' ? 'T' : 'P'
+      lines[8].setText(`SP  [${spBar}]  ${spInt}/${max}  ${statusMark}  ${recIcon} ${actIcon}`)
+      lines[8].setColor(cDim)
+    } else {
+      lines[6].setText('')
+      lines[7].setText('')
+      lines[8].setText('')
+    }
+  }
+
+  private buildInspectActionIcons(): void {
+    const dSize = 40
+    const half = dSize / 2
+
+    const mkIcon = (fillColor: number, sym: string, onClick: () => void): Phaser.GameObjects.Container => {
+      const c = this.add.container(0, 0)
+      const g = this.add.graphics()
+      g.fillStyle(fillColor, 1)
+      g.beginPath()
+      g.moveTo(0, -half)
+      g.lineTo(half, 0)
+      g.lineTo(0, half)
+      g.lineTo(-half, 0)
+      g.closePath()
+      g.fillPath()
+      g.lineStyle(2, 0xffffff, 0.3)
+      g.strokePath()
+      c.add(g)
+
+      const txt = this.add.text(0, 0, sym, {
+        fontSize: '16px', color: '#ffffff',
+        fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      }).setOrigin(0.5)
+      c.add(txt)
+
+      c.setSize(dSize, dSize)
+      c.setInteractive(new Phaser.Geom.Rectangle(-half, -half, dSize, dSize), Phaser.Geom.Rectangle.Contains)
+      if (c.input) c.input.cursor = 'pointer'
+
+      c.on('pointerdown', onClick)
+      c.setAlpha(0)
+      c.setDepth(50)
+      return c
+    }
+
+    this.inspectActionSkill = mkIcon(0x1976d2, '\u26A1', () => this.activateInspectSkill())
+    this.inspectActionRetreat = mkIcon(0xc62828, '\u27F3', () => this.retreatInspectedUnit())
+  }
+
+  private positionActionIcons(unit: DeployedUnit): void {
+    const pos = this.grid.tileToPixel(unit.row, unit.col)
+    const off = 64  // outside selection diamond (TILE_SIZE * 1.5)
+
+    this.inspectActionSkill.setPosition(pos.x + off, pos.y)
+    this.inspectActionSkill.setAlpha(1)
+
+    this.inspectActionRetreat.setPosition(pos.x - off, pos.y)
+    this.inspectActionRetreat.setAlpha(1)
+  }
+
+  private hideActionIcons(): void {
+    this.inspectActionSkill.setAlpha(0)
+    this.inspectActionRetreat.setAlpha(0)
   }
 
   private buildCardBar(): void {
@@ -911,19 +1319,27 @@ export class GameScene extends Phaser.Scene {
       icon.fillTriangle(iconX, iconY - iconSize / 4, iconX - iconSize / 4, iconY + iconSize / 4, iconX + iconSize / 4, iconY + iconSize / 4)
     }
 
-    const nameLabel = this.add.text(cardW / 2, 75, unit.subtypeLabel, {
+    const skillName = unit.skills?.[0]?.name ?? ''
+    const skillCost = unit.skills?.[0]?.spCost ?? 0
+
+    const nameLabel = this.add.text(cardW / 2, 69, unit.subtypeLabel, {
       fontSize: '15px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
     nameLabel.setOrigin(0.5, 0)
 
-    const dpLabel = this.add.text(cardW / 2, 96, `DP ${cost}`, {
+    const skillLabel = this.add.text(cardW / 2, 89, `${skillName} SP${skillCost}`, {
+      fontSize: '10px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    })
+    skillLabel.setOrigin(0.5, 0)
+
+    const dpLabel = this.add.text(cardW / 2, 102, `DP ${cost}`, {
       fontSize: FONT_SIZE.xs, color: onCooldown ? COLORS.text.danger : COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
     dpLabel.setOrigin(0.5, 0)
 
     const cdRing = this.add.graphics()
 
-    const children: Phaser.GameObjects.GameObject[] = [bg, icon, nameLabel, dpLabel, cdRing]
+    const children: Phaser.GameObjects.GameObject[] = [bg, icon, nameLabel, skillLabel, dpLabel, cdRing]
 
     if (onCooldown) {
       const remaining = Math.max(0, this.depSystem.getCooldownRemaining(squadIndex))
@@ -973,23 +1389,27 @@ export class GameScene extends Phaser.Scene {
       bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x00a2ff : 0xcfd8dc, 1)
       bg.setAlpha(!canAfford && !onCooldown ? 0.45 : 1)
 
-      const dpLabel = container.getAt(3) as Phaser.GameObjects.Text
+      const skillLabel = container.getAt(3) as Phaser.GameObjects.Text
+      const skill = unit.skills?.[0]
+      skillLabel.setText(skill ? `${skill.name} SP${skill.spCost}` : '')
+
+      const dpLabel = container.getAt(4) as Phaser.GameObjects.Text
       dpLabel.setText(`DP ${cost}`)
       dpLabel.setColor(onCooldown ? COLORS.text.danger : COLORS.text.accent)
 
-      const cdRing = container.getAt(4) as Phaser.GameObjects.Graphics
+      const cdRing = container.getAt(5) as Phaser.GameObjects.Graphics
       if (onCooldown) {
         const remaining = Math.max(0, this.depSystem.getCooldownRemaining(squadIndex))
         this.drawCooldownRing(cdRing, 96 - 14, 14, 10, remaining / unit.redeployTime)
-        if (container.length >= 6) {
-          const cdText = container.getAt(5) as Phaser.GameObjects.Text
+        if (container.length >= 7) {
+          const cdText = container.getAt(6) as Phaser.GameObjects.Text
           cdText.setText(`${remaining.toFixed(1)}s`)
           cdText.setAlpha(1)
         }
       } else {
         cdRing.clear()
-        if (container.length >= 6) {
-          const cdText = container.getAt(5) as Phaser.GameObjects.Text
+        if (container.length >= 7) {
+          const cdText = container.getAt(6) as Phaser.GameObjects.Text
           cdText.setAlpha(0)
         }
       }
@@ -1066,21 +1486,19 @@ export class GameScene extends Phaser.Scene {
     if (this.selectedSquadIndex === squadIndex && this.deployState !== 'idle') {
       this.cancelDeployment()
       this.selectedSquadIndex = null
-      this.updateStatsPanel(null)
+      this.hideInspectPanel()
       this.updateCardVisuals()
       return
     }
 
     this.selectedSquadIndex = squadIndex
-    this.updateStatsPanel(unit)
+    if (this.inspectingUnit) {
+      this.exitDecisionMode()
+    }
+    this.showCardPanel(unit, squadIndex)
     if (this.battleActive && !this.battleEnded && !this.isPaused) {
       if (this.deployState === 'facing') {
         this.cancelDeployment()
-      }
-      if (this.inspectingUnit) {
-        this.inspectRetreatBtn.setAlpha(0)
-        this.inspectCloseBtn.setAlpha(0)
-        this.inspectingUnit = null
       }
       this.deployState = 'placing'
       this.decisionMode = true
@@ -1417,8 +1835,6 @@ export class GameScene extends Phaser.Scene {
     this.selectedSquadIndex = null
     this.deployedIndices.clear()
     this.exitDecisionMode()
-    this.inspectRetreatBtn.setAlpha(0)
-    this.inspectCloseBtn.setAlpha(0)
     this.clearRangePreview()
     this.resultText.setAlpha(0)
     this.cardBarScrollX = 0
@@ -1427,7 +1843,6 @@ export class GameScene extends Phaser.Scene {
       this.unitCards = []
     }
     this.rebuildCardBar()
-    this.updateStatsPanel(null)
     this.updateHUD()
   }
 

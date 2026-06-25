@@ -51,6 +51,8 @@ export class PickerScene extends Phaser.Scene {
   private slotIndex: number = -1
   private available: UnitConfig[] = []
   private pickedUnit: UnitConfig | null = null
+  private selectedSkillId: string = ''
+  private skillRects: { id: string; g: Phaser.GameObjects.Graphics; y: number }[] = []
   private cardScrollX: number = 0
   private cardScrollMax: number = 0
   private cardScrollContainer!: Phaser.GameObjects.Container
@@ -368,11 +370,98 @@ export class PickerScene extends Phaser.Scene {
         py += 17
       }
     }
+
+    this.showSkills(unit, py + 8)
+  }
+
+  private showSkills(unit: UnitConfig, py: number): number {
+    this.infoContainer.add(this.add.text(8, py, 'SKILLS', {
+      fontSize: '13px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    }))
+    py += 16
+    this.skillRects = []
+
+    if (!unit.skills?.length) {
+      this.infoContainer.add(this.add.text(8, py, '—', {
+        fontSize: '13px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      }))
+      return py + 16
+    }
+
+    const defSkillId = unit.skills[0].id
+    if (!this.selectedSkillId) this.selectedSkillId = defSkillId
+
+    const recoveryIcon: Record<string, string> = { auto: '⟳', offensive: '⚔', defensive: '⊡' }
+    const activationIcon: Record<string, string> = { auto: 'A', manual: 'M', toggle: 'T', passive: 'P' }
+
+    for (let i = 0; i < unit.skills.length; i++) {
+      const skill = unit.skills[i]
+      const isSelected = this.selectedSkillId === skill.id
+      const rowY = py
+      const rowH = 52
+
+      const bg = this.add.graphics()
+      bg.fillStyle(isSelected ? 0x00a2ff : 0xf5f7f9, 1)
+      bg.fillRoundedRect(4, rowY, SIDEBAR_W - 8, rowH, 4)
+      bg.lineStyle(isSelected ? 2 : 1, isSelected ? 0x00a2ff : 0xcfd8dc, isSelected ? 1 : 0.6)
+      bg.strokeRoundedRect(4, rowY, SIDEBAR_W - 8, rowH, 4)
+      bg.setInteractive(new Phaser.Geom.Rectangle(4, rowY, SIDEBAR_W - 8, rowH), Phaser.Geom.Rectangle.Contains)
+      if (bg.input) bg.input.cursor = 'pointer'
+      bg.on('pointerdown', () => this.selectSkill(skill.id))
+      this.infoContainer.add(bg)
+      this.skillRects.push({ id: skill.id, g: bg, y: rowY })
+
+      const headerText = `S${i + 1} ${skill.name}  ${skill.spCost}${recoveryIcon[skill.spRecovery] ?? '?'}|${activationIcon[skill.activation] ?? '?'}`
+      const header = this.add.text(10, rowY + 3, headerText, {
+        fontSize: '11px', color: isSelected ? '#ffffff' : COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+      })
+      this.infoContainer.add(header)
+
+      const desc = this.add.text(10, rowY + 18, skill.description, {
+        fontSize: '9px', color: isSelected ? '#e0e0e0' : COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', wordWrap: { width: SIDEBAR_W - 16 },
+      })
+      this.infoContainer.add(desc)
+
+      py += rowH + 4
+    }
+
+    return py
+  }
+
+  private selectSkill(skillId: string): void {
+    this.selectedSkillId = skillId
+    for (const sr of this.skillRects) {
+      const isSel = sr.id === skillId
+      sr.g.clear()
+      sr.g.fillStyle(isSel ? 0x00a2ff : 0xf5f7f9, 1)
+      sr.g.fillRoundedRect(4, sr.y, SIDEBAR_W - 8, 52, 4)
+      sr.g.lineStyle(isSel ? 2 : 1, isSel ? 0x00a2ff : 0xcfd8dc, isSel ? 1 : 0.6)
+      sr.g.strokeRoundedRect(4, sr.y, SIDEBAR_W - 8, 52, 4)
+    }
+    const containerChildren = this.infoContainer.getAll()
+    for (const child of containerChildren) {
+      if (child.type === 'Text') {
+        const text = child as Phaser.GameObjects.Text
+        const txt = text.text
+        for (const sr of this.skillRects) {
+          const skill = this.pickedUnit?.skills.find(s => s.id === sr.id)
+          if (skill && txt.includes(`${skill.name}  ${skill.spCost}`)) {
+            text.setColor(sr.id === skillId ? '#ffffff' : COLORS.text.primary)
+          }
+          if (skill && txt === skill.description) {
+            text.setColor(sr.id === skillId ? '#e0e0e0' : COLORS.text.secondary)
+          }
+        }
+      }
+    }
+    this.showConfirm()
   }
 
   private showConfirm(): void {
     if (this.confirmBtn) this.confirmBtn.destroy()
-    this.confirmBtn = makeNodeButton(this, 10, this.H - 48, `Confirm (${this.pickedUnit?.subtypeLabel ?? ''})`, () => this.confirmPick(), {
+    const skillName = this.pickedUnit?.skills?.find(s => s.id === this.selectedSkillId)?.name ?? ''
+    const label = skillName ? `Deploy with ${skillName}` : `Confirm (${this.pickedUnit?.subtypeLabel ?? ''})`
+    this.confirmBtn = makeNodeButton(this, 10, this.H - 48, label, () => this.confirmPick(), {
       w: SIDEBAR_W - 20, h: 34, textSize: FONT_SIZE.xs, role: 'primary',
     })
   }
@@ -381,7 +470,7 @@ export class PickerScene extends Phaser.Scene {
     if (!this.pickedUnit || this.slotIndex < 0) return
     const squad = this.scene.get('SquadScene') as any
     if (squad.receivePickedUnit) {
-      squad.receivePickedUnit(this.pickedUnit, this.slotIndex)
+      squad.receivePickedUnit(this.pickedUnit, this.slotIndex, this.selectedSkillId || undefined)
     }
     this.scene.stop()
   }

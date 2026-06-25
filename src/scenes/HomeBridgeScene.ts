@@ -1,73 +1,13 @@
 import Phaser from 'phaser'
 import { COLORS } from '../ui/Constants'
 
-interface RoleColors {
-  top: number; bottom: number; pressedTop: number; pressedBottom: number
-}
-
-const ROLE_FILLS: Record<string, RoleColors> = {
-  primary: {
-    top: COLORS.nodeButton.primaryTop,
-    bottom: COLORS.nodeButton.primaryBottom,
-    pressedTop: COLORS.nodeButton.primaryTopPressed,
-    pressedBottom: COLORS.nodeButton.primaryBottomPressed,
-  },
-}
-
-const ROLE_TEXT: Record<string, string> = {
-  primary: '#ffffff',
-}
-
 const BTN_DEFS: {
-  key: string; label: string; x: number; y: number; w: number; leftH: number; rightH: number; fontSize: string;
+  key: string; label: string; x: number; y: number; w: number; h: number; fontSize: string;
 }[] = [
-  { key: 'terminal', label: 'TERMINAL', x: 810, y: 272, w: 450, leftH: 86, rightH: 98, fontSize: '20px' },
-  { key: 'squad', label: 'SQUAD PRESET', x: 810, y: 374, w: 218, leftH: 74, rightH: 84, fontSize: '18px' },
-  { key: 'editor', label: 'LEVEL EDITOR', x: 1042, y: 374, w: 218, leftH: 74, rightH: 84, fontSize: '18px' },
+  { key: 'terminal', label: 'TERMINAL', x: 810, y: 261, w: 450, h: 98, fontSize: '20px' },
+  { key: 'squad', label: 'SQUAD PRESET', x: 810, y: 375, w: 218, h: 84, fontSize: '18px' },
+  { key: 'editor', label: 'LEVEL EDITOR', x: 1042, y: 375, w: 218, h: 84, fontSize: '18px' },
 ]
-
-function drawShadow(g: Phaser.GameObjects.Graphics, w: number, h: number, topOffset: number): void {
-  const layers = [
-    { off: 2, a: 0.08 }, { off: 4, a: 0.06 }, { off: 6, a: 0.04 },
-    { off: 8, a: 0.03 }, { off: 10, a: 0.02 }, { off: 12, a: 0.01 },
-  ]
-  for (const l of layers) {
-    g.fillStyle(0x000000, l.a)
-    g.fillRect(l.off, l.off + topOffset, w, h)
-  }
-}
-
-function drawTrapezoid(
-  g: Phaser.GameObjects.Graphics,
-  x: number, y: number, w: number, leftH: number, rightH: number,
-  topColor: number, bottomColor: number,
-): void {
-  const mid = leftH / 2
-  g.fillGradientStyle(topColor, topColor, bottomColor, bottomColor)
-  g.beginPath()
-  g.moveTo(x, y)
-  g.lineTo(x + w, y + mid - rightH / 2)
-  g.lineTo(x + w, y + mid + rightH / 2)
-  g.lineTo(x, y + leftH)
-  g.closePath()
-  g.fillPath()
-}
-
-function drawBorder(
-  g: Phaser.GameObjects.Graphics,
-  x: number, y: number, w: number, leftH: number, rightH: number,
-  color: number, alpha: number,
-): void {
-  const mid = leftH / 2
-  g.lineStyle(1, color, alpha)
-  g.beginPath()
-  g.moveTo(x, y)
-  g.lineTo(x + w, y + mid - rightH / 2)
-  g.lineTo(x + w, y + mid + rightH / 2)
-  g.lineTo(x, y + leftH)
-  g.closePath()
-  g.strokePath()
-}
 
 export class HomeBridgeScene extends Phaser.Scene {
   constructor() {
@@ -104,108 +44,84 @@ export class HomeBridgeScene extends Phaser.Scene {
     accent.lineBetween(60, 105, 340, 105)
 
     for (const def of BTN_DEFS) {
-      const colors = ROLE_FILLS.primary
-      const textColor = ROLE_TEXT.primary
+      const colors = {
+        top: COLORS.nodeButton.primaryTop,
+        bottom: COLORS.nodeButton.primaryBottom,
+        pressedTop: COLORS.nodeButton.primaryTopPressed,
+        pressedBottom: COLORS.nodeButton.primaryBottomPressed,
+      }
 
       const c = this.add.container(def.x, def.y)
       const shadow = this.add.graphics()
       const gfx = this.add.graphics()
-      const bdr = this.add.graphics()
-      c.add([shadow, gfx, bdr])
+      c.add([shadow, gfx])
 
-      const txt = this.add.text(0, 0, def.label, {
+      const txt = this.add.text(def.w / 2, def.h / 2, def.label, {
         fontSize: def.fontSize,
         fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
         fontStyle: 'bold',
-        color: textColor,
+        color: '#ffffff',
       }).setOrigin(0.5, 0.5)
-
-      let isPressed = false
-      let hoverTween: Phaser.Tweens.Tween | null = null
-      const hoverLeftH = def.key === 'terminal' ? 94 : 80
-
-      const bboxTop = (leftH: number, rightH: number): number =>
-        leftH / 2 - rightH / 2
-
-      const draw = (pressed: boolean, leftH: number, rightH: number): void => {
-        shadow.clear()
-        gfx.clear()
-        bdr.clear()
-
-        const topOff = bboxTop(leftH, rightH)
-        const bboxH = rightH
-        if (!pressed) {
-          drawShadow(shadow, def.w, bboxH, topOff)
-        } else {
-          shadow.fillStyle(0x000000, 0.06)
-          shadow.fillRect(2, 2 + topOff, def.w, bboxH)
-          shadow.fillStyle(0x000000, 0.03)
-          shadow.fillRect(4, 4 + topOff, def.w, bboxH)
-        }
-
-        const tc = pressed ? colors.pressedTop : colors.top
-        const bc = pressed ? colors.pressedBottom : colors.bottom
-        drawTrapezoid(gfx, 0, 0, def.w, leftH, rightH, tc, bc)
-        drawBorder(bdr, 0, 0, def.w, leftH, rightH, tc, 0.3)
-
-        txt.setPosition(def.w / 2, leftH / 2)
-      }
-
-      draw(false, def.leftH, def.rightH)
       c.add(txt)
 
-      const bboxH = def.rightH
-      const topOff = bboxTop(def.leftH, def.rightH)
-      c.setSize(def.w, bboxH)
-      c.setInteractive(
-        new Phaser.Geom.Rectangle(0, topOff, def.w, bboxH),
-        Phaser.Geom.Rectangle.Contains,
-      )
+      const draw = (pressed: boolean): void => {
+        shadow.clear()
+        gfx.clear()
+
+        if (!pressed) {
+          const layers = [
+            { off: 2, a: 0.08 }, { off: 4, a: 0.06 }, { off: 6, a: 0.04 },
+            { off: 8, a: 0.03 }, { off: 10, a: 0.02 }, { off: 12, a: 0.01 },
+          ]
+          for (const l of layers) {
+            shadow.fillStyle(0x000000, l.a)
+            shadow.fillRect(l.off, l.off, def.w, def.h)
+          }
+        } else {
+          shadow.fillStyle(0x000000, 0.06)
+          shadow.fillRect(2, 2, def.w, def.h)
+          shadow.fillStyle(0x000000, 0.03)
+          shadow.fillRect(4, 4, def.w, def.h)
+        }
+
+        gfx.fillGradientStyle(
+          pressed ? colors.pressedTop : colors.top,
+          pressed ? colors.pressedTop : colors.top,
+          pressed ? colors.pressedBottom : colors.bottom,
+          pressed ? colors.pressedBottom : colors.bottom,
+        )
+        gfx.fillRect(0, 0, def.w, def.h)
+        gfx.lineStyle(1, pressed ? colors.pressedTop : colors.top, 0.3)
+        gfx.strokeRect(0, 0, def.w, def.h)
+      }
+
+      draw(false)
+      c.setSize(def.w, def.h)
+      c.setInteractive(new Phaser.Geom.Rectangle(0, 0, def.w, def.h), Phaser.Geom.Rectangle.Contains)
       if (c.input) c.input.cursor = 'pointer'
 
       c.on('pointerover', () => {
-        if (isPressed) return
-        if (hoverTween) hoverTween.stop()
-        const p = { v: 0 }
-        hoverTween = this.tweens.add({
-          targets: p,
-          v: 1,
-          duration: 150,
-          onUpdate: () => {
-            const lh = def.leftH + (hoverLeftH - def.leftH) * p.v
-            draw(isPressed, lh, def.rightH)
-          },
-        })
+        this.tweens.add({ targets: c, scaleX: 1.04, scaleY: 1.04, duration: 150, ease: 'Sine.easeOut' })
       })
 
       c.on('pointerout', () => {
-        const wasPressed = isPressed
-        isPressed = false
-        if (hoverTween) hoverTween.stop()
-        const p = { v: 0 }
-        hoverTween = this.tweens.add({
-          targets: p,
-          v: 1,
-          duration: 150,
-          onUpdate: () => {
-            const lh = hoverLeftH + (def.leftH - hoverLeftH) * p.v
-            draw(false, lh, def.rightH)
-          },
-        })
-        if (wasPressed) c.setPosition(def.x, def.y)
+        const wasPressed = c.getData('pressed')
+        if (wasPressed) return
+        this.tweens.add({ targets: c, scaleX: 1, scaleY: 1, x: def.x, y: def.y, duration: 150, ease: 'Sine.easeOut' })
       })
 
       c.on('pointerdown', () => {
-        isPressed = true
-        draw(true, def.leftH, def.rightH)
+        c.setData('pressed', true)
+        draw(true)
         c.setPosition(def.x + 2, def.y + 2)
+        this.tweens.add({ targets: c, scaleX: 0.98, scaleY: 0.98, duration: 80, ease: 'Sine.easeOut' })
       })
 
       c.on('pointerup', () => {
-        if (!isPressed) return
-        isPressed = false
-        draw(false, def.leftH, def.rightH)
+        c.setData('pressed', false)
+        draw(false)
         c.setPosition(def.x, def.y)
+        this.tweens.add({ targets: c, scaleX: 1, scaleY: 1, duration: 80, ease: 'Sine.easeOut' })
         switch (def.key) {
           case 'terminal': this.scene.start('ChapterSelectScene'); break
           case 'squad': this.scene.start('SquadScene', { levelId: 'menu', chapterId: 'menu', levelData: null }); break

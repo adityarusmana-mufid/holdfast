@@ -1,88 +1,482 @@
 {
-  "name": "Forward Patrol",
-  "cols": 10,
-  "rows": 3,
+  "name": "Operation 0-6",
+  "cols": 8,
+  "rows": 7,
   "tiles": [
     [
-      { "row": 0, "col": 0, "type": "floor" },
-      { "row": 0, "col": 1, "type": "floor" },
-      { "row": 0, "col": 2, "type": "deploy_ranged" },
-      { "row": 0, "col": 3, "type": "deploy_ranged" },
-      { "row": 0, "col": 4, "type": "deploy_ranged" },
-      { "row": 0, "col": 5, "type": "deploy_ranged" },
-      { "row": 0, "col": 6, "type": "deploy_ranged" },
-      { "row": 0, "col": 7, "type": "deploy_ranged" },
-      { "row": 0, "col": 8, "type": "floor" },
-      { "row": 0, "col": 9, "type": "floor" }
+      {
+        "row": 0,
+        "col": 0,
+        "type": "spawn"
+      },
+      {
+        "row": 0,
+        "col": 1,
+        "type": "route"
+      },
+      {
+        "row": 0,
+        "col": 2,
+        "type": "route"
+      },
+      {
+        "row": 0,
+        "col": 3,
+        "type": "route"
+      },
+      {
+        "row": 0,
+        "col": 4,
+        "type": "route"
+      },
+      {
+        "row": 0,
+        "col": 5,
+        "type": "route"
+      },
+      {
+        "row": 0,
+        "col": 6,
+        "type": "route"
+      },
+      {
+        "row": 0,
+        "col": 7,
+        "type": "route"
+      }
     ],
     [
-      { "row": 1, "col": 0, "type": "spawn" },
-      { "row": 1, "col": 1, "type": "route" },
-      { "row": 1, "col": 2, "type": "route" },
-      { "row": 1, "col": 3, "type": "route" },
-      { "row": 1, "col": 4, "type": "route" },
-      { "row": 1, "col": 5, "type": "route" },
-      { "row": 1, "col": 6, "type": "route" },
-      { "row": 1, "col": 7, "type": "route" },
-      { "row": 1, "col": 8, "type": "route" },
-      { "row": 1, "col": 9, "type": "goal" }
+      {
+        "row": 1,
+        "col": 0,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 1,
+        "col": 1,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 1,
+        "col": 2,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 1,
+        "col": 3,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 1,
+        "col": 4,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 1,
+        "col": 5,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 1,
+        "col": 6,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 1,
+        "col": 7,
+        "type": "route"
+      }
     ],
     [
-      { "row": 2, "col": 0, "type": "floor" },
-      { "row": 2, "col": 1, "type": "floor" },
-      { "row": 2, "col": 2, "type": "deploy_ranged" },
-      { "row": 2, "col": 3, "type": "deploy_ranged" },
-      { "row": 2, "col": 4, "type": "deploy_ranged" },
-      { "row": 2, "col": 5, "type": "deploy_ranged" },
-      { "row": 2, "col": 6, "type": "deploy_ranged" },
-      { "row": 2, "col": 7, "type": "deploy_ranged" },
-      { "row": 2, "col": 8, "type": "floor" },
-      { "row": 2, "col": 9, "type": "floor" }
+      {
+        "row": 2,
+        "col": 0,
+        "type": "route"
+      },
+      {
+        "row": 2,
+        "col": 1,
+        "type": "route"
+      },
+      {
+        "row": 2,
+        "col": 2,
+        "type": "route"
+      },
+      {
+        "row": 2,
+        "col": 3,
+        "type": "route"
+      },
+      {
+        "row": 2,
+        "col": 4,
+        "type": "route"
+      },
+      {
+        "row": 2,
+        "col": 5,
+        "type": "route"
+      },
+      {
+        "row": 2,
+        "col": 6,
+        "type": "route"
+      },
+      {
+        "row": 2,
+        "col": 7,
+        "type": "route"
+      }
+    ],
+    [
+      {
+        "row": 3,
+        "col": 0,
+        "type": "route"
+      },
+      {
+        "row": 3,
+        "col": 1,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 3,
+        "col": 2,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 3,
+        "col": 3,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 3,
+        "col": 4,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 3,
+        "col": 5,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 3,
+        "col": 6,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 3,
+        "col": 7,
+        "type": "deploy_ranged"
+      }
+    ],
+    [
+      {
+        "row": 4,
+        "col": 0,
+        "type": "route"
+      },
+      {
+        "row": 4,
+        "col": 1,
+        "type": "route"
+      },
+      {
+        "row": 4,
+        "col": 2,
+        "type": "route"
+      },
+      {
+        "row": 4,
+        "col": 3,
+        "type": "route"
+      },
+      {
+        "row": 4,
+        "col": 4,
+        "type": "route"
+      },
+      {
+        "row": 4,
+        "col": 5,
+        "type": "route"
+      },
+      {
+        "row": 4,
+        "col": 6,
+        "type": "route"
+      },
+      {
+        "row": 4,
+        "col": 7,
+        "type": "route"
+      }
+    ],
+    [
+      {
+        "row": 5,
+        "col": 0,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 5,
+        "col": 1,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 5,
+        "col": 2,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 5,
+        "col": 3,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 5,
+        "col": 4,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 5,
+        "col": 5,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 5,
+        "col": 6,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 5,
+        "col": 7,
+        "type": "route"
+      }
+    ],
+    [
+      {
+        "row": 6,
+        "col": 0,
+        "type": "route"
+      },
+      {
+        "row": 6,
+        "col": 1,
+        "type": "route"
+      },
+      {
+        "row": 6,
+        "col": 2,
+        "type": "route"
+      },
+      {
+        "row": 6,
+        "col": 3,
+        "type": "route"
+      },
+      {
+        "row": 6,
+        "col": 4,
+        "type": "route"
+      },
+      {
+        "row": 6,
+        "col": 5,
+        "type": "route"
+      },
+      {
+        "row": 6,
+        "col": 6,
+        "type": "route"
+      },
+      {
+        "row": 6,
+        "col": 7,
+        "type": "goal"
+      }
     ]
   ],
   "waypoints": [
-    { "row": 1, "col": 0 },
-    { "row": 1, "col": 1 },
-    { "row": 1, "col": 2 },
-    { "row": 1, "col": 3 },
-    { "row": 1, "col": 4 },
-    { "row": 1, "col": 5 },
-    { "row": 1, "col": 6 },
-    { "row": 1, "col": 7 },
-    { "row": 1, "col": 8 },
-    { "row": 1, "col": 9 }
+    {
+      "row": 0,
+      "col": 0
+    },
+    {
+      "row": 0,
+      "col": 1
+    },
+    {
+      "row": 0,
+      "col": 2
+    },
+    {
+      "row": 0,
+      "col": 3
+    },
+    {
+      "row": 0,
+      "col": 4
+    },
+    {
+      "row": 0,
+      "col": 5
+    },
+    {
+      "row": 0,
+      "col": 6
+    },
+    {
+      "row": 0,
+      "col": 7
+    },
+    {
+      "row": 1,
+      "col": 7
+    },
+    {
+      "row": 2,
+      "col": 7
+    },
+    {
+      "row": 2,
+      "col": 6
+    },
+    {
+      "row": 2,
+      "col": 5
+    },
+    {
+      "row": 2,
+      "col": 4
+    },
+    {
+      "row": 2,
+      "col": 3
+    },
+    {
+      "row": 2,
+      "col": 2
+    },
+    {
+      "row": 2,
+      "col": 1
+    },
+    {
+      "row": 2,
+      "col": 0
+    },
+    {
+      "row": 3,
+      "col": 0
+    },
+    {
+      "row": 4,
+      "col": 0
+    },
+    {
+      "row": 4,
+      "col": 1
+    },
+    {
+      "row": 4,
+      "col": 2
+    },
+    {
+      "row": 4,
+      "col": 3
+    },
+    {
+      "row": 4,
+      "col": 4
+    },
+    {
+      "row": 4,
+      "col": 5
+    },
+    {
+      "row": 4,
+      "col": 6
+    },
+    {
+      "row": 4,
+      "col": 7
+    },
+    {
+      "row": 5,
+      "col": 7
+    },
+    {
+      "row": 6,
+      "col": 7
+    }
   ],
   "waves": [
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 4, "spawnInterval": 2 },
-        { "enemyType": "trooper", "count": 2, "spawnInterval": 3 }
+        {
+          "enemyType": "soldier",
+          "count": 2,
+          "spawnInterval": 3
+        }
+      ],
+      "preludeDuration": 10
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        {
+          "enemyType": "soldier",
+          "count": 3,
+          "spawnInterval": 3
+        },
+        {
+          "enemyType": "trooper",
+          "count": 2,
+          "spawnInterval": 2.6
+        }
+      ],
+      "preludeDuration": 9
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        {
+          "enemyType": "soldier",
+          "count": 3,
+          "spawnInterval": 3
+        },
+        {
+          "enemyType": "trooper",
+          "count": 2,
+          "spawnInterval": 2.6
+        }
       ],
       "preludeDuration": 8
     },
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 3, "spawnInterval": 2 },
-        { "enemyType": "trooper", "count": 2, "spawnInterval": 3 },
-        { "enemyType": "drone", "count": 1, "spawnInterval": 3.5 }
+        {
+          "enemyType": "soldier",
+          "count": 4,
+          "spawnInterval": 3
+        },
+        {
+          "enemyType": "trooper",
+          "count": 3,
+          "spawnInterval": 2.6
+        }
       ],
-      "preludeDuration": 6
-    },
-    {
-      "routeIndex": 0,
-      "entries": [
-        { "enemyType": "trooper", "count": 3, "spawnInterval": 3 },
-        { "enemyType": "soldier", "count": 2, "spawnInterval": 2 }
-      ],
-      "preludeDuration": 6
+      "preludeDuration": 7
     }
   ],
-  "startingDP": 22,
+  "tutorial": false,
+  "startingDP": 19,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10,
-  "guideText": ["Hostiles are grouping up in larger numbers. Area-of-effect attacks can damage multiple enemies at once."]
+  "lives": 10
 }

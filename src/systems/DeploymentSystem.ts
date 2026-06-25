@@ -50,7 +50,10 @@ export class DeploymentSystem {
     const cost = this.getCurrentCost(instanceId, unit)
     if (this.currentDP < cost) return { ok: false, reason: `Need ${cost} DP, have ${this.currentDP}` }
 
-    if (unit.type === 'ground') {
+    const isSpecialist = unit.traits?.some(t => t.traitId === UnitTrait.DeployAnywhere)
+    if (isSpecialist) {
+      // can deploy on any walkable/deployable tile
+    } else if (unit.type === 'ground') {
       if (tile.type !== TileType.Ground && tile.type !== TileType.RepairNode && tile.type !== TileType.ArmorGrid) {
         return { ok: false, reason: 'Ground units need ground tiles' }
       }

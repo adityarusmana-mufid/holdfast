@@ -1,4 +1,5 @@
 const FONT_FAMILY = '"Share Tech Mono", "Roboto Mono", monospace'
+const FONT_SERIF = 'Georgia, "Times New Roman", serif'
 
 export const FONT_SIZE = {
   xs: '14px',
@@ -18,7 +19,11 @@ export const FONTS = {
   h3: { fontSize: FONT_SIZE.lg, fontFamily: FONT_FAMILY, fontStyle: 'bold' },
   h2: { fontSize: FONT_SIZE.xl, fontFamily: FONT_FAMILY, fontStyle: 'bold' },
   h1: { fontSize: FONT_SIZE['3xl'], fontFamily: FONT_FAMILY, fontStyle: 'bold' },
+  serif: { fontSize: FONT_SIZE.xl, fontFamily: FONT_SERIF },
+  serifH2: { fontSize: FONT_SIZE['2xl'], fontFamily: FONT_SERIF, fontStyle: 'bold' },
 }
+
+export { FONT_SERIF }
 
 export const SPACING = {
   xs: 4,

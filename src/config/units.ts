@@ -1,5 +1,6 @@
 import { UnitConfig, UnitTrait } from '../types/index'
 import { RANGE_PATTERNS } from '../shared/utils/GridMath'
+import { SKILLS } from './skills'
 
 export const UNIT_CONFIGS: UnitConfig[] = [
   {
@@ -20,6 +21,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 10,
     color: 0x3498db,
     traits: [{ traitId: UnitTrait.BlocksTwo }],
+    skills: SKILLS['pioneer'],
   },
   {
     id: 'fighter',
@@ -39,6 +41,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0xe74c3c,
     traits: [{ traitId: UnitTrait.FastAttack }],
+    skills: SKILLS['fighter'],
   },
   {
     id: 'arts_fighter',
@@ -58,6 +61,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0x9b59b6,
     traits: [{ traitId: UnitTrait.ArtsDamage }],
+    skills: SKILLS['arts_fighter'],
   },
   {
     id: 'centurion_guard',
@@ -77,6 +81,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0xe74c3c,
     traits: [{ traitId: UnitTrait.AoEMelee }, { traitId: UnitTrait.BlocksTwo }],
+    skills: SKILLS['centurion_guard'],
   },
   {
     id: 'protector',
@@ -96,6 +101,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 20,
     color: 0x2ecc71,
     traits: [{ traitId: UnitTrait.BlocksThree }],
+    skills: SKILLS['protector'],
   },
   {
     id: 'core_caster',
@@ -115,6 +121,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 20,
     color: 0x9b59b6,
     traits: [{ traitId: UnitTrait.ArtsDamage }],
+    skills: SKILLS['core_caster'],
   },
   {
     id: 'sniper',
@@ -134,6 +141,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0xf39c12,
     traits: [],
+    skills: SKILLS['sniper'],
   },
   {
     id: 'swordmaster',
@@ -153,6 +161,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0xc0392b,
     traits: [{ traitId: UnitTrait.DoubleHit }],
+    skills: SKILLS['swordmaster'],
   },
   {
     id: 'deadeye',
@@ -172,6 +181,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0xe67e22,
     traits: [{ traitId: UnitTrait.TargetingLowestDef }],
+    skills: SKILLS['deadeye'],
   },
   {
     id: 'charger',
@@ -194,6 +204,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
       { traitId: UnitTrait.DPOnKill, value: 1 },
       { traitId: UnitTrait.FullRefundRetreat },
     ],
+    skills: SKILLS['charger'],
   },
   {
     id: 'heavyshooter',
@@ -213,6 +224,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0xf1c40f,
     traits: [],
+    skills: SKILLS['heavyshooter'],
   },
   {
     id: 'blast_caster',
@@ -235,6 +247,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
       { traitId: UnitTrait.LinearAoE },
       { traitId: UnitTrait.ArtsDamage },
     ],
+    skills: SKILLS['blast_caster'],
   },
   {
     id: 'earthshaker',
@@ -254,6 +267,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0xd35400,
     traits: [{ traitId: UnitTrait.LinearAoE }],
+    skills: SKILLS['earthshaker'],
   },
   {
     id: 'artilleryman',
@@ -274,6 +288,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     color: 0xe67e22,
     splashConfig: { radius: 1, damageMultiplier: 0.5 },
     traits: [{ traitId: UnitTrait.AoESplash }],
+    skills: SKILLS['artilleryman'],
   },
   {
     id: 'splash_caster',
@@ -297,6 +312,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
       { traitId: UnitTrait.AoESplash },
       { traitId: UnitTrait.ArtsDamage },
     ],
+    skills: SKILLS['splash_caster'],
   },
   {
     id: 'chain_caster',
@@ -319,6 +335,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
       { traitId: UnitTrait.ChainJump, radius: 2, maxTargets: 3, damageFalloff: 0.85 },
       { traitId: UnitTrait.ArtsDamage },
     ],
+    skills: SKILLS['chain_caster'],
   },
   {
     id: 'decel_binder',
@@ -338,6 +355,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0x1abc9c,
     traits: [{ traitId: UnitTrait.SlowOnHit, value: 0.5, duration: 2 }],
+    skills: SKILLS['decel_binder'],
   },
   {
     id: 'lord_guard',
@@ -358,6 +376,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0xc0392b,
     traits: [{ traitId: UnitTrait.RangedWhenNotBlocking }],
+    skills: SKILLS['lord_guard'],
   },
   {
     id: 'fortress_defender',
@@ -378,6 +397,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 20,
     color: 0x27ae60,
     traits: [{ traitId: UnitTrait.RangedAoEWhenNotBlocking }],
+    skills: SKILLS['fortress_defender'],
   },
   {
     id: 'instructor_guard',
@@ -401,6 +421,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
       { traitId: UnitTrait.RangedWhenNotBlocking },
       { traitId: UnitTrait.RangedAttack80 },
     ],
+    skills: SKILLS['instructor_guard'],
   },
   {
     id: 'medic_st',
@@ -420,6 +441,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0x2ecc71,
     traits: [{ traitId: UnitTrait.HealAlly }],
+    skills: SKILLS['medic_st'],
   },
   {
     id: 'incantation_medic',
@@ -442,6 +464,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
       { traitId: UnitTrait.AttackHealsAlly },
       { traitId: UnitTrait.ArtsDamage },
     ],
+    skills: SKILLS['incantation_medic'],
   },
   {
     id: 'medic_multi',
@@ -461,6 +484,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0x2ecc71,
     traits: [{ traitId: UnitTrait.HealMulti, value: 3 }],
+    skills: SKILLS['medic_multi'],
   },
   {
     id: 'bard_supporter',
@@ -480,6 +504,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0x1abc9c,
     traits: [{ traitId: UnitTrait.AoEHoT, radius: 2, value: 60 }],
+    skills: SKILLS['bard_supporter'],
   },
   {
     id: 'soloblade',
@@ -499,6 +524,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0xe74c3c,
     traits: [{ traitId: UnitTrait.HealOnAttack, value: 120 }],
+    skills: SKILLS['soloblade'],
   },
   {
     id: 'reaper',
@@ -518,6 +544,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0xd35400,
     traits: [{ traitId: UnitTrait.AoEMelee }, { traitId: UnitTrait.HealOnAttack, value: 60 }],
+    skills: SKILLS['reaper'],
   },
   {
     id: 'juggernaut',
@@ -538,6 +565,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     color: 0x2ecc71,
     canBeHealed: false,
     traits: [{ traitId: UnitTrait.BlocksThree }],
+    skills: SKILLS['juggernaut'],
   },
   {
     id: 'crusher',
@@ -557,5 +585,89 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     redeployTime: 15,
     color: 0x8e44ad,
     traits: [],
+    skills: SKILLS['crusher'],
+  },
+  {
+    id: 'guardian',
+    name: 'Defender',
+    archetype: 'defender',
+    subtypeLabel: 'Guardian',
+    type: 'ground',
+    hp: 2000,
+    atk: 250,
+    def: 300,
+    res: 0,
+    damageType: 'kinetic',
+    attackInterval: 1.5,
+    rangePattern: RANGE_PATTERNS.ranged4x3,
+    blockCount: 3,
+    dpCost: 20,
+    redeployTime: 20,
+    color: 0x45b39d,
+    traits: [
+      { traitId: UnitTrait.HealAlly },
+      { traitId: UnitTrait.BlocksThree },
+    ],
+    skills: SKILLS['guardian'],
+  },
+  {
+    id: 'roadblock',
+    name: 'Roadblock',
+    archetype: 'special',
+    subtypeLabel: 'Barrier',
+    type: 'ground',
+    hp: 500,
+    atk: 0,
+    def: 300,
+    res: 0,
+    damageType: 'kinetic',
+    attackInterval: 99,
+    rangePattern: RANGE_PATTERNS.selfOnly,
+    blockCount: 3,
+    dpCost: 5,
+    redeployTime: 10,
+    color: 0x888888,
+    traits: [{ traitId: UnitTrait.BlocksThree }],
+    skills: SKILLS['roadblock'],
+  },
+  {
+    id: 'pusher',
+    name: 'Push Stroker',
+    archetype: 'specialist',
+    subtypeLabel: 'Pusher',
+    type: 'ground',
+    hp: 800,
+    atk: 0,
+    def: 50,
+    res: 0,
+    damageType: 'kinetic',
+    attackInterval: 99,
+    rangePattern: RANGE_PATTERNS.selfOnly,
+    blockCount: 0,
+    dpCost: 8,
+    redeployTime: 15,
+    color: 0x00bcd4,
+    traits: [{ traitId: UnitTrait.DeployAnywhere }],
+    skills: SKILLS['pusher'],
+  },
+  {
+    id: 'puller',
+    name: 'Hookmaster',
+    archetype: 'specialist',
+    subtypeLabel: 'Puller',
+    type: 'ground',
+    hp: 900,
+    atk: 0,
+    def: 60,
+    res: 0,
+    damageType: 'kinetic',
+    attackInterval: 99,
+    rangePattern: RANGE_PATTERNS.selfOnly,
+    blockCount: 0,
+    dpCost: 10,
+    redeployTime: 15,
+    color: 0x7c4dff,
+    traits: [{ traitId: UnitTrait.DeployAnywhere }],
+    skills: SKILLS['puller'],
   },
 ]

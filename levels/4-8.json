@@ -1,0 +1,513 @@
+{
+  "name": "Operation 4-8",
+  "cols": 10,
+  "rows": 7,
+  "tiles": [
+    [
+      {
+        "row": 0,
+        "col": 0,
+        "type": "floor"
+      },
+      {
+        "row": 0,
+        "col": 1,
+        "type": "floor"
+      },
+      {
+        "row": 0,
+        "col": 2,
+        "type": "floor"
+      },
+      {
+        "row": 0,
+        "col": 3,
+        "type": "floor"
+      },
+      {
+        "row": 0,
+        "col": 4,
+        "type": "floor"
+      },
+      {
+        "row": 0,
+        "col": 5,
+        "type": "floor"
+      },
+      {
+        "row": 0,
+        "col": 6,
+        "type": "floor"
+      },
+      {
+        "row": 0,
+        "col": 7,
+        "type": "floor"
+      },
+      {
+        "row": 0,
+        "col": 8,
+        "type": "floor"
+      },
+      {
+        "row": 0,
+        "col": 9,
+        "type": "floor"
+      }
+    ],
+    [
+      {
+        "row": 1,
+        "col": 0,
+        "type": "floor"
+      },
+      {
+        "row": 1,
+        "col": 1,
+        "type": "floor"
+      },
+      {
+        "row": 1,
+        "col": 2,
+        "type": "floor"
+      },
+      {
+        "row": 1,
+        "col": 3,
+        "type": "floor"
+      },
+      {
+        "row": 1,
+        "col": 4,
+        "type": "floor"
+      },
+      {
+        "row": 1,
+        "col": 5,
+        "type": "floor"
+      },
+      {
+        "row": 1,
+        "col": 6,
+        "type": "floor"
+      },
+      {
+        "row": 1,
+        "col": 7,
+        "type": "floor"
+      },
+      {
+        "row": 1,
+        "col": 8,
+        "type": "floor"
+      },
+      {
+        "row": 1,
+        "col": 9,
+        "type": "floor"
+      }
+    ],
+    [
+      {
+        "row": 2,
+        "col": 0,
+        "type": "floor"
+      },
+      {
+        "row": 2,
+        "col": 1,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 2,
+        "col": 2,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 2,
+        "col": 3,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 2,
+        "col": 4,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 2,
+        "col": 5,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 2,
+        "col": 6,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 2,
+        "col": 7,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 2,
+        "col": 8,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 2,
+        "col": 9,
+        "type": "floor"
+      }
+    ],
+    [
+      {
+        "row": 3,
+        "col": 0,
+        "type": "spawn"
+      },
+      {
+        "row": 3,
+        "col": 1,
+        "type": "route"
+      },
+      {
+        "row": 3,
+        "col": 2,
+        "type": "route"
+      },
+      {
+        "row": 3,
+        "col": 3,
+        "type": "route"
+      },
+      {
+        "row": 3,
+        "col": 4,
+        "type": "route"
+      },
+      {
+        "row": 3,
+        "col": 5,
+        "type": "route"
+      },
+      {
+        "row": 3,
+        "col": 6,
+        "type": "route"
+      },
+      {
+        "row": 3,
+        "col": 7,
+        "type": "route"
+      },
+      {
+        "row": 3,
+        "col": 8,
+        "type": "route"
+      },
+      {
+        "row": 3,
+        "col": 9,
+        "type": "goal"
+      }
+    ],
+    [
+      {
+        "row": 4,
+        "col": 0,
+        "type": "floor"
+      },
+      {
+        "row": 4,
+        "col": 1,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 4,
+        "col": 2,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 4,
+        "col": 3,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 4,
+        "col": 4,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 4,
+        "col": 5,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 4,
+        "col": 6,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 4,
+        "col": 7,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 4,
+        "col": 8,
+        "type": "deploy_ranged"
+      },
+      {
+        "row": 4,
+        "col": 9,
+        "type": "floor"
+      }
+    ],
+    [
+      {
+        "row": 5,
+        "col": 0,
+        "type": "floor"
+      },
+      {
+        "row": 5,
+        "col": 1,
+        "type": "floor"
+      },
+      {
+        "row": 5,
+        "col": 2,
+        "type": "floor"
+      },
+      {
+        "row": 5,
+        "col": 3,
+        "type": "floor"
+      },
+      {
+        "row": 5,
+        "col": 4,
+        "type": "floor"
+      },
+      {
+        "row": 5,
+        "col": 5,
+        "type": "floor"
+      },
+      {
+        "row": 5,
+        "col": 6,
+        "type": "floor"
+      },
+      {
+        "row": 5,
+        "col": 7,
+        "type": "floor"
+      },
+      {
+        "row": 5,
+        "col": 8,
+        "type": "floor"
+      },
+      {
+        "row": 5,
+        "col": 9,
+        "type": "floor"
+      }
+    ],
+    [
+      {
+        "row": 6,
+        "col": 0,
+        "type": "floor"
+      },
+      {
+        "row": 6,
+        "col": 1,
+        "type": "floor"
+      },
+      {
+        "row": 6,
+        "col": 2,
+        "type": "floor"
+      },
+      {
+        "row": 6,
+        "col": 3,
+        "type": "floor"
+      },
+      {
+        "row": 6,
+        "col": 4,
+        "type": "floor"
+      },
+      {
+        "row": 6,
+        "col": 5,
+        "type": "floor"
+      },
+      {
+        "row": 6,
+        "col": 6,
+        "type": "floor"
+      },
+      {
+        "row": 6,
+        "col": 7,
+        "type": "floor"
+      },
+      {
+        "row": 6,
+        "col": 8,
+        "type": "floor"
+      },
+      {
+        "row": 6,
+        "col": 9,
+        "type": "floor"
+      }
+    ]
+  ],
+  "waypoints": [
+    {
+      "row": 3,
+      "col": 0
+    },
+    {
+      "row": 3,
+      "col": 1
+    },
+    {
+      "row": 3,
+      "col": 2
+    },
+    {
+      "row": 3,
+      "col": 3
+    },
+    {
+      "row": 3,
+      "col": 4
+    },
+    {
+      "row": 3,
+      "col": 5
+    },
+    {
+      "row": 3,
+      "col": 6
+    },
+    {
+      "row": 3,
+      "col": 7
+    },
+    {
+      "row": 3,
+      "col": 9
+    }
+  ],
+  "waves": [
+    {
+      "routeIndex": 0,
+      "entries": [
+        {
+          "enemyType": "trooper",
+          "count": 3,
+          "spawnInterval": 2.5
+        }
+      ],
+      "preludeDuration": 8
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        {
+          "enemyType": "trooper",
+          "count": 4,
+          "spawnInterval": 2.5
+        }
+      ],
+      "preludeDuration": 7.5
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        {
+          "enemyType": "trooper",
+          "count": 4,
+          "spawnInterval": 2.5
+        },
+        {
+          "enemyType": "heavy",
+          "count": 5,
+          "spawnInterval": 2.2
+        }
+      ],
+      "preludeDuration": 7
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        {
+          "enemyType": "trooper",
+          "count": 5,
+          "spawnInterval": 2.5
+        },
+        {
+          "enemyType": "heavy",
+          "count": 6,
+          "spawnInterval": 2.2
+        }
+      ],
+      "preludeDuration": 6.5
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        {
+          "enemyType": "trooper",
+          "count": 5,
+          "spawnInterval": 2.5
+        },
+        {
+          "enemyType": "heavy",
+          "count": 6,
+          "spawnInterval": 2.2
+        },
+        {
+          "enemyType": "caster",
+          "count": 6,
+          "spawnInterval": 1.9
+        }
+      ],
+      "preludeDuration": 6
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        {
+          "enemyType": "trooper",
+          "count": 6,
+          "spawnInterval": 2.5
+        },
+        {
+          "enemyType": "heavy",
+          "count": 6,
+          "spawnInterval": 2.2
+        },
+        {
+          "enemyType": "caster",
+          "count": 6,
+          "spawnInterval": 1.9
+        }
+      ],
+      "preludeDuration": 5.5
+    }
+  ],
+  "tutorial": false,
+  "startingDP": 15,
+  "dpRegenRate": 1,
+  "dpCap": 99,
+  "deploymentLimit": 8,
+  "lives": 10
+}

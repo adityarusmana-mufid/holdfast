@@ -158,8 +158,20 @@ export class EnemySprite {
     return mult
   }
 
+  isStunned(): boolean {
+    return this.statusEffects.some(e => e.type === 'stun')
+  }
+
+  displaceTo(targetRow: number, targetCol: number): void {
+    const pos = this.grid.tileToPixel(targetRow, targetCol)
+    this.x = pos.x
+    this.y = pos.y
+    this.applyVisualPosition()
+  }
+
   move(delta: number): boolean {
     if (this.blocked || !this.alive) return false
+    if (this.isStunned()) return false
     if (this.currentWaypoint >= this.path.length - 1) return false
 
     this.updateStatusEffects(delta)

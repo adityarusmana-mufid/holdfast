@@ -271,7 +271,7 @@ export class LevelSelectScene extends Phaser.Scene {
       this.scene.start('ChapterSelectScene')
     }, { w: 72, h: 32, textSize: '11px' })
     makeNodeButton(this, 94, 16, 'HOME', () => {
-      this.scene.start('ChapterSelectScene')
+      this.scene.start('HomeBridgeScene')
     }, { w: 72, h: 32, textSize: '11px' })
   }
 

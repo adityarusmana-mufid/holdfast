@@ -13,6 +13,8 @@ export enum TileType {
   Goal = 'goal',
   RepairNode = 'repair_node',
   ArmorGrid = 'armor_grid',
+  StnGen = 'stn_gen',
+  Hole = 'hole',
 }
 
 export interface Position {
@@ -92,6 +94,7 @@ export enum UnitTrait {
   AoEHoT = 'aoe_hot',
   LongRangeAttack = 'long_range_attack',
   PassiveDPRegen = 'passive_dp_regen',
+  DeployAnywhere = 'deploy_anywhere',
 }
 
 export interface UnitTraitConfig {
@@ -104,8 +107,10 @@ export interface UnitTraitConfig {
   damageMultiplier?: number
 }
 
+export type StatusEffectType = 'slow' | 'stun' | 'root'
+
 export interface StatusEffect {
-  type: 'slow'
+  type: StatusEffectType
   remainingDuration: number
   factor: number
 }
@@ -137,6 +142,7 @@ export interface UnitConfig {
   traits: UnitTraitConfig[]
   splashConfig?: SplashConfig
   canBeHealed?: boolean
+  skills: SkillConfig[]
 }
 
 export interface EnemyConfig {
@@ -156,6 +162,54 @@ export interface EnemyConfig {
   description?: string
 }
 
+export type SpRecoveryType = 'auto' | 'offensive' | 'defensive'
+export type SkillActivationType = 'auto' | 'manual' | 'toggle' | 'passive'
+export type SkillDurationType = 'instant' | 'duration' | 'toggle' | 'unlimited' | 'ammunition'
+
+export type SkillEffect =
+  | { type: 'generateDP'; amount: number }
+  | { type: 'enhanceAttack'; atkMultiplier?: number; hitCount?: number; aspdBonus?: number;
+      trueDamage?: boolean; splash?: { radius: number; damageMultiplier: number };
+      defIgnore?: number; targetCount?: number; binds?: boolean; slowFactor?: number }
+  | { type: 'statBuff'; atkMultiplier?: number; defMultiplier?: number; aspdBonus?: number;
+      blockBonus?: number; hpRegenPerSecond?: number | { percent: number };
+      healOnAttackMultiplier?: number }
+  | { type: 'heal'; amountMultiplier?: number; isPercent?: boolean; targetCount?: number;
+      range?: 'self' | 'ally' | 'allies' }
+  | { type: 'aoeAttack'; radius: number; damageMultiplier: number; damageType?: DamageType }
+  | { type: 'buffAlly'; atkMultiplier?: number; defMultiplier?: number; aspdBonus?: number;
+      hpRegen?: number; duration: number }
+  | { type: 'debuffEnemies'; slowFactor?: number; duration: number; fragile?: number; radius?: number }
+  | { type: 'statToggle'; defMultiplier?: number; atkMultiplier?: number;
+      blockBonus?: number; attackAllBlocked?: boolean; hpRegenPerSecond?: number | { percent: number };
+      meleeOnly?: boolean }
+  | { type: 'survival'; minHp?: boolean; shieldPercent?: number; duration?: number }
+  | { type: 'special'; description: string }
+  | { type: 'displace'; direction: 'away' | 'toward'; tiles: number; radius: number }
+
+export interface SkillConfig {
+  id: string
+  name: string
+  description: string
+  spRecovery: SpRecoveryType
+  activation: SkillActivationType
+  spCost: number
+  spInitial: number
+  durationType: SkillDurationType
+  duration?: number
+  charges?: number
+  effect: SkillEffect
+}
+
+export interface SkillState {
+  config: SkillConfig
+  currentSp: number
+  isActive: boolean
+  remainingDuration: number
+  charges: number
+  spLocked: boolean
+}
+
 export interface DeployedUnit {
   config: UnitConfig
   instanceId: number
@@ -166,4 +220,6 @@ export interface DeployedUnit {
   lastAttackTime: number
   blocking: number[]
   facing: Direction
+  skillState?: SkillState
+  effectiveBlockCount?: number
 }

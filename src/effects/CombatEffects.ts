@@ -279,3 +279,92 @@ export function flashDamage(
     onComplete: () => f.destroy(),
   })
 }
+
+export function spawnBuffParticles(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  color: number,
+  count: number = 6,
+): void {
+  for (let i = 0; i < count; i++) {
+    const g = scene.add.graphics()
+    g.fillStyle(color, 1)
+    g.fillCircle(0, 0, 3 + Math.random() * 3)
+    g.setPosition(x + (Math.random() - 0.5) * 20, y + (Math.random() - 0.5) * 10)
+    g.setDepth(31)
+    scene.tweens.add({
+      targets: g,
+      y: g.y - 30 - Math.random() * 20,
+      alpha: 0,
+      duration: 500 + Math.random() * 300,
+      ease: 'Quad.easeOut',
+      onComplete: () => g.destroy(),
+    })
+  }
+}
+
+export function spawnSparkHit(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+): void {
+  const g = scene.add.graphics()
+  g.fillStyle(0xffd700, 1)
+  g.fillCircle(0, 0, 6)
+  g.setPosition(x, y)
+  g.setDepth(31)
+  scene.tweens.add({
+    targets: g,
+    alpha: 0,
+    scaleX: 2.5,
+    scaleY: 2.5,
+    duration: 150,
+    onComplete: () => g.destroy(),
+  })
+  // 4 small sparks flying outward
+  for (let i = 0; i < 4; i++) {
+    const s = scene.add.graphics()
+    s.fillStyle(0xfff9c4, 1)
+    s.fillRect(-1.5, -1.5, 3, 3)
+    s.setPosition(x, y)
+    s.setDepth(31)
+    const angle = (Math.PI * 2 * i) / 4
+    scene.tweens.add({
+      targets: s,
+      x: x + Math.cos(angle) * 18,
+      y: y + Math.sin(angle) * 18,
+      alpha: 0,
+      duration: 200,
+      ease: 'Quad.easeOut',
+      onComplete: () => s.destroy(),
+    })
+  }
+}
+
+export function spawnHealCross(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+): void {
+  const g = scene.add.graphics()
+  g.lineStyle(3, 0x4caf50, 1)
+  g.strokeCircle(x, y, 10)
+  g.lineStyle(2, 0xffffff, 0.8)
+  g.beginPath()
+  g.moveTo(x - 6, y)
+  g.lineTo(x + 6, y)
+  g.moveTo(x, y - 6)
+  g.lineTo(x, y + 6)
+  g.strokePath()
+  g.setDepth(31)
+  scene.tweens.add({
+    targets: g,
+    alpha: 0,
+    scaleX: 1.5,
+    scaleY: 1.5,
+    duration: 400,
+    ease: 'Quad.easeOut',
+    onComplete: () => g.destroy(),
+  })
+}

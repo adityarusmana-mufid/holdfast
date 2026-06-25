@@ -64,33 +64,26 @@ Three trapezoid-shaped buttons right-aligned, stacked vertically and centered as
 
 **Alignment**: TERMINAL is right-aligned with 20px margin (x = 1280 - 20 - 450 = 810). SQUAD and EDITOR sit side-by-side in a second row, spanning the same 450px width as TERMINAL for visual balance.
 
-**Vertical centering**: 2-row layout centered vertically:
-- Total stack height: 86 + 16 + 74 = 176px
-- Stack top: (720 - 176) / 2 = 272
-- TERMINAL y: 272
-- SQUAD PRESET y: 272 + 86 + 16 = 374
-- LEVEL EDITOR y: 374 (same row as SQUAD)
+**Vertical centering**: 2-row layout centered vertically, **bottom-aligned** (bottom edge is grounding line — only top edge moves during hover):
+- Row 1 (TERMINAL): bbox height 98px, bottomY = 359
+- Gap: 16px
+- Row 2 (SQUAD/EDITOR): bbox height 84px, bottomY = 459
+- Total stack: 98 + 16 + 84 = 198px, top at (720-198)/2 = 261
 
-### Perspective Foreshortening (1-Point Perspective)
+### Button Aesthetic
 
-Each button uses **1-point perspective foreshortening** to simulate depth — the right edge is taller than the left, as if the buttons sit on a plane receding toward a vanishing point off-screen left.
+Each button is a **flat rectangle** with gradient fill (matching the existing `makeNodeButton` aesthetic from other scenes):
+- Dark gradient: `#4a4a4a` top → `#303030` bottom
+- Pressed state: darker gradient, +2/+2 position shift, reduced shadow layers
+- 6-layer drop shadow beneath unpressed buttons (2–12px offset, 0.08–0.01 alpha)
 
-**Physics**: In perspective projection, apparent size is inversely proportional to distance. An object at distance `d` subtends an angle `θ ≈ h/d`. As the plane recedes to the left, the left side is farther (smaller), the right side is closer (larger). Both edges share a vertical midpoint, so the right edge extends equally above and below the left edge — this centers the perspective shift, making the button appear to tilt toward the viewer on the right side.
+### Hover Animation
 
-**Implementation** (`drawTrapezoid`):
-- Left edge: `(x, y)` → `(x, y + leftH)` — reference edge
-- Right edge: `(x + w, y + leftH/2 - rightH/2)` → `(x + w, y + leftH/2 + rightH/2)` — centered around same midpoint, actual height = `rightH`
-- Shadow: offset by `bboxTop = leftH/2 - rightH/2` so the multi-layer shadow follows the bounding box
-
-**Intensity**:
-| Button | leftH | rightH | Increase |
-|--------|-------|--------|----------|
-| TERMINAL | 86px | 98px | +14% |
-| SQUAD/EDITOR | 74px | 84px | +14% |
-
-**Hover state** (inner edge manipulation): leftH animates toward rightH, reducing perspective (TERMINAL leftH→94, SQUAD/EDITOR leftH→80). The outer edge stays fixed — the effect comes from the inner edge "catching up" to the outer edge height, making the button feel like it's tilting toward the cursor.
-
-**Hover interaction**: On pointerover, the inner edge (leftH) tweens toward the outer edge (rightH) — the button flattens, simulating it lifting toward the viewer. TERMINAL: leftH 86→94 (near rightH=98), SQUAD/EDITOR: leftH 74→80 (near rightH=84). 150ms ease. On pointerout, leftH tweens back to default.
+Buttons use a **scale-up** animation on hover:
+- `pointerover`: scale to 1.04×, 150ms `Sine.easeOut` — button lifts toward cursor
+- `pointerout`: scale back to 1.0×, 150ms — settles back
+- `pointerdown`: quick 0.98× squash (80ms), then release restores to 1.0×
+- `pointer` cursor on all buttons
 
 **Cursor**: `pointer` cursor on all buttons.
 

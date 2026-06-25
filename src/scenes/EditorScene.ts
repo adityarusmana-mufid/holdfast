@@ -19,6 +19,8 @@ const PALETTE_ITEMS: { type: TileType; label: string; color: number }[] = [
   { type: TileType.Goal, label: 'Goal', color: 0x1a1a4a },
   { type: TileType.RepairNode, label: 'Repair Node', color: 0x2a4a3a },
   { type: TileType.ArmorGrid, label: 'Armor Grid', color: 0x2a3a4a },
+  { type: TileType.StnGen, label: 'Stn Generator', color: 0x4a4a00 },
+  { type: TileType.Hole, label: 'Hole', color: 0x1a0030 },
 ]
 
 const PANEL_W = 200
@@ -55,6 +57,13 @@ export class EditorScene extends Phaser.Scene {
     const gap = PANEL_X - paletteRightEdge - 12 * TILE_SIZE
     const editorOffsetX = paletteRightEdge + Math.floor(gap / 2)
     this.grid = new Grid(this, 12, 8, editorOffsetX, 100)
+
+    makeNodeButton(this, 16, 16, '< BACK', () => {
+      this.scene.start('HomeBridgeScene')
+    }, { w: 72, h: 32, textSize: '11px' })
+    makeNodeButton(this, 94, 16, 'HOME', () => {
+      this.scene.start('HomeBridgeScene')
+    }, { w: 72, h: 32, textSize: '11px' })
 
     this.add.text(this.grid.offsetX, 6, 'HOLDFAST // LEVEL EDITOR', {
       ...FONTS.small, color: COLORS.text.accent,

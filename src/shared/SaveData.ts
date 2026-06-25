@@ -6,6 +6,7 @@ export interface LevelCompletion {
 interface SaveData {
   levelCompletions: Record<string, LevelCompletion>
   squads: Record<string, (string | null)[]>
+  squadSkills: Record<string, Record<number, string>>
 }
 
 const SAVE_KEY = 'holdfast_save'
@@ -18,10 +19,11 @@ function loadSave(): SaveData {
       return {
         levelCompletions: parsed.levelCompletions ?? {},
         squads: parsed.squads ?? {},
+        squadSkills: parsed.squadSkills ?? {},
       }
     }
   } catch { /* ignore */ }
-  return { levelCompletions: {}, squads: {} }
+  return { levelCompletions: {}, squads: {}, squadSkills: {} }
 }
 
 export function saveCompletion(levelId: string, stars: number, enemiesDefeated: number): void {
@@ -57,6 +59,16 @@ export function saveSquad(levelId: string, slotIds: (string | null)[]): void {
 
 export function loadSquad(levelId: string): (string | null)[] | undefined {
   return loadSave().squads[levelId]
+}
+
+export function savePickedSkills(levelId: string, skills: Record<number, string>): void {
+  const data = loadSave()
+  data.squadSkills[levelId] = skills
+  localStorage.setItem(SAVE_KEY, JSON.stringify(data))
+}
+
+export function loadPickedSkills(levelId: string): Record<number, string> | undefined {
+  return loadSave().squadSkills[levelId]
 }
 
 export function resetAllProgress(): void {

@@ -1,3 +1,39 @@
+## [2026-06-25] Phase — Three New Mechanics: Barriers, Stun Generator, Displacement
+- **Barriers** (`src/config/units.ts`): Deployable unit with blockCount=3, 0 ATK, very high HP. Cheap DP cost (5). Blocks enemies in place without attacking — roadblock mechanic for TR-8.
+- **Stun Generator** (`src/config/units.ts`, `src/config/skills.ts`): Ranged deployable with EMP Burst skill (manual activation, 15 SP). Applies 5-second stun to all enemies within 2 tiles. Stun prevents all movement. New status effect type `'stun'` in `types/index.ts`.
+- **Displacement Drone** (`src/config/units.ts`, `src/config/skills.ts`): Ranged deployable with Shockwave skill (manual activation, 12 SP). Blasts enemies backward 2 tiles along their path. New `displace` skill effect type and `EnemySprite.displace()` method.
+- **Enemy.ts**: Added `isStunned()` check (prevents movement), `displace(tiles)` method (rewinds waypoint index and repositions), updated `move()` to respect stun.
+- **GameScene**: Handles `aoe_stun` special effect (iterate enemies in radius, apply stun status) and `displace` effect (iterate enemies, call displace backward).
+- **Level rewrites**: TR-8 now teaches Barriers (roadblocks), TR-9 teaches Stun Generator, TR-14 teaches Displacement Drone.
+- Files: `src/types/index.ts`, `src/config/units.ts`, `src/config/skills.ts`, `src/entities/Enemy.ts`, `src/scenes/GameScene.ts`, `src/shared/utils/levelHelpers.ts`, `levels/TR-8.json`, `levels/TR-9.json`, `levels/TR-14.json`
+
+## [2026-06-25] Phase — TR Pacing Restructure (Arknights Chapter Alignment)
+- **Research skill**: `.opencode/skills/game-pacing-research/SKILL.md` — codified wiki.gg-based TR stage research methodology with canonical query format, verified chapter mapping, and mechanic-to-Holdfast equivalence table
+- **Chapter restructure**: All TR-1–TR-7 moved to Chapter 0 (Prologue), TR-8/TR-9 to Chapter 1 (Ep 01), TR-11–TR-14 to Chapter 2 (Ep 02), TR-15 to Chapter 3 (Ep 03). Uses dynamic `makePositions()` to generate correct node count per chapter.
+- **New tutorial levels**: TR-10 (Decel Binder slow), TR-11 (Supporter + Caster armor breach), TR-12 (spread vs enemy AoE), TR-13 (Guard intercept), TR-14 (RepairNode/ArmorGrid terrain), TR-15 (retreat DP refund) — all with targeted enemy comps and 1–2 page guide text
+- **TR-8/TR-9 guide refresh**: Updated guide text for clarity without changing tile layouts
+- **levelHelpers.ts**: Added squad definitions for TR-10 through TR-15
+- Files: `src/config/chapters.ts`, `src/shared/utils/levelHelpers.ts`, `levels/TR-8.json`, `levels/TR-9.json`, `levels/TR-10.json`, `levels/TR-11.json`, `levels/TR-12.json`, `levels/TR-13.json`, `levels/TR-14.json`, `levels/TR-15.json`, `.opencode/skills/game-pacing-research/SKILL.md`
+
+## [2026-06-25] Phase — Home Bridge Scene (Startup Hub)
+- **HomeBridgeScene**: New startup scene replacing ChapterSelectScene as first screen. Gradient background, "HOLDFAST" title with left-fade animation, 3 trapezoid buttons (TERMINAL, SQUAD PRESET, LEVEL EDITOR) with staggered right-fade entry. Buttons use same gradient/shadow/press aesthetic as `makeNodeButton` (primary role, dark grey, white text). Perspective hover effect compresses edge 5px on cursor side. Camera fadeIn(300ms) starts the chain.
+- **SquadScene menu mode**: `levelId === 'menu'` disables Start Mission, shows BACK to HomeBridgeScene, saves/loads to `menu_squad` key. Enables Squad Preset flow from home.
+- **BootScene**: now starts HomeBridgeScene instead of ChapterSelectScene.
+- Files: `src/scenes/HomeBridgeScene.ts`, `src/scenes/BootScene.ts`, `src/scenes/SquadScene.ts`, `src/main.ts`
+- Spec: `docs/superpowers/specs/2026-06-25-home-bridge-scene-design.md`
+
+## [2026-06-25] Phase — Skills System (78 skills, 26 subclasses, SP mechanics)
+- **Design spec**: `docs/superpowers/specs/2026-06-25-skills-system-design.md` — full spec with per-subclass skill tables, SP mechanics (recovery × activation axes), duration axis (instant/time/toggle/ammunition/unlimited), review pass of all 78 skills
+- **Types**: Added `SpRecoveryType`, `SkillActivationType`, `SkillDurationType`, `SkillEffect` (discriminated union), `SkillConfig`, `SkillState`; updated `UnitConfig` (skills field), `DeployedUnit` (skillState field)
+- **Skill config**: `src/config/skills.ts` — 78 skills across 26 subclasses, keyed by unit ID
+- **Guardian subclass**: Added to `src/config/units.ts` (healing Defender, 3 skills)
+- **SkillSystem**: `src/systems/SkillSystem.ts` — SP charging (auto/offensive/defensive), auto/manual/toggle activation, duration tracking, skill state management
+- **CombatSystem**: `effectiveUnitAttack` callback for enhanceAttack effects (atk multiplier, hit count, true damage)
+- **PickerScene**: Skill selection column in sidebar — 3 skill rows per unit, clickable with highlight, confirm button shows "Deploy with [skill name]"
+- **GameScene**: SP display on card bar + inspect panel, skill activation button (manual/toggle), offensive/defensive SP gain wiring, skill system integration in update loop
+- **SquadScene**: `pickedSkills` tracking per slot, passed to GameScene
+- Files: `src/types/index.ts`, `src/config/skills.ts`, `src/config/units.ts`, `src/systems/SkillSystem.ts`, `src/systems/CombatSystem.ts`, `src/scenes/PickerScene.ts`, `src/scenes/GameScene.ts`, `src/scenes/SquadScene.ts`, `docs/superpowers/specs/2026-06-25-skills-system-design.md`
+
 ## [2026-06-24] Phase — Multi-Dialog Guide System + Text Rewrite
 - **Multi-dialog**: `guideText` changed from single string to `string[]`. Guide dialog supports multiple pages (click to advance, last page shows `[ tap to dismiss ]`). Visual-novel style sequential reveal.
 - **Text rewrite**: All 15 level guide texts rewritten as direct second-person instructions. TR tutorials get 2 pages each (teach mechanic step-by-step), story levels get 1 page (concise tactical tip).

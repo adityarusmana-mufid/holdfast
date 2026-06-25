@@ -15,6 +15,8 @@ export function tileColor(type: TileType): number {
     case TileType.Goal: return 0x4444cc
     case TileType.RepairNode: return 0xb0b8c4
     case TileType.ArmorGrid: return 0xb0b8c4
+    case TileType.StnGen: return 0xffd700
+    case TileType.Hole: return 0x1a0030
     default: return 0xb0b8c4
   }
 }
@@ -29,6 +31,8 @@ export function tileBorderColor(type: TileType): number {
     case TileType.Goal: return 0x6666ff
     case TileType.RepairNode: return 0x44cc55
     case TileType.ArmorGrid: return 0x4488cc
+    case TileType.StnGen: return 0xff8f00
+    case TileType.Hole: return 0x000000
     default: return 0x555555
   }
 }
@@ -51,9 +55,17 @@ export function isDeployable(type: TileType): boolean {
   return type === TileType.Ground || type === TileType.Ranged || type === TileType.RepairNode || type === TileType.ArmorGrid
 }
 
+export function isStnGen(type: TileType): boolean {
+  return type === TileType.StnGen
+}
+
+export function isHole(type: TileType): boolean {
+  return type === TileType.Hole
+}
+
 export function isWalkable(type: TileType): boolean {
   return type === TileType.Floor || type === TileType.Spawn || type === TileType.Goal ||
-    type === TileType.RepairNode || type === TileType.ArmorGrid
+    type === TileType.RepairNode || type === TileType.ArmorGrid || type === TileType.Hole
 }
 
 export function validateRoutePath(route: Route): boolean {

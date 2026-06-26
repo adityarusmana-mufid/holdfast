@@ -108,7 +108,7 @@ export class LevelSelectScene extends Phaser.Scene {
     const ch = CHAPTERS.find(c => c.id === this.chapterId)
     const levelIds = getLevelIdsForChapter(this.chapterId)
 
-    this.cameras.main.setBackgroundColor('#f0f2f5')
+    this.cameras.main.setBackgroundColor('#05001A')
 
     const gridGfx = this.add.graphics()
     gridGfx.lineStyle(1, 0xcfd8dc, 0.15)
@@ -116,7 +116,7 @@ export class LevelSelectScene extends Phaser.Scene {
     for (let y = 0; y <= H; y += 48) gridGfx.lineBetween(0, y, W, y)
 
     this.add.text(W / 2, 32, ch?.title ?? 'Levels', {
-      ...FONTS.h2, color: '#1a1a2e',
+      ...FONTS.h2, color: COLORS.text.primary,
     }).setOrigin(0.5, 0)
 
     this.add.text(W / 2, 66, ch?.subtitle ?? '', {

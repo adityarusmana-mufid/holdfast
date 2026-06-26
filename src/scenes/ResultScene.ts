@@ -36,6 +36,9 @@ export class ResultScene extends Phaser.Scene {
     const isVictory = this.outcome === 'victory'
     const levelDef = getLevelDef(this.levelId)
 
+    this.add.graphics()
+      .fillStyle(0x05001A, 1)
+      .fillRect(0, 0, W, H)
     this.cameras.main.flash(isVictory ? 300 : 600, isVictory ? 0 : 200, isVictory ? 200 : 0, isVictory ? 83 : 50)
 
     this.add.text(W / 2, 100, isVictory ? 'SYNC COMPLETE' : 'SYNC FAILED', {

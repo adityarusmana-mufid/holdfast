@@ -31,7 +31,7 @@ export class LevelPreviewScene extends Phaser.Scene {
     const data = this.levelData
     if (!data) { this.scene.stop(); return }
 
-    this.cameras.main.setBackgroundColor('#f0f2f5')
+    this.cameras.main.setBackgroundColor('#05001A')
 
     const gridGfx = this.add.graphics()
     gridGfx.lineStyle(1, 0x4fc3f7, 0.06)
@@ -157,10 +157,10 @@ export class LevelPreviewScene extends Phaser.Scene {
       const cx = px + cardW / 2
 
       const bg = this.add.graphics()
-      bg.fillStyle(0xffffff, 0.8)
-      bg.fillRoundedRect(px, py, cardW, 180, 6)
+      bg.fillStyle(0x1A1A3E, 0.9)
+      bg.fillRect(px, py, cardW, 180)
       bg.lineStyle(1, config.color, 0.4)
-      bg.strokeRoundedRect(px, py, cardW, 180, 6)
+      bg.strokeRect(px, py, cardW, 180)
       this.contentContainer.add(bg)
 
       const icon = this.add.graphics()

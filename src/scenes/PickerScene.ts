@@ -83,11 +83,11 @@ export class PickerScene extends Phaser.Scene {
     this.H = 720
 
     const mainBg = this.add.graphics()
-    mainBg.fillStyle(0xeef2f5, 1)
+    mainBg.fillStyle(0x05001A, 1)
     mainBg.fillRect(0, 0, this.W, this.H)
 
     const sidebarBg = this.add.graphics()
-    sidebarBg.fillStyle(0xe8ecf0, 1)
+    sidebarBg.fillStyle(0x0A0A28, 1)
     sidebarBg.fillRect(0, 0, SIDEBAR_W, this.H)
 
     this.add.text(SIDEBAR_W / 2, 20, 'SELECT UNIT', {
@@ -121,7 +121,7 @@ export class PickerScene extends Phaser.Scene {
     const startY = 48
 
     const stripBg = this.add.graphics()
-    stripBg.fillStyle(0xe8ecf0, 0.6)
+    stripBg.fillStyle(0x0A0A28, 1)
     stripBg.fillRect(fx - 2, 48, FILTER_W + 4, ARCHETYPE_ORDER.length * (btnSize + gap) + 8)
 
     ARCHETYPE_ORDER.forEach((key, i) => {
@@ -129,10 +129,10 @@ export class PickerScene extends Phaser.Scene {
       const color = ARCHETYPE_COLORS[key] ?? 0x78909c
 
       const bg = this.add.graphics()
-      bg.fillStyle(key === this.activeFilter ? color : 0xffffff, key === this.activeFilter ? 0.9 : 0.5)
-      bg.fillRoundedRect(fx, by, btnSize, btnSize, 4)
+      bg.fillStyle(key === this.activeFilter ? color : 0x1A1A3E, key === this.activeFilter ? 0.9 : 1)
+      bg.fillRect(fx, by, btnSize, btnSize)
       bg.lineStyle(key === this.activeFilter ? 2 : 1, color, key === this.activeFilter ? 1 : 0.4)
-      bg.strokeRoundedRect(fx, by, btnSize, btnSize, 4)
+      bg.strokeRect(fx, by, btnSize, btnSize)
 
       const label = key === 'all' ? 'ALL' : key.substring(0, 2).toUpperCase()
       const txt = this.add.text(fx + btnSize / 2, by + btnSize / 2, label, {
@@ -163,10 +163,10 @@ export class PickerScene extends Phaser.Scene {
       const isActive = (fb.key === 'all' && this.activeFilter === null) || fb.key === this.activeFilter
       const color = ARCHETYPE_COLORS[fb.key] ?? 0x78909c
       fb.bg.clear()
-      fb.bg.fillStyle(isActive ? color : 0xffffff, isActive ? 0.9 : 0.5)
-      fb.bg.fillRoundedRect(0, 0, 36, 36, 4)
+      fb.bg.fillStyle(isActive ? color : 0x1A1A3E, isActive ? 0.9 : 1)
+      fb.bg.fillRect(0, 0, 36, 36)
       fb.bg.lineStyle(isActive ? 2 : 1, color, isActive ? 1 : 0.4)
-      fb.bg.strokeRoundedRect(0, 0, 36, 36, 4)
+      fb.bg.strokeRect(0, 0, 36, 36)
       fb.label.setColor(isActive ? '#ffffff' : COLORS.text.dim)
     }
 
@@ -194,10 +194,10 @@ export class PickerScene extends Phaser.Scene {
       const ly = row * (CARD_H + CARD_GAP)
 
       const bg = this.add.graphics()
-      bg.fillStyle(0xffffff, 1)
-      bg.fillRoundedRect(lx, ly, CARD_W, CARD_H, 6)
+      bg.fillStyle(0x1A1A3E, 1)
+      bg.fillRect(lx, ly, CARD_W, CARD_H)
       bg.lineStyle(2, unit.color, 0.6)
-      bg.strokeRoundedRect(lx, ly, CARD_W, CARD_H, 6)
+      bg.strokeRect(lx, ly, CARD_W, CARD_H)
       bg.setInteractive(new Phaser.Geom.Rectangle(lx, ly, CARD_W, CARD_H), Phaser.Geom.Rectangle.Contains)
       if (bg.input) bg.input.cursor = 'pointer'
       this.cardScrollContainer.add(bg)
@@ -207,9 +207,9 @@ export class PickerScene extends Phaser.Scene {
       const icon = this.add.graphics()
       if (unit.type === 'ground') {
         icon.fillStyle(unit.color, 1)
-        icon.fillRoundedRect(lx + CARD_W / 2 - iconSize / 2, iconTop, iconSize, iconSize, 8)
+        icon.fillRect(lx + CARD_W / 2 - iconSize / 2, iconTop, iconSize, iconSize)
         icon.fillStyle(0xffffff, 0.2)
-        icon.fillRoundedRect(lx + CARD_W / 2 - iconSize / 4, iconTop + iconSize / 4, iconSize / 2, iconSize / 2, 4)
+        icon.fillRect(lx + CARD_W / 2 - iconSize / 4, iconTop + iconSize / 4, iconSize / 2, iconSize / 2)
       } else {
         icon.fillStyle(unit.color, 1)
         icon.fillTriangle(lx + CARD_W / 2, iconTop, lx + CARD_W / 2 - iconSize / 2, iconTop + iconSize, lx + CARD_W / 2 + iconSize / 2, iconTop + iconSize)
@@ -289,10 +289,10 @@ export class PickerScene extends Phaser.Scene {
     for (const cc of this.cardContainers) {
       const isSelected = cc.unit.id === unit.id
       cc.bg.clear()
-      cc.bg.fillStyle(0xffffff, 1)
-      cc.bg.fillRoundedRect(cc.lx, cc.ly, CARD_W, CARD_H, 6)
-      cc.bg.lineStyle(isSelected ? 3 : 2, isSelected ? 0x00a2ff : cc.unit.color, isSelected ? 1 : 0.6)
-      cc.bg.strokeRoundedRect(cc.lx, cc.ly, CARD_W, CARD_H, 6)
+      cc.bg.fillStyle(0x1A1A3E, 1)
+      cc.bg.fillRect(cc.lx, cc.ly, CARD_W, CARD_H)
+      cc.bg.lineStyle(isSelected ? 3 : 2, isSelected ? 0x4488FF : cc.unit.color, isSelected ? 1 : 0.6)
+      cc.bg.strokeRect(cc.lx, cc.ly, CARD_W, CARD_H)
     }
     this.showInfo(unit)
     this.showConfirm()
@@ -309,9 +309,9 @@ export class PickerScene extends Phaser.Scene {
     const iy = 92 - iconSize / 2
     if (unit.type === 'ground') {
       icon.fillStyle(unit.color, 1)
-      icon.fillRoundedRect(cx - iconSize / 2, iy, iconSize, iconSize, 8)
+      icon.fillRect(cx - iconSize / 2, iy, iconSize, iconSize)
       icon.fillStyle(0xffffff, 0.2)
-      icon.fillRoundedRect(cx - iconSize / 4, iy + iconSize / 4, iconSize / 2, iconSize / 2, 4)
+      icon.fillRect(cx - iconSize / 4, iy + iconSize / 4, iconSize / 2, iconSize / 2)
     } else {
       icon.fillStyle(unit.color, 1)
       icon.fillTriangle(cx, iy, cx - iconSize / 2, iy + iconSize, cx + iconSize / 2, iy + iconSize)
@@ -402,10 +402,10 @@ export class PickerScene extends Phaser.Scene {
       const rowH = 52
 
       const bg = this.add.graphics()
-      bg.fillStyle(isSelected ? 0x00a2ff : 0xf5f7f9, 1)
-      bg.fillRoundedRect(4, rowY, SIDEBAR_W - 8, rowH, 4)
-      bg.lineStyle(isSelected ? 2 : 1, isSelected ? 0x00a2ff : 0xcfd8dc, isSelected ? 1 : 0.6)
-      bg.strokeRoundedRect(4, rowY, SIDEBAR_W - 8, rowH, 4)
+      bg.fillStyle(isSelected ? 0x0004EB : 0x0D0D30, 1)
+      bg.fillRect(4, rowY, SIDEBAR_W - 8, rowH)
+      bg.lineStyle(isSelected ? 2 : 1, isSelected ? 0x4488FF : 0x6B7280, isSelected ? 1 : 0.6)
+      bg.strokeRect(4, rowY, SIDEBAR_W - 8, rowH)
       bg.setInteractive(new Phaser.Geom.Rectangle(4, rowY, SIDEBAR_W - 8, rowH), Phaser.Geom.Rectangle.Contains)
       if (bg.input) bg.input.cursor = 'pointer'
       bg.on('pointerdown', () => this.selectSkill(skill.id))
@@ -434,10 +434,10 @@ export class PickerScene extends Phaser.Scene {
     for (const sr of this.skillRects) {
       const isSel = sr.id === skillId
       sr.g.clear()
-      sr.g.fillStyle(isSel ? 0x00a2ff : 0xf5f7f9, 1)
-      sr.g.fillRoundedRect(4, sr.y, SIDEBAR_W - 8, 52, 4)
-      sr.g.lineStyle(isSel ? 2 : 1, isSel ? 0x00a2ff : 0xcfd8dc, isSel ? 1 : 0.6)
-      sr.g.strokeRoundedRect(4, sr.y, SIDEBAR_W - 8, 52, 4)
+      sr.g.fillStyle(isSel ? 0x0004EB : 0x0D0D30, 1)
+      sr.g.fillRect(4, sr.y, SIDEBAR_W - 8, 52)
+      sr.g.lineStyle(isSel ? 2 : 1, isSel ? 0x4488FF : 0x6B7280, isSel ? 1 : 0.6)
+      sr.g.strokeRect(4, sr.y, SIDEBAR_W - 8, 52)
     }
     const containerChildren = this.infoContainer.getAll()
     for (const child of containerChildren) {

@@ -87,7 +87,6 @@ export function makeNodeButton(
     if (!pressed) {
       drawShadow(shadow, W, H)
     } else {
-      // pressed: fewer shadow layers for shallower depth
       shadow.fillStyle(0x000000, 0.06)
       shadow.fillRect(2, 2, W, H)
       shadow.fillStyle(0x000000, 0.03)
@@ -100,13 +99,15 @@ export function makeNodeButton(
 
   draw(colors.top, colors.bottom, false)
 
+  c.add([shadow, bg])
+
   const txt = scene.add.text(W / 2, H / 2, label, {
     fontSize: textSize,
     color: textColor,
     fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
   }).setOrigin(0.5)
 
-  c.add([shadow, bg, txt])
+  c.add(txt)
   c.setSize(W, H)
   c.setInteractive(new Phaser.Geom.Rectangle(-4, -4, W + 8, H + 8), Phaser.Geom.Rectangle.Contains)
   if (c.input) c.input.cursor = 'pointer'

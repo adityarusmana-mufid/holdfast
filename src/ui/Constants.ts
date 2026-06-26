@@ -41,14 +41,14 @@ export const SPACING = {
 }
 
 export const COLOR_SHADE = {
-  primary: { 500: 0x00a2ff, 600: 0x0091e6, 700: 0x007acc },
+  primary: { 500: 0x0004EB, 600: 0x0000A8, 700: 0x000066 },
   success: { 500: 0x00c853, 600: 0x00b34a, 700: 0x009e41 },
   danger: { 500: 0xd32f2f, 600: 0xbd2a2a, 700: 0xa72525 },
-  neutral: { 100: 0xf4f6f8, 200: 0xe8ecf0, 300: 0xd5dbe3, 400: 0xccd0d6, 500: 0x8a8a9a, 600: 0x4a4a5a, 700: 0x1a1a2e },
+  neutral: { 100: 0x0D0D30, 200: 0x0A0A28, 300: 0x080820, 400: 0x060618, 500: 0x6B7280, 600: 0x8A8A9A, 700: 0x05001A },
 }
 
 export const COLORS = {
-  panel: { bg: 0xf0f2f5, border: COLOR_SHADE.primary[500], header: COLOR_SHADE.primary[500] },
+  panel: { bg: 0x0D0D30, border: COLOR_SHADE.primary[500], header: COLOR_SHADE.primary[500] },
   palette: {
     floor: 0xebeff5,
     wall: 0xd5dbe3,
@@ -59,25 +59,25 @@ export const COLORS = {
     goal: 0xd4f5de,
   },
   text: {
-    primary: '#1a1a2e',
-    secondary: '#4a4a5a',
-    dim: '#5d6d7d',
-    accent: '#00a2ff',
+    primary: '#ffffff',
+    secondary: '#b0b8c8',
+    dim: '#6B7280',
+    accent: '#4488FF',
     success: '#00c853',
     warning: '#ff9100',
     danger: '#d32f2f',
   },
-  bg: COLOR_SHADE.neutral[100],
-  button: { bg: 0xffffff, hover: COLOR_SHADE.primary[500], active: COLOR_SHADE.primary[600], border: COLOR_SHADE.primary[500] },
+  bg: 0x05001A,
+  button: { bg: 0x0004EB, hover: 0x0004EB, active: 0x0000A8, border: 0x0004EB },
   nodeButton: {
-    defaultTop: 0xd5dbe3,
-    defaultBottom: 0xc0c4cc,
-    defaultTopPressed: 0xc0c4cc,
-    defaultBottomPressed: 0xa8acb4,
-    primaryTop: 0x4a4a4a,
-    primaryBottom: 0x303030,
-    primaryTopPressed: 0x383838,
-    primaryBottomPressed: 0x282828,
+    defaultTop: 0x1A1A3E,
+    defaultBottom: 0x0D0D30,
+    defaultTopPressed: 0x0D0D30,
+    defaultBottomPressed: 0x05001A,
+    primaryTop: 0x0004EB,
+    primaryBottom: 0x0000A8,
+    primaryTopPressed: 0x0000A8,
+    primaryBottomPressed: 0x000066,
     dangerTop: 0x5a2020,
     dangerBottom: 0x3a1010,
     dangerTopPressed: 0x4a1818,

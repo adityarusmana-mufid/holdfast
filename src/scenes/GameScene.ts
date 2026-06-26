@@ -884,7 +884,7 @@ export class GameScene extends Phaser.Scene {
     this.unitPreview.fillStyle(config.color, 0.35)
 
     if (config.type === 'ground') {
-      this.unitPreview.fillRoundedRect(center.x - half, center.y - half, size, size, 4)
+      this.unitPreview.fillRect(center.x - half, center.y - half, size, size)
     } else {
       this.unitPreview.fillTriangle(center.x, center.y - half, center.x - half, center.y + half, center.x + half, center.y + half)
     }
@@ -892,7 +892,7 @@ export class GameScene extends Phaser.Scene {
     const halfSmall = size / 4
     this.unitPreview.fillStyle(0xffffff, 0.15)
     if (config.type === 'ground') {
-      this.unitPreview.fillRoundedRect(center.x - halfSmall, center.y - halfSmall, halfSmall * 2, halfSmall * 2, 2)
+      this.unitPreview.fillRect(center.x - halfSmall, center.y - halfSmall, halfSmall * 2, halfSmall * 2)
     } else {
       this.unitPreview.fillTriangle(center.x, center.y - halfSmall / 2, center.x - halfSmall, center.y + halfSmall, center.x + halfSmall, center.y + halfSmall)
     }
@@ -1431,9 +1431,9 @@ export class GameScene extends Phaser.Scene {
     const isSelected = this.selectedSquadIndex === squadIndex
 
     const bg = this.add.graphics()
-    bg.fillStyle(0xffffff, 1)
-    bg.fillRoundedRect(0, 0, cardW, cardH, 6)
-    bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x00a2ff : 0xcfd8dc, 1)
+    bg.fillStyle(0x1A1A3E, 1)
+    bg.fillRect(0, 0, cardW, cardH)
+    bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x4488FF : 0x6B7280, 1)
     bg.setAlpha(!canAfford && !onCooldown ? 0.45 : 1)
 
     const iconX = cardW / 2
@@ -1442,9 +1442,9 @@ export class GameScene extends Phaser.Scene {
     const icon = this.add.graphics()
     if (unit.type === 'ground') {
       icon.fillStyle(unit.color, 1)
-      icon.fillRoundedRect(iconX - iconSize / 2, iconY - iconSize / 2, iconSize, iconSize, 6)
+      icon.fillRect(iconX - iconSize / 2, iconY - iconSize / 2, iconSize, iconSize)
       icon.fillStyle(0xffffff, 0.2)
-      icon.fillRoundedRect(iconX - iconSize / 4, iconY - iconSize / 4, iconSize / 2, iconSize / 2, 3)
+      icon.fillRect(iconX - iconSize / 4, iconY - iconSize / 4, iconSize / 2, iconSize / 2)
     } else {
       icon.fillStyle(unit.color, 1)
       icon.fillTriangle(iconX, iconY - iconSize / 2, iconX - iconSize / 2, iconY + iconSize / 2, iconX + iconSize / 2, iconY + iconSize / 2)
@@ -1519,9 +1519,9 @@ export class GameScene extends Phaser.Scene {
 
       const bg = container.getAt(0) as Phaser.GameObjects.Graphics
       bg.clear()
-      bg.fillStyle(isSelected ? 0xe3f2fd : 0xffffff, 1)
-      bg.fillRoundedRect(0, 0, 96, 128, 6)
-      bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x00a2ff : 0xcfd8dc, 1)
+      bg.fillStyle(isSelected ? 0x0004EB : 0x0D0D30, 1)
+      bg.fillRect(0, 0, 96, 128)
+      bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x4488FF : 0x6B7280, 1)
       bg.setAlpha(!canAfford && !onCooldown ? 0.45 : 1)
 
       const skillLabel = container.getAt(3) as Phaser.GameObjects.Text
@@ -1825,7 +1825,7 @@ export class GameScene extends Phaser.Scene {
 
     const bg = this.add.graphics()
     bg.fillStyle(0x1a1a2e, 0.85)
-    bg.fillRoundedRect(0, 0, W, 72, 6)
+    bg.fillRect(0, 0, W, 72)
 
     const icon = this.add.graphics()
     icon.fillStyle(config.color, 1)
@@ -2001,8 +2001,8 @@ export class GameScene extends Phaser.Scene {
 
     const panel = this.add.graphics()
     panel.setDepth(61)
-    panel.fillStyle(0xffffff, 1)
-    panel.fillRoundedRect(0, pY, w, pH, { tl: 14, tr: 14, bl: 0, br: 0 })
+    panel.fillStyle(0x0D0D30, 1)
+    panel.fillRect(0, pY, w, pH)
 
     const cx = 34
     const cy = pY + pH / 2

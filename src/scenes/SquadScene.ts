@@ -66,6 +66,10 @@ export class SquadScene extends Phaser.Scene {
     const W = 1280
     const H = 720
 
+    this.add.graphics()
+      .fillStyle(0x05001A, 1)
+      .fillRect(0, 0, W, H)
+
     this.add.text(W / 2, 20, 'SQUAD SELECTION', {
       ...FONTS.h2, color: COLORS.text.primary,
     }).setOrigin(0.5, 0)
@@ -143,18 +147,18 @@ export class SquadScene extends Phaser.Scene {
 
     if (unit) {
       bg.fillStyle(unit.color, 0.15)
-      bg.fillRoundedRect(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H, 6)
+      bg.fillRect(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H)
       bg.lineStyle(2, unit.color, 0.6)
-      bg.strokeRoundedRect(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H, 6)
+      bg.strokeRect(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H)
 
       const iconSize = 48
       const iconTop = -52
       const icon = this.add.graphics()
       if (unit.type === 'ground') {
         icon.fillStyle(unit.color, 1)
-        icon.fillRoundedRect(-iconSize / 2, iconTop, iconSize, iconSize, 6)
+        icon.fillRect(-iconSize / 2, iconTop, iconSize, iconSize)
         icon.fillStyle(0xffffff, 0.2)
-        icon.fillRoundedRect(-iconSize / 4, iconTop + iconSize / 4, iconSize / 2, iconSize / 2, 3)
+        icon.fillRect(-iconSize / 4, iconTop + iconSize / 4, iconSize / 2, iconSize / 2)
       } else {
         icon.fillStyle(unit.color, 1)
         icon.fillTriangle(0, iconTop, -iconSize / 2, iconTop + iconSize, iconSize / 2, iconTop + iconSize)
@@ -176,10 +180,10 @@ export class SquadScene extends Phaser.Scene {
 
       c.add([bg, icon, label, sub, dpText])
     } else {
-      bg.fillStyle(0xe8ecf0, 0.5)
-      bg.fillRoundedRect(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H, 6)
-      bg.lineStyle(1, 0xccd0d6, 0.8)
-      bg.strokeRoundedRect(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H, 6)
+      bg.fillStyle(0x0D0D30, 0.7)
+      bg.fillRect(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H)
+      bg.lineStyle(1, 0x6B7280, 0.4)
+      bg.strokeRect(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H)
 
       const empty = this.add.text(0, 0, '+', {
         fontSize: '32px', color: '#5a6a7a', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',

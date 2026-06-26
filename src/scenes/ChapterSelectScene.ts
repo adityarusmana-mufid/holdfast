@@ -15,6 +15,10 @@ export class ChapterSelectScene extends Phaser.Scene {
     const W = 1280
     const H = 720
 
+    this.add.graphics()
+      .fillStyle(0x05001A, 1)
+      .fillRect(0, 0, W, H)
+
     this.add.text(W / 2, 30, 'HOLDFAST', {
       ...FONTS.h1, color: COLORS.text.primary,
     }).setOrigin(0.5, 0)
@@ -35,27 +39,8 @@ export class ChapterSelectScene extends Phaser.Scene {
       const gfx = this.add.graphics()
       c.add([shadow, gfx])
 
-      const drawShadow = (pressed: boolean): void => {
-        shadow.clear()
-        if (!pressed) {
-          const layers = [
-            { off: 2, a: 0.08 }, { off: 4, a: 0.06 }, { off: 6, a: 0.04 },
-            { off: 8, a: 0.03 }, { off: 10, a: 0.02 }, { off: 12, a: 0.01 },
-          ]
-          for (const l of layers) {
-            shadow.fillStyle(0x000000, l.a)
-            shadow.fillRect(l.off - CARD_W / 2, l.off, CARD_W, CARD_H)
-          }
-        } else {
-          shadow.fillStyle(0x000000, 0.06)
-          shadow.fillRect(2 - CARD_W / 2, 2, CARD_W, CARD_H)
-          shadow.fillStyle(0x000000, 0.03)
-          shadow.fillRect(4 - CARD_W / 2, 4, CARD_W, CARD_H)
-        }
-      }
-
       const draw = (pressed: boolean): void => {
-        drawShadow(pressed)
+        shadow.clear()
         gfx.clear()
         gfx.fillGradientStyle(
           pressed ? COLORS.nodeButton.primaryTopPressed : COLORS.nodeButton.primaryTop,

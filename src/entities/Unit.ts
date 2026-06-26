@@ -70,9 +70,9 @@ export class UnitSprite {
     this.body.fillStyle(config.color, 1)
 
     if (config.type === 'ground') {
-      this.body.fillRoundedRect(-half, -half, size, size, 4)
+      this.body.fillRect(-half, -half, size, size)
       this.body.lineStyle(2, 0x00a2ff, 0.4)
-      this.body.strokeRoundedRect(-half, -half, size, size, 4)
+      this.body.strokeRect(-half, -half, size, size)
 
       const indSize = 4
       this.body.fillStyle(0xffffff, 0.7)

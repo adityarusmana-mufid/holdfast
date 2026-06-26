@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { EnemyConfig, Position, StatusEffect } from '../types/index'
+import { EnemyConfig, Position, StatusEffect, FlowDirection } from '../types/index'
 import { Grid, TILE_SIZE } from '../entities/Grid'
 
 const AERIAL_ELEVATION = 40
@@ -31,6 +31,9 @@ export class EnemySprite {
   visualOffsetX: number = 0
   visualOffsetY: number = 0
   statusEffects: StatusEffect[] = []
+
+  routingState: 'route' | 'reroute' = 'route'
+  rerouteTargetWaypoint: number = -1
 
   private grid: Grid
 
@@ -171,10 +174,13 @@ export class EnemySprite {
 
   move(delta: number): boolean {
     if (this.blocked || !this.alive) return false
+    this.updateStatusEffects(delta)
     if (this.isStunned()) return false
     if (this.currentWaypoint >= this.path.length - 1) return false
 
-    this.updateStatusEffects(delta)
+    if (this.routingState === 'reroute') {
+      return this.moveReroute(delta)
+    }
 
     const target = this.path[this.currentWaypoint + 1]
     const targetPos = this.grid.tileToPixel(target.row, target.col)
@@ -199,6 +205,79 @@ export class EnemySprite {
       this.applyVisualPosition()
       return false
     }
+  }
+
+  private moveReroute(delta: number): boolean {
+    const currentTile = this.getCurrentTile()
+    if (!currentTile) return false
+
+    const flowDir = this.rerouteFlowDirection(currentTile)
+    if (!flowDir) {
+      this.resumeRoute()
+      return false
+    }
+
+    const targetPos = this.grid.tileToPixel(
+      currentTile.row + (flowDir === 'up' ? -1 : flowDir === 'down' ? 1 : 0),
+      currentTile.col + (flowDir === 'left' ? -1 : flowDir === 'right' ? 1 : 0)
+    )
+
+    const dx = targetPos.x - this.x
+    const dy = targetPos.y - this.y
+    const dist = Math.sqrt(dx * dx + dy * dy)
+
+    const angle = Math.atan2(dy, dx)
+    this.dirIndicator.rotation = angle
+
+    const step = this.config.speed * this.getSpeedMultiplier() * delta
+
+    if (dist <= step) {
+      this.x = targetPos.x
+      this.y = targetPos.y
+      this.applyVisualPosition()
+
+      const nextTile = this.getCurrentTile()
+      if (nextTile && this.isOnRoute(nextTile)) {
+        this.resumeRoute()
+      }
+      return true
+    } else {
+      this.x += (dx / dist) * step
+      this.y += (dy / dist) * step
+      this.applyVisualPosition()
+      return false
+    }
+  }
+
+  rerouteFlowDirection(tile: Position): FlowDirection {
+    if (this.grid.getFlowDirection) {
+      return this.grid.getFlowDirection(tile)
+    }
+    return null
+  }
+
+  isOnRoute(tile: Position): boolean {
+    if (!this.path) return false
+    for (let i = this.currentWaypoint; i < this.path.length; i++) {
+      if (this.path[i].row === tile.row && this.path[i].col === tile.col) {
+        this.rerouteTargetWaypoint = i
+        return true
+      }
+    }
+    return false
+  }
+
+  resumeRoute(): void {
+    this.routingState = 'route'
+    if (this.rerouteTargetWaypoint >= 0) {
+      this.currentWaypoint = this.rerouteTargetWaypoint
+      this.rerouteTargetWaypoint = -1
+    }
+  }
+
+  enterRerouteMode(): void {
+    this.routingState = 'reroute'
+    this.rerouteTargetWaypoint = -1
   }
 
   getCurrentTile(): { row: number; col: number } | null {

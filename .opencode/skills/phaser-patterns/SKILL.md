@@ -231,7 +231,90 @@ When overflow (shadow, glow, hexagon) from element A reaches within 4px of eleme
 
 **Check**: `perceptual_gap = (gap between A's VISUAL extent and B's hit area)`. If < 4px, the layout feels cramped even if technically correct.
 
-## 8. Scene Structure Conventions
+## 8. Design-to-Canvas Layout Bridge
+
+This is a **build-time methodology** for translating a flat, high-contrast, no-rounded-corners design language into Phaser canvas code. Layouts are computed once in `create()` and only recalculated on explicit events (`refreshLayout()`).
+
+### 8.1 Layout Constants Module
+
+Every scene imports these shared constants:
+
+```typescript
+// src/shared/Layout.ts
+export const TW = 4  // base spacing unit (logical px)
+// Never multiply by devicePixelRatio — Phaser's game.resolution handles Retina.
+
+export const HAIRLINE = window.devicePixelRatio  // 1 physical px for borders
+
+// Design system palette — Naked City Films inspired
+export const DESIGN = {
+  canvas: 0x05001A,    // deep navy background
+  canvasLight: 0x000000,
+  surface: 0xFFFFFF,   // card/panel backgrounds
+  primary: 0x0004EB,   // electric blue accent, interactive elements
+  secondary: 0xE5E7EB, // borders, low-priority framing
+  textPrimary: '#FFFFFF',
+  textOnSurface: '#000000',
+  muted: '#6B7280',
+  error: 0xD92D20,
+}
+```
+
+`DESIGN` properties that are hex integers (canvas, surface, primary, secondary, error) go into `fillStyle()` / `lineStyle()`. String properties (textPrimary, textOnSurface, muted) go into `setColor()` or `color: '...'` in Text style objects.
+
+### 8.2 The Accumulator Pattern (flex-col)
+
+For vertical lists (deploy cards, inspect panel rows, menu items):
+
+```typescript
+let currentY = padding
+const itemSpacing = 4 * TW  // gap between items
+
+children.forEach(child => {
+  child.setPosition(padding, currentY)
+  currentY += child.displayHeight + itemSpacing
+})
+```
+
+Store `currentY` as a class field for dynamic containers. Wrap in a `refreshLayout()` method called on events (deploy, damage, wave change), never from `update()`.
+
+### 8.3 Origin Rules
+
+| Component type | Origin |
+|---|---|
+| Panels, list items, text blocks, backgrounds | `(0, 0)` top-left |
+| Buttons, screen titles, animated elements | `(0.5, 0.5)` center |
+
+Center origin enables clean hover-scale tweens and centered alignment without manual offset math.
+
+### 8.4 Font Rendering
+
+- **Static labels** (titles, section headers, button labels): `scene.add.text()` with fontSize and color.
+- **Dynamic text** (HP numbers, DP counters, wave numbers): `scene.add.text()` for now. Bitmap fonts are a future optimization — revisit only if frame rate drops below 30fps on target device.
+- Always use exact font sizes. Do not use Phaser's scale property on text — it rasterizes at original size and stretches.
+
+### 8.5 Shape & Border Translation (No Rounded Corners)
+
+This project uses a sharp, zero-radius aesthetic (Infisical-inspired). All corners are 0px.
+
+```typescript
+// Panel background + border
+const bg = scene.add.graphics()
+bg.fillStyle(DESIGN.canvas, 1)
+bg.fillRect(x, y, w, h)
+bg.lineStyle(HAIRLINE, DESIGN.secondary, 0.4)
+bg.strokeRect(x, y, w, h)
+```
+
+- No `fillRoundedRect` — use `fillRect` everywhere
+- No `strokeRoundedRect` — use `strokeRect` everywhere
+- Draw `lineStyle` / `strokeRect` AFTER `fillRect` so the border renders on top of the fill
+
+### 8.6 Depth on Container Children
+
+Children inherit their parent Container's `setDepth()`. Only call `setDepth` on individual children when they must break out of their container's stacking order (e.g., a tooltip that needs to float above a scroll-cropped panel).
+
+## 9. Scene Structure Conventions
 
 ### Lifecycle
 
@@ -254,7 +337,7 @@ create():      // 1. Background → 2. Decorations → 3. Interactive elements �
 
 Every interactive element: `if (obj.input) obj.input.cursor = 'pointer'`
 
-## 9. Scene Review Checklist
+## 10. Scene Review Checklist
 
 When reviewing a scene for layout issues:
 
@@ -269,3 +352,9 @@ When reviewing a scene for layout issues:
 - [ ] Overlay dismiss zone width scoped to outside-panel area, not full screen
 - [ ] Visual overflow (shadows, decorations) doesn't eat into the perceptual gap between adjacent interactive elements
 - [ ] Elements at the same depth that overlap differ in size or color
+- [ ] Layout calculated in create(), not update() — dynamic containers have refreshLayout() called on events
+- [ ] No rounded corners anywhere — all fillRect/strokeRect, no fillRoundedRect/strokeRoundedRect
+- [ ] Layout constants (TW, HAIRLINE, DESIGN) imported from Layout.ts, not hardcoded
+- [ ] Origin follows component type rules: top-left for panels/list items, center for buttons/titles
+- [ ] HAIRLINE borders drawn AFTER fills (lineStyle before strokeRect, not after)
+- [ ] No multiplied TW by devicePixelRatio — Phaser handles Retina internally

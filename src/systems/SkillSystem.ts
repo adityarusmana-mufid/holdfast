@@ -22,8 +22,34 @@ export class SkillSystem {
       currentSp: skill.spInitial,
       isActive: false,
       remainingDuration: 0,
-      charges: skill.charges ?? 0,
+      charges: 0,
       spLocked: false,
+    }
+  }
+
+  private storeCharge(unit: DeployedUnit): void {
+    const state = unit.skillState
+    if (!state) return
+    const maxCh = state.config.charges ?? 0
+    if (state.charges >= maxCh) return
+    state.currentSp -= state.config.spCost
+    state.charges++
+  }
+
+  private tryAutoTrigger(unit: DeployedUnit): void {
+    const state = unit.skillState
+    if (!state || state.isActive || state.spLocked) return
+    if (state.config.activation !== 'auto') return
+    if (state.currentSp < state.config.spCost) return
+
+    const maxCh = state.config.charges ?? 0
+    if (maxCh > 0 && state.config.durationType === 'instant') {
+      if (state.charges < maxCh) {
+        this.storeCharge(unit)
+        state.spLocked = state.charges >= maxCh
+      }
+    } else {
+      this.activateSkill(unit)
     }
   }
 
@@ -48,11 +74,10 @@ export class SkillSystem {
       if (state.spLocked) continue
 
       if (config.spRecovery === 'auto') {
-        state.currentSp = Math.min(config.spCost, state.currentSp + AUTO_SP_RATE * dt)
-
-        if (config.activation === 'auto' && state.currentSp >= config.spCost) {
-          this.activateSkill(unit)
-        }
+        const maxCh = config.charges ?? 0
+        const cap = maxCh > 0 ? config.spCost : config.spCost
+        state.currentSp = Math.min(cap, state.currentSp + AUTO_SP_RATE * dt)
+        this.tryAutoTrigger(unit)
       }
     }
   }
@@ -63,10 +88,7 @@ export class SkillSystem {
     if (state.config.spRecovery !== 'offensive') return
 
     state.currentSp = Math.min(state.config.spCost, state.currentSp + 1)
-
-    if (state.config.activation === 'auto' && state.currentSp >= state.config.spCost) {
-      this.activateSkill(unit)
-    }
+    this.tryAutoTrigger(unit)
   }
 
   defensiveSPGain(unit: DeployedUnit): void {
@@ -75,10 +97,16 @@ export class SkillSystem {
     if (state.config.spRecovery !== 'defensive') return
 
     state.currentSp = Math.min(state.config.spCost, state.currentSp + 1)
+    this.tryAutoTrigger(unit)
+  }
 
-    if (state.config.activation === 'auto' && state.currentSp >= state.config.spCost) {
-      this.activateSkill(unit)
-    }
+  tryConsumeCharge(unit: DeployedUnit): boolean {
+    const state = unit.skillState
+    if (!state || state.charges <= 0) return false
+    state.charges--
+    state.spLocked = false
+    this.events.onSkillActivated?.(unit)
+    return true
   }
 
   activateSkill(unit: DeployedUnit): void {
@@ -86,7 +114,12 @@ export class SkillSystem {
     if (!state || state.isActive) return
 
     const config = state.config
-    state.currentSp -= config.spCost
+    const maxCh = config.charges ?? 0
+    if (maxCh > 0 && state.charges > 0) {
+      state.charges--
+    } else {
+      state.currentSp -= config.spCost
+    }
     state.isActive = true
     state.spLocked = true
 
@@ -113,16 +146,32 @@ export class SkillSystem {
   canActivateSkill(unit: DeployedUnit): boolean {
     const state = unit.skillState
     if (!state) return false
-    return !state.isActive && !state.spLocked && state.currentSp >= state.config.spCost
+    if (state.isActive) return false
+
+    const isCharge = (state.config.charges ?? 0) > 0
+    if (isCharge && state.config.activation === 'auto') return state.charges > 0
+    return !state.spLocked && state.currentSp >= state.config.spCost
   }
 
   getSpProgress(unit: DeployedUnit): number {
     const state = unit.skillState
     if (!state) return 0
+    const maxCh = state.config.charges ?? 0
+    if (maxCh > 0) {
+      const totalSp = state.charges * state.config.spCost + state.currentSp
+      const maxSp = maxCh * state.config.spCost
+      return totalSp / maxSp
+    }
     return state.currentSp / state.config.spCost
   }
 
   getSpCurrent(unit: DeployedUnit): number {
-    return unit.skillState?.currentSp ?? 0
+    const state = unit.skillState
+    if (!state) return 0
+    const maxCh = state.config.charges ?? 0
+    if (maxCh > 0) {
+      return state.charges * state.config.spCost + state.currentSp
+    }
+    return state.currentSp
   }
 }

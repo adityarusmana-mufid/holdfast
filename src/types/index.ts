@@ -222,4 +222,25 @@ export interface DeployedUnit {
   facing: Direction
   skillState?: SkillState
   effectiveBlockCount?: number
+  nextAttackPushStunWall?: boolean
+  nextAttackPullArts?: boolean
+  maelstromActive?: boolean
+  maelstromCenter?: { row: number; col: number }
+  maelstromEndTime?: number
+}
+
+export type FlowDirection = 'up' | 'down' | 'left' | 'right' | null
+
+export type RouteMode = 'fixed' | 'dynamic'
+
+export interface FlowField {
+  directions: Map<string, FlowDirection>
+  goalTiles: Position[]
+  blockedTiles: Set<string>
+}
+
+export interface RouteState {
+  mode: RouteMode
+  flowField?: FlowField
+  fixedRoutes?: Route[]
 }

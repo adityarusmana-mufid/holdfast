@@ -9,6 +9,8 @@ export class UnitSprite {
   private body: Phaser.GameObjects.Graphics
   private hpBar: Phaser.GameObjects.Graphics
   private hpBg: Phaser.GameObjects.Graphics
+  private spBar: Phaser.GameObjects.Graphics
+  private spBg: Phaser.GameObjects.Graphics
   private label: Phaser.GameObjects.Text
 
   lastAttackTime: number = 0
@@ -17,6 +19,7 @@ export class UnitSprite {
   col: number
   currentHp: number
   facing: Direction
+  spProgress: number = 0
 
   constructor(scene: Phaser.Scene, grid: Grid, config: UnitConfig, row: number, col: number, hp: number, facing: Direction = 'up') {
     this.scene = scene
@@ -44,6 +47,13 @@ export class UnitSprite {
     this.hpBar = scene.add.graphics()
     this.drawHp(size)
 
+    this.spBg = scene.add.graphics()
+    this.spBg.fillStyle(0x424242, 0.6)
+    this.spBg.fillRect(-half, -half - 3, size, 3)
+
+    this.spBar = scene.add.graphics()
+    this.drawSp(size)
+
     this.label = scene.add.text(0, half + 6, `${config.subtypeLabel}`, {
       fontSize: FONT_SIZE.xs,
       color: '#4a4a5a',
@@ -51,7 +61,7 @@ export class UnitSprite {
     })
     this.label.setOrigin(0.5)
 
-    this.container = scene.add.container(pos.x, pos.y, [glow, this.body, this.hpBg, this.hpBar, this.label])
+    this.container = scene.add.container(pos.x, pos.y, [glow, this.body, this.hpBg, this.hpBar, this.spBg, this.spBar, this.label])
     this.container.setDepth(10)
   }
 
@@ -109,6 +119,20 @@ export class UnitSprite {
     const hpColor = ratio > 0.5 ? 0x00c853 : ratio > 0.25 ? 0xff9100 : 0xd32f2f
     this.hpBar.fillStyle(hpColor, 1)
     this.hpBar.fillRect(-half, -half - 8, size * ratio, 4)
+  }
+
+  private drawSp(size: number): void {
+    this.spBar.clear()
+    const half = size / 2
+    const ratio = Math.max(0, Math.min(1, this.spProgress))
+    const spColor = ratio >= 1 ? 0xffd700 : 0xff9100
+    this.spBar.fillStyle(spColor, 1)
+    this.spBar.fillRect(-half, -half - 3, size * ratio, 3)
+  }
+
+  updateSp(progress: number): void {
+    this.spProgress = progress
+    this.drawSp(TILE_SIZE * 0.7)
   }
 
   updateHp(newHp: number): void {

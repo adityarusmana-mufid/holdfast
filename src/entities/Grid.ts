@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
-import { Tile, TileType, LevelData, Route, Position } from '../types/index'
+import { Tile, TileType, LevelData, Route, Position, FlowDirection } from '../types/index'
 import { tileColor, tileBorderColor, tileLabel, tileTextColor, ROUTE_COLORS } from '../shared/utils/GridMath'
+import { PathSystem } from '../systems/PathSystem'
 
 export const TILE_SIZE = 64
 export const GRID_OFFSET_X = 148
@@ -29,6 +30,7 @@ export class Grid {
   cols: number
   rows: number
   tiles: Tile[][]
+  private pathSystem: PathSystem | null = null
 
   constructor(scene: Phaser.Scene, cols: number = 12, rows: number = 8, offsetX: number = GRID_OFFSET_X, offsetY: number = GRID_OFFSET_Y) {
     this.scene = scene
@@ -373,5 +375,16 @@ export class Grid {
     this.tileGraphics.destroy()
     this.gridLines.destroy()
     this.labelTexts.forEach(t => t.destroy())
+  }
+
+  setPathSystem(pathSystem: PathSystem): void {
+    this.pathSystem = pathSystem
+  }
+
+  getFlowDirection(pos: Position): FlowDirection {
+    if (this.pathSystem) {
+      return this.pathSystem.getFlowDirection(pos)
+    }
+    return null
   }
 }

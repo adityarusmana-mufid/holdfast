@@ -42,11 +42,22 @@ export class SquadScene extends Phaser.Scene {
     if (savedSkills) {
       this.pickedSkills = savedSkills
     }
-    if (!saved) {
+    if (!saved && this.levelId !== 'menu') {
+      const menuSaved = loadSquad('menu_squad')
+      if (menuSaved) {
+        for (let i = 0; i < 12; i++) {
+          const id = menuSaved[i]
+          if (id) this.slots[i] = UNIT_CONFIGS.find(u => u.id === id) ?? null
+        }
+        const menuSkills = loadPickedSkills('menu_squad')
+        if (menuSkills) this.pickedSkills = menuSkills
+      }
+    }
+    if (this.slots.every(s => s === null)) {
       const defaultIds = ['pioneer', 'charger', 'protector', 'fighter', 'sniper', 'core_caster', 'medic_st']
       for (let i = 0; i < defaultIds.length; i++) {
         const unit = UNIT_CONFIGS.find(u => u.id === defaultIds[i])
-        if (unit) this.slots[i] = unit
+        if (unit) (this.slots as (UnitConfig | null)[])[i] = unit
       }
     }
   }
@@ -220,6 +231,8 @@ export class SquadScene extends Phaser.Scene {
       'deadeye',
       'decel_binder',
       'bard_supporter',
+      'pusher',
+      'puller',
     ]
     for (let i = 0; i < 12; i++) {
       const unit = UNIT_CONFIGS.find(u => u.id === picks[i]) ?? null

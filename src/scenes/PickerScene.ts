@@ -35,7 +35,7 @@ const CARD_W = 160
 const CARD_H = 220
 const CARD_GAP = 12
 const FILTER_W = 52
-const ARCHETYPE_ORDER = ['all', 'vanguard', 'guard', 'defender', 'sniper', 'caster', 'medic', 'supporter']
+const ARCHETYPE_ORDER = ['all', 'vanguard', 'guard', 'defender', 'sniper', 'caster', 'medic', 'supporter', 'specialist']
 const ARCHETYPE_COLORS: Record<string, number> = {
   all: 0x78909c,
   vanguard: 0x4fc3f7,
@@ -45,6 +45,7 @@ const ARCHETYPE_COLORS: Record<string, number> = {
   caster: 0xab47bc,
   medic: 0xec407a,
   supporter: 0xffa726,
+  specialist: 0x00bcd4,
 }
 
 export class PickerScene extends Phaser.Scene {

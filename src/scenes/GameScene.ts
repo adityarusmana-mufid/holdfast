@@ -43,6 +43,7 @@ export class GameScene extends Phaser.Scene {
   private resultText!: Phaser.GameObjects.Text
   private hoverIndicator!: Phaser.GameObjects.Graphics
   private activeWindUps: Map<number, { cancel: () => void }> = new Map()
+  private maelstromTimers: Map<string, number> = new Map()
 
   private deployState: 'idle' | 'placing' | 'facing' = 'idle'
   private pendingTile: Position | null = null
@@ -214,6 +215,37 @@ export class GameScene extends Phaser.Scene {
             spawnSparkHit(this, tPos.x, tPos.y)
           }
         }
+        const sk = deployed?.skillState
+        if (sk && sk.config.activation === 'auto' && (sk.config.charges ?? 0) > 0) {
+          this.skillSystem.tryConsumeCharge(deployed!)
+        }
+        if (deployed?.nextAttackPushStunWall) {
+          deployed.nextAttackPushStunWall = false
+          const dRow = tile.row - unit.row
+          const dCol = tile.col - unit.col
+          const tRow = Math.max(0, Math.min(this.grid.rows - 1, tile.row + Math.sign(dRow || 1)))
+          const tCol = Math.max(0, Math.min(this.grid.cols - 1, tile.col + Math.sign(dCol || 1)))
+          target.displaceTo(tRow, tCol)
+          target.applyStatusEffect({ type: 'stun', remainingDuration: 2.5, factor: 0 })
+          if (this.enemyManager) this.enemyManager.onEnemyDisplaced(target)
+          if (sk && !(sk.config.charges ?? 0)) this.skillSystem.deactivateSkill(deployed!)
+        }
+        if (deployed?.nextAttackPullArts) {
+          deployed.nextAttackPullArts = false
+          const dRow = unit.row - tile.row
+          const dCol = unit.col - tile.col
+          const distPull = Math.abs(dRow) + Math.abs(dCol)
+          if (distPull > 0) {
+            const tRow = Math.max(0, Math.min(this.grid.rows - 1, tile.row + Math.sign(dRow)))
+            const tCol = Math.max(0, Math.min(this.grid.cols - 1, tile.col + Math.sign(dCol)))
+            target.displaceTo(tRow, tCol)
+            if (this.enemyManager) this.enemyManager.onEnemyDisplaced(target)
+          }
+          const artsDmg = Math.max(1, Math.floor(unit.config.atk * 2.1 * 0.05), Math.floor(unit.config.atk * 2.1 - target.config.armor))
+          target.takeDamage(artsDmg)
+          if (artsDmg > 0) this.showDamageNumber(artsDmg, target, 'kinetic')
+          if (sk && !(sk.config.charges ?? 0)) this.skillSystem.deactivateSkill(deployed!)
+        }
       },
       onEnemyWindUp: (enemy: EnemySprite, target: UnitSprite, attackId: number) => {
         const speed = this.effectiveSpeed
@@ -311,6 +343,7 @@ export class GameScene extends Phaser.Scene {
           spawnExpandRing(this, pos.x, pos.y, 0x9c27b0, 56, 500)
         }
         if (eff.type === 'special' && eff.description === 'aoe_stun') {
+          this.depSystem.addDP(12)
           const stunRadius = 2 * TILE_SIZE
           for (const enemy of this.enemyManager.getEnemies()) {
             if (!enemy.alive) continue
@@ -318,10 +351,55 @@ export class GameScene extends Phaser.Scene {
             const dx = ePos.x - pos.x
             const dy = ePos.y - pos.y
             if (Math.sqrt(dx * dx + dy * dy) <= stunRadius) {
-              enemy.applyStatusEffect({ type: 'stun', remainingDuration: 5000, factor: 0 })
+              enemy.applyStatusEffect({ type: 'stun', remainingDuration: 5, factor: 0 })
             }
           }
           spawnExpandRing(this, pos.x, pos.y, 0x7c4dff, stunRadius * 2, 600)
+          this.flashMessage(`+12 DP`, 0x4fc3f7)
+        }
+        if (eff.type === 'special' && eff.description === 'auto_push_stun_wall') {
+          unit.nextAttackPushStunWall = true
+          this.flashMessage(`${s.config.name} READY`, 0x00bcd4)
+        }
+        if (eff.type === 'special' && eff.description === 'auto_pull_arts') {
+          unit.nextAttackPullArts = true
+          this.flashMessage(`${s.config.name} READY`, 0x7c4dff)
+        }
+        if (eff.type === 'special' && eff.description === 'line_pull_damage') {
+          const rangeTiles: Position[] = []
+          for (let i = 1; i <= 3; i++) {
+            for (let j = -1; j <= 1; j++) {
+              if (unit.facing === 'right') rangeTiles.push({ row: unit.row + j, col: unit.col + i })
+              else if (unit.facing === 'left') rangeTiles.push({ row: unit.row + j, col: unit.col - i })
+              else if (unit.facing === 'down') rangeTiles.push({ row: unit.row + i, col: unit.col + j })
+              else rangeTiles.push({ row: unit.row - i, col: unit.col + j })
+            }
+          }
+          const validTiles = rangeTiles.filter(t => t.row >= 0 && t.row < this.grid.rows && t.col >= 0 && t.col < this.grid.cols)
+          const tileSet = new Set(validTiles.map(t => `${t.row},${t.col}`))
+          for (const enemy of this.enemyManager.getEnemies()) {
+            if (!enemy.alive || enemy.config.isAerial) continue
+            const eTile = enemy.getCurrentTile()
+            if (!eTile || !tileSet.has(`${eTile.row},${eTile.col}`)) continue
+            const dRow = unit.row - eTile.row
+            const dCol = unit.col - eTile.col
+            const tRow = Math.max(0, Math.min(this.grid.rows - 1, eTile.row + Math.sign(dRow)))
+            const tCol = Math.max(0, Math.min(this.grid.cols - 1, eTile.col + Math.sign(dCol)))
+            enemy.displaceTo(tRow, tCol)
+            if (this.enemyManager) this.enemyManager.onEnemyDisplaced(enemy)
+            const dmg = Math.max(1, Math.floor(unit.config.atk * 2.2 * 0.05), Math.floor(unit.config.atk * 2.2 - enemy.config.armor))
+            enemy.takeDamage(dmg)
+            if (dmg > 0) this.showDamageNumber(dmg, enemy, 'kinetic')
+          }
+          spawnExpandRing(this, pos.x, pos.y, 0x4fc3f7, 3 * TILE_SIZE, 500)
+          this.flashMessage('TIDAL SURGE', 0x4fc3f7)
+        }
+        if (eff.type === 'special' && eff.description === 'maelstrom_pull_slow') {
+          const now = this.time.now
+          unit.maelstromActive = true
+          unit.maelstromCenter = { row: unit.row, col: unit.col }
+          unit.maelstromEndTime = now + 8000
+          this.flashMessage('DANCE OF THE MAELSTROM', 0x7c4dff)
         }
         if (eff.type === 'displace') {
           const dispRadius = eff.radius * TILE_SIZE
@@ -344,6 +422,9 @@ export class GameScene extends Phaser.Scene {
               const clampedRow = Math.max(0, Math.min(this.grid.rows - 1, tRow))
               const clampedCol = Math.max(0, Math.min(this.grid.cols - 1, tCol))
               enemy.displaceTo(clampedRow, clampedCol)
+              if (this.enemyManager) {
+                this.enemyManager.onEnemyDisplaced(enemy)
+              }
             }
           }
           spawnExpandRing(this, pos.x, pos.y, 0x00bcd4, dispRadius * 2, 400)
@@ -531,7 +612,7 @@ export class GameScene extends Phaser.Scene {
           if (!eTile) continue
           if (Math.abs(eTile.row - pos.row) <= 1 && Math.abs(eTile.col - pos.col) <= 1) {
             enemy.takeDamage(1000)
-            enemy.applyStatusEffect({ type: 'stun', remainingDuration: 7000, factor: 0 })
+            enemy.applyStatusEffect({ type: 'stun', remainingDuration: 7, factor: 0 })
           }
         }
         this.flashMessage('STUN GENERATOR ACTIVATED', 0xffd700)
@@ -850,12 +931,16 @@ export class GameScene extends Phaser.Scene {
       this.flashMessage(`DEPLOY // ${selected.name}  -${cost} DP`, selected.color)
       this.selectedSquadIndex = null
       this.rebuildCardBar()
+
+      if (selected.id === 'roadblock' && this.enemyManager) {
+        this.enemyManager.onRoadblockDeployed(this.pendingTile!.row, this.pendingTile!.col)
+      }
     }
     this.clearRangePreview()
     this.cancelDeployIndicator.setAlpha(0)
     this.facingCancelBtn.setAlpha(0)
     this.pendingTile = null
-    this.deployState = 'placing'
+    this.deployState = 'idle'
     this.exitDecisionMode()
   }
 
@@ -864,7 +949,7 @@ export class GameScene extends Phaser.Scene {
     this.cancelDeployIndicator.setAlpha(0)
     this.facingCancelBtn.setAlpha(0)
     this.pendingTile = null
-    this.deployState = 'placing'
+    this.deployState = 'idle'
     this.exitDecisionMode()
     this.flashMessage('DEPLOYMENT CANCELLED', 0xff9100)
   }
@@ -940,6 +1025,10 @@ export class GameScene extends Phaser.Scene {
       this.removeUnitSprite(row, col)
       this.deployedIndices.delete(instanceId)
       this.flashMessage(`RETREAT // ${config.name}  +${refund} DP`, 0x00c853)
+
+      if (config.id === 'roadblock' && this.enemyManager) {
+        this.enemyManager.onRoadblockRemoved(row, col)
+      }
     }
     this.exitDecisionMode()
     this.rebuildCardBar()
@@ -960,6 +1049,16 @@ export class GameScene extends Phaser.Scene {
       const allUnits = this.depSystem.getAllUnits()
       this.skillSystem.update(delta * speed, allUnits)
       for (const du of allUnits) {
+        const sprite = this.unitSprites.find(s => s.row === du.row && s.col === du.col)
+        if (sprite) {
+          du.currentHp = sprite.currentHp
+          if (du.skillState) {
+            const isPrimed = du.skillState.isActive && du.skillState.config.durationType === 'instant'
+            sprite.updateSp(isPrimed ? 1 : this.skillSystem.getSpProgress(du))
+          }
+        }
+      }
+      for (const du of allUnits) {
         const actEff = du.skillState?.isActive ? du.skillState.config.effect : null
         if (actEff?.type === 'statBuff' && actEff.blockBonus) {
           du.effectiveBlockCount = du.config.blockCount + actEff.blockBonus
@@ -967,6 +1066,31 @@ export class GameScene extends Phaser.Scene {
           du.effectiveBlockCount = du.config.blockCount + actEff.blockBonus
         } else {
           du.effectiveBlockCount = undefined
+        }
+      }
+      const now = this.time.now
+      for (const du of allUnits) {
+        if (!du.maelstromActive || !du.maelstromEndTime || now >= du.maelstromEndTime) {
+          if (du.maelstromActive) du.maelstromActive = false
+          continue
+        }
+        const key = `${du.row},${du.col}`
+        const lastPull = this.maelstromTimers.get(key) ?? 0
+        if (now - lastPull < 1500) continue
+        this.maelstromTimers.set(key, now)
+        for (const enemy of enemies) {
+          if (!enemy.alive || enemy.config.isAerial) continue
+          const eTile = enemy.getCurrentTile()
+          if (!eTile) continue
+          const dist = Math.abs(eTile.row - du.row) + Math.abs(eTile.col - du.col)
+          if (dist > 2) continue
+          const dRow = du.row - eTile.row
+          const dCol = du.col - eTile.col
+          const tRow = Math.max(0, Math.min(this.grid.rows - 1, eTile.row + Math.sign(dRow)))
+          const tCol = Math.max(0, Math.min(this.grid.cols - 1, eTile.col + Math.sign(dCol)))
+          enemy.displaceTo(tRow, tCol)
+          enemy.applyStatusEffect({ type: 'slow', remainingDuration: 1.5, factor: 0.5 })
+          if (this.enemyManager) this.enemyManager.onEnemyDisplaced(enemy)
         }
       }
       this.combatSystem.update(delta * speed, this.unitSprites, enemies)
@@ -1175,13 +1299,21 @@ export class GameScene extends Phaser.Scene {
 
     const skill = unit.skillState
     if (skill) {
-      const max = skill.config.spCost
-      const spInt = Math.floor(skill.currentSp)
+      const maxCh = skill.config.charges ?? 0
+      const isPrimed = skill.isActive && skill.config.durationType === 'instant'
+      const max = maxCh > 0 ? maxCh * skill.config.spCost : skill.config.spCost
+      const spInt = maxCh > 0
+        ? skill.charges * skill.config.spCost + Math.floor(skill.currentSp)
+        : (isPrimed ? max : Math.floor(skill.currentSp))
       const spBar = '\u2588'.repeat(Math.round(spInt / max * 8)).padEnd(8, '\u2591')
       const statusMark = skill.config.activation === 'toggle'
         ? (skill.isActive ? '[ON]' : '[OFF]')
-        : (skill.isActive ? '[ACTIVE]' : '')
-      const isReady = spInt >= max && !skill.isActive
+        : (maxCh > 0
+          ? (skill.charges > 0 ? '[CHARGED]' : '')
+          : (isPrimed ? '[PRIMED]' : (skill.isActive ? '[ACTIVE]' : '')))
+      const isReady = maxCh > 0
+        ? skill.charges > 0 && !skill.isActive
+        : (isPrimed || (spInt >= max && !skill.isActive))
 
       lines[6].setText('\u2500\u2500\u2500 SKILL \u2500\u2500\u2500')
       lines[6].setColor(cDim)
@@ -1192,7 +1324,8 @@ export class GameScene extends Phaser.Scene {
 
       const recIcon = skill.config.spRecovery === 'auto' ? '\u27F3' : skill.config.spRecovery === 'offensive' ? '\u2694' : '\u2291'
       const actIcon = skill.config.activation === 'auto' ? 'A' : skill.config.activation === 'manual' ? 'M' : skill.config.activation === 'toggle' ? 'T' : 'P'
-      lines[8].setText(`SP  [${spBar}]  ${spInt}/${max}  ${statusMark}  ${recIcon} ${actIcon}`)
+      const chargeStr = maxCh > 0 ? `  CHG:${skill.charges}/${maxCh}` : ''
+      lines[8].setText(`SP  [${spBar}]  ${spInt}/${max}${chargeStr}  ${statusMark}  ${recIcon} ${actIcon}`)
       lines[8].setColor(cDim)
     } else {
       lines[6].setText('')
@@ -1319,8 +1452,10 @@ export class GameScene extends Phaser.Scene {
       icon.fillTriangle(iconX, iconY - iconSize / 4, iconX - iconSize / 4, iconY + iconSize / 4, iconX + iconSize / 4, iconY + iconSize / 4)
     }
 
-    const skillName = unit.skills?.[0]?.name ?? ''
-    const skillCost = unit.skills?.[0]?.spCost ?? 0
+    const pickedId = this.pickedSkills[squadIndex]
+    const skill = unit.skills?.find(s => s.id === pickedId) ?? unit.skills?.[0]
+    const skillName = skill?.name ?? ''
+    const skillCost = skill?.spCost ?? 0
 
     const nameLabel = this.add.text(cardW / 2, 69, unit.subtypeLabel, {
       fontSize: '15px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
@@ -1390,8 +1525,9 @@ export class GameScene extends Phaser.Scene {
       bg.setAlpha(!canAfford && !onCooldown ? 0.45 : 1)
 
       const skillLabel = container.getAt(3) as Phaser.GameObjects.Text
-      const skill = unit.skills?.[0]
-      skillLabel.setText(skill ? `${skill.name} SP${skill.spCost}` : '')
+      const pickedId = this.pickedSkills[squadIndex]
+      const skillCfg = unit.skills?.find(s => s.id === pickedId) ?? unit.skills?.[0]
+      skillLabel.setText(skillCfg ? `${skillCfg.name} SP${skillCfg.spCost}` : '')
 
       const dpLabel = container.getAt(4) as Phaser.GameObjects.Text
       dpLabel.setText(`DP ${cost}`)

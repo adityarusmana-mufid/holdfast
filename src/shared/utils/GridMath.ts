@@ -1,4 +1,4 @@
-import { Direction, TileType, Position, Route } from '../../types/index'
+import { Direction, TileType, Position, Route, FlowDirection, Tile } from '../../types/index'
 
 export const ROUTE_COLORS = [
   0xff4444, 0x4488ff, 0x44dd44, 0xffaa00,
@@ -168,6 +168,7 @@ export const RANGE_PATTERNS: Record<string, number[][]> = {
   pointBlank: [[-1, 0]],
   line4: [[-1, 0], [-2, 0], [-3, 0], [-4, 0]],
   meleeCross: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]],
+  meleeExtended: [[-2, -1], [-2, 0], [-2, 1], [-1, -1], [-1, 0], [-1, 1], [0, 0]],
   ranged5x3: (() => {
     const tiles: number[][] = []
     for (let r = -5; r <= -1; r++) {
@@ -177,4 +178,87 @@ export const RANGE_PATTERNS: Record<string, number[][]> = {
     }
     return tiles
   })(),
+}
+
+export function posKey(pos: Position): string {
+  return `${pos.row},${pos.col}`
+}
+
+export function keyToPos(key: string): Position {
+  const [row, col] = key.split(',').map(Number)
+  return { row, col }
+}
+
+export function directionToPos(dir: FlowDirection, from: Position): Position {
+  switch (dir) {
+    case 'up':    return { row: from.row - 1, col: from.col }
+    case 'down':  return { row: from.row + 1, col: from.col }
+    case 'left':  return { row: from.row, col: from.col - 1 }
+    case 'right': return { row: from.row, col: from.col + 1 }
+    default:      return from
+  }
+}
+
+export function posToDirection(from: Position, to: Position): FlowDirection {
+  const dr = to.row - from.row
+  const dc = to.col - from.col
+  if (dr === -1 && dc === 0) return 'up'
+  if (dr === 1 && dc === 0) return 'down'
+  if (dr === 0 && dc === -1) return 'left'
+  if (dr === 0 && dc === 1) return 'right'
+  return null
+}
+
+export interface FlowFieldResult {
+  directions: Map<string, FlowDirection>
+  reachable: Set<string>
+}
+
+export function computeFlowFieldToRoute(
+  routes: Route[],
+  grid: Tile[][],
+  blockedTiles: Set<string>,
+  rows: number,
+  cols: number
+): FlowFieldResult {
+  const directions = new Map<string, FlowDirection>()
+  const reachable = new Set<string>()
+  const queue: Position[] = []
+
+  for (const route of routes) {
+    const waypoints = [route.spawn, ...route.waypoints, route.goal]
+    for (const wp of waypoints) {
+      const key = posKey(wp)
+      if (!blockedTiles.has(key)) {
+        directions.set(key, null)
+        reachable.add(key)
+        queue.push({ row: wp.row, col: wp.col })
+      }
+    }
+  }
+
+  while (queue.length > 0) {
+    const pos = queue.shift()!
+    const key = posKey(pos)
+    const currentDir = directions.get(key)
+
+    const neighbors = getNeighbors(pos, rows, cols, false)
+    for (const nb of neighbors) {
+      const nbKey = posKey(nb)
+      if (blockedTiles.has(nbKey)) continue
+      if (directions.has(nbKey)) continue
+
+      const tile = grid[nb.row]?.[nb.col]
+      if (!tile || !isWalkable(tile.type)) continue
+
+      const dirToCurrent = posToDirection(nb, pos)
+      if (dirToCurrent) {
+        directions.set(nbKey, dirToCurrent)
+        reachable.add(nbKey)
+        queue.push(nb)
+      }
+    }
+  }
+
+  return { directions, reachable }
 }

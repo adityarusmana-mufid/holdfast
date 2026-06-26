@@ -3,6 +3,7 @@ import { EnemyConfig, Wave, Route, Position, TileType } from '../types/index'
 import { Grid } from '../entities/Grid'
 import { EnemySprite } from '../entities/Enemy'
 import { DeploymentSystem } from './DeploymentSystem'
+import { PathSystem } from './PathSystem'
 import { ENEMY_CONFIGS } from '../config/enemies'
 
 export interface EnemyManagerEvents {
@@ -15,6 +16,7 @@ export class EnemyManager {
   private scene: Phaser.Scene
   private grid: Grid
   private depSystem: DeploymentSystem
+  private pathSystem: PathSystem | null = null
   private events: EnemyManagerEvents
   private enemies: EnemySprite[] = []
   private routes: Route[] = []
@@ -55,6 +57,8 @@ export class EnemyManager {
 
   startBattle(): void {
     this.battleStarted = true
+    this.pathSystem = new PathSystem(this.grid, this.routes, this.grid.tiles, this.grid.rows, this.grid.cols)
+    this.grid.setPathSystem(this.pathSystem)
     this.startNextWave()
   }
 
@@ -299,6 +303,46 @@ export class EnemyManager {
   getDealtWith(): number { return this.enemiesDealtWith }
 
   getTotalEnemyCount(): number { return this.totalEnemyCount }
+
+  onRoadblockDeployed(row: number, col: number): void {
+    if (!this.pathSystem || !this.pathSystem.isDynamic()) return
+    this.pathSystem.addBlockedTile(row, col)
+    this.checkEnemiesForReroute(row, col)
+  }
+
+  onRoadblockRemoved(row: number, col: number): void {
+    if (!this.pathSystem || !this.pathSystem.isDynamic()) return
+    this.pathSystem.removeBlockedTile(row, col)
+    this.checkEnemiesForReroute(row, col)
+  }
+
+  private checkEnemiesForReroute(blockRow: number, blockCol: number): void {
+    const blockKey = `${blockRow},${blockCol}`
+    for (const enemy of this.enemies) {
+      if (!enemy.alive) continue
+      if (enemy.routingState === 'reroute') continue
+      if (enemy.config.isAerial) continue
+      const currentTile = enemy.getCurrentTile()
+      if (!currentTile) continue
+
+      const nextWaypointIdx = enemy.currentWaypoint + 1
+      if (nextWaypointIdx >= enemy.path.length) continue
+
+      const nextTile = enemy.path[nextWaypointIdx]
+      const nextKey = `${nextTile.row},${nextTile.col}`
+
+      if (nextKey === blockKey || this.pathSystem!.isBlocked(nextTile.row, nextTile.col)) {
+        enemy.enterRerouteMode()
+      }
+    }
+  }
+
+  onEnemyDisplaced(enemy: EnemySprite): void {
+    if (!this.pathSystem || !this.pathSystem.isDynamic()) return
+    if (enemy.routingState === 'route') {
+      enemy.enterRerouteMode()
+    }
+  }
 
   cleanup(): void {
     for (const e of this.enemies) e.destroy()

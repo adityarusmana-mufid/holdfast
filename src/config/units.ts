@@ -80,7 +80,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     dpCost: 14,
     redeployTime: 15,
     color: 0xe74c3c,
-    traits: [{ traitId: UnitTrait.AoEMelee }, { traitId: UnitTrait.BlocksTwo }],
+    traits: [{ traitId: UnitTrait.AoEMeleeBlockCapped }, { traitId: UnitTrait.BlocksTwo }],
     skills: SKILLS['centurion_guard'],
   },
   {
@@ -266,7 +266,8 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     dpCost: 18,
     redeployTime: 15,
     color: 0xd35400,
-    traits: [{ traitId: UnitTrait.LinearAoE }],
+    splashConfig: { radius: 1, damageMultiplier: 0.5 },
+    traits: [{ traitId: UnitTrait.AoESplash }],
     skills: SKILLS['earthshaker'],
   },
   {
@@ -396,7 +397,11 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     dpCost: 22,
     redeployTime: 20,
     color: 0x27ae60,
-    traits: [{ traitId: UnitTrait.RangedAoEWhenNotBlocking }],
+    splashConfig: { radius: 1, damageMultiplier: 0.5 },
+    traits: [
+      { traitId: UnitTrait.RangedWhenNotBlocking },
+      { traitId: UnitTrait.AoESplash },
+    ],
     skills: SKILLS['fortress_defender'],
   },
   {
@@ -584,7 +589,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     dpCost: 20,
     redeployTime: 15,
     color: 0x8e44ad,
-    traits: [],
+    traits: [{ traitId: UnitTrait.AoEMeleeBlockCapped }],
     skills: SKILLS['crusher'],
   },
   {

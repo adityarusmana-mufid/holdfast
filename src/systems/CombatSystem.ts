@@ -68,15 +68,19 @@ export class CombatSystem {
       } else if (this.hasTrait(unit, UnitTrait.LinearAoE)) {
         this.executeLinearAoEAttack(unit, enemies)
       } else if (this.hasTrait(unit, UnitTrait.AoEMelee)) {
-        this.executeAoEMeleeAttack(unit, enemies, params)
+        const hitCount = this.executeAoEMeleeAttack(unit, enemies, params)
         if (this.hasTrait(unit, UnitTrait.HealOnAttack)) {
           const traitConfig = unit.config.traits.find(t => t.traitId === UnitTrait.HealOnAttack)
-          const healAmount = traitConfig?.value ?? 50
-          const healed = unit.heal(healAmount)
+          const healAmount = (traitConfig?.value ?? 50)
+          const cappedHits = Math.min(hitCount, unit.config.blockCount)
+          const totalHeal = healAmount * Math.max(1, cappedHits)
+          const healed = unit.heal(totalHeal)
           if (healed > 0 && this.events.onHealApplied) {
             this.events.onHealApplied(unit, healed, unit)
           }
         }
+      } else if (this.hasTrait(unit, UnitTrait.AoEMeleeBlockCapped)) {
+        this.executeBlockCappedAttack(unit, enemies, params)
       } else {
         const target = this.findTarget(unit, enemies, params.rangePattern)
         if (!target || !target.alive) continue
@@ -241,12 +245,27 @@ export class CombatSystem {
     }
   }
 
-  private executeAoEMeleeAttack(unit: UnitSprite, enemies: EnemySprite[], params: AttackParams): void {
+  private executeAoEMeleeAttack(unit: UnitSprite, enemies: EnemySprite[], params: AttackParams): number {
     const targets = this.getEnemiesInRange(unit, enemies, params.rangePattern)
+    let hitCount = 0
     for (const target of targets) {
       if (!target.alive) continue
       this.events.onUnitAttackInitiated?.(unit, target, unit.config.damageType)
       this.applyDamage(unit, target, params.atk)
+      hitCount++
+    }
+    return hitCount
+  }
+
+  private executeBlockCappedAttack(unit: UnitSprite, enemies: EnemySprite[], params: AttackParams): void {
+    const targets = this.getEnemiesInRange(unit, enemies, params.rangePattern)
+    const maxTargets = unit.config.blockCount
+    let count = 0
+    for (const target of targets) {
+      if (!target.alive || count >= maxTargets) continue
+      this.events.onUnitAttackInitiated?.(unit, target, unit.config.damageType)
+      this.applyDamage(unit, target, params.atk)
+      count++
     }
   }
 

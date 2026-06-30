@@ -83,6 +83,7 @@ export enum UnitTrait {
   ChainJump = 'chain_jump',
   LinearAoE = 'linear_aoe',
   AoEMelee = 'aoe_melee',
+  AoEMeleeBlockCapped = 'aoe_melee_block_capped',
   TargetingLowestDef = 'targeting_lowest_def',
   RangedWhenNotBlocking = 'ranged_when_not_blocking',
   RangedAoEWhenNotBlocking = 'ranged_aoe_when_not_blocking',

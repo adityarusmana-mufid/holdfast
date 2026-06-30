@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { Direction, UnitConfig } from '../types/index'
+import { Direction, UnitConfig, DeployedUnit } from '../types/index'
 import { Grid, TILE_SIZE } from './Grid'
 import { FONT_SIZE } from '../ui/Constants'
 
@@ -12,6 +12,7 @@ export class UnitSprite {
   private spBar: Phaser.GameObjects.Graphics
   private spBg: Phaser.GameObjects.Graphics
   private label: Phaser.GameObjects.Text
+  private chargeText: Phaser.GameObjects.Text
 
   lastAttackTime: number = 0
   config: UnitConfig
@@ -20,6 +21,7 @@ export class UnitSprite {
   currentHp: number
   facing: Direction
   spProgress: number = 0
+  deployedUnit: DeployedUnit | null = null
 
   constructor(scene: Phaser.Scene, grid: Grid, config: UnitConfig, row: number, col: number, hp: number, facing: Direction = 'up') {
     this.scene = scene
@@ -54,6 +56,13 @@ export class UnitSprite {
     this.spBar = scene.add.graphics()
     this.drawSp(size)
 
+    this.chargeText = scene.add.text(0, -half - 16, '', {
+      fontSize: '11px',
+      color: '#ffd700',
+      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setVisible(false)
+
     this.label = scene.add.text(0, half + 6, `${config.subtypeLabel}`, {
       fontSize: FONT_SIZE.xs,
       color: '#4a4a5a',
@@ -61,8 +70,9 @@ export class UnitSprite {
     })
     this.label.setOrigin(0.5)
 
-    this.container = scene.add.container(pos.x, pos.y, [glow, this.body, this.hpBg, this.hpBar, this.spBg, this.spBar, this.label])
-    this.container.setDepth(10)
+    this.container = scene.add.container(pos.x, pos.y, [glow, this.body, this.hpBg, this.hpBar, this.spBg, this.spBar, this.chargeText, this.label])
+    this.container.setDepth(20)
+    this.chargeText.setDepth(22)
   }
 
   private drawBody(config: UnitConfig, size: number, facing: Direction): void {
@@ -128,6 +138,18 @@ export class UnitSprite {
     const spColor = ratio >= 1 ? 0xffd700 : 0xff9100
     this.spBar.fillStyle(spColor, 1)
     this.spBar.fillRect(-half, -half - 3, size * ratio, 3)
+  }
+
+  updateCharges(current: number, max: number): void {
+    if (current <= 0 || max <= 0) {
+      this.chargeText.setVisible(false)
+      return
+    }
+    const size = TILE_SIZE * 0.7
+    const half = size / 2
+    this.chargeText.setPosition(0, -half - 16)
+    this.chargeText.setText(current.toString())
+    this.chargeText.setVisible(true)
   }
 
   updateSp(progress: number): void {

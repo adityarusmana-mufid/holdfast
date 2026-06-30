@@ -1,7 +1,7 @@
 import { Grid } from '../entities/Grid'
 import { EnemySprite } from '../entities/Enemy'
 import { UnitSprite } from '../entities/Unit'
-import { Position, UnitTrait, TileType, DamageType } from '../types/index'
+import { Position, UnitTrait, TileType, DamageType, DeployedUnit } from '../types/index'
 import { positionsInRange } from '../shared/utils/GridMath'
 
 export interface CombatEvents {
@@ -186,6 +186,13 @@ export class CombatSystem {
     })
   }
 
+  private getSkillRangePattern(unit: UnitSprite): number[][] | null {
+    const du = unit.deployedUnit
+    if (!du?.skillState?.isActive) return null
+    const skillConfig = du.skillState.config
+    return skillConfig.skillRangePattern ?? null
+  }
+
   private getAttackParams(unit: UnitSprite, enemies: EnemySprite[]): AttackParams {
     const isBlocking = this.isBlocking(unit, enemies)
     const hasRangedMode = this.hasTrait(unit, UnitTrait.RangedWhenNotBlocking) ||
@@ -200,15 +207,17 @@ export class CombatSystem {
       }
     }
 
+    const skillRange = this.getSkillRangePattern(unit)
+
     if (!hasRangedMode || isBlocking) {
-      return { rangePattern: unit.config.rangePattern, atk, useAoE: false }
+      return { rangePattern: skillRange ?? unit.config.rangePattern, atk, useAoE: false }
     }
 
     if (this.hasTrait(unit, UnitTrait.RangedAttack80)) {
       atk = Math.floor(atk * 0.8)
     }
 
-    const rangePattern = unit.config.altRangePattern ?? unit.config.rangePattern
+    const rangePattern = skillRange ?? unit.config.altRangePattern ?? unit.config.rangePattern
     const useAoE = this.hasTrait(unit, UnitTrait.RangedAoEWhenNotBlocking)
 
     return { rangePattern, atk, useAoE }

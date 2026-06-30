@@ -199,6 +199,7 @@ export interface SkillConfig {
   duration?: number
   charges?: number
   effect: SkillEffect
+  skillRangePattern?: number[][]
 }
 
 export interface SkillState {

@@ -1,4 +1,5 @@
 import { SkillConfig } from '../types/index'
+import { RANGE_PATTERNS } from '../shared/utils/GridMath'
 
 export const SKILLS: Record<string, SkillConfig[]> = {
   pioneer: [
@@ -307,6 +308,8 @@ export const SKILLS: Record<string, SkillConfig[]> = {
       spRecovery: 'auto', activation: 'auto', spCost: 4, spInitial: 0,
       durationType: 'instant',
       effect: { type: 'heal', amountMultiplier: 1.8, range: 'ally' },
+      skillRangePattern: RANGE_PATTERNS.surrounding8,
+      charges: 3,
     },
     {
       id: 'guardian_s2', name: 'Medicine Dispensing',

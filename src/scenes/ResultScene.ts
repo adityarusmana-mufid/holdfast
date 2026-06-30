@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
-import { COLORS, FONTS } from '../ui/Constants'
+import { COLORS, FONTS, FONT_SIZE, TOP_BAR } from '../ui/Constants'
+import { drawGridBg } from '../ui/Components'
 import { getLevelDef } from '../config/chapters'
 
 export class ResultScene extends Phaser.Scene {
@@ -36,12 +37,12 @@ export class ResultScene extends Phaser.Scene {
     const isVictory = this.outcome === 'victory'
     const levelDef = getLevelDef(this.levelId)
 
-    this.add.graphics()
-      .fillStyle(0x05001A, 1)
-      .fillRect(0, 0, W, H)
+    this.cameras.main.setBackgroundColor('#f4f7fa')
+    drawGridBg(this, W, H)
+
     this.cameras.main.flash(isVictory ? 300 : 600, isVictory ? 0 : 200, isVictory ? 200 : 0, isVictory ? 83 : 50)
 
-    this.add.text(W / 2, 100, isVictory ? 'SYNC COMPLETE' : 'SYNC FAILED', {
+    this.add.text(W / 2, TOP_BAR + 36, isVictory ? 'SYNC COMPLETE' : 'SYNC FAILED', {
       ...FONTS.h1,
       color: isVictory ? '#00c853' : '#d32f2f',
     }).setOrigin(0.5, 0)

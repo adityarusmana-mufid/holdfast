@@ -9,7 +9,7 @@ import { EnemyManager } from '../systems/EnemyManager'
 import { CombatSystem } from '../systems/CombatSystem'
 import { HealingSystem } from '../systems/HealingSystem'
 import { UNIT_CONFIGS } from '../config/units'
-import { COLORS, FONT_SIZE } from '../ui/Constants'
+import { COLORS, FONT_SIZE, SIDEBAR_W as PANEL_W } from '../ui/Constants'
 import { makeNodeButton } from '../ui/Components'
 import { spawnProjectile, playSwing, showWindUp, flashDamage, spawnChainBolt, spawnSplashRing, spawnExpandRing, spawnBurstParticles, spawnBuffParticles, spawnSparkHit, spawnHealCross } from '../effects/CombatEffects'
 import { SkillSystem } from '../systems/SkillSystem'
@@ -429,6 +429,10 @@ export class GameScene extends Phaser.Scene {
           }
           spawnExpandRing(this, pos.x, pos.y, 0x00bcd4, dispRadius * 2, 400)
         }
+      },
+      onChargeChanged: (unit, current, max) => {
+        const sprite = this.unitSprites.find(u => u.deployedUnit === unit)
+        if (sprite) sprite.updateCharges(current, max)
       },
       onSkillDeactivated: (unit) => {
         this.flashMessage(`SKILL END // ${unit.skillState?.config.name ?? 'END'}`, 0xff9100)
@@ -1109,7 +1113,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   private buildInspectPanel(): void {
-    const PANEL_W = 210
     const H = this.scale.height
 
     this.inspectPanel = this.add.container(0, 0)
@@ -1134,12 +1137,12 @@ export class GameScene extends Phaser.Scene {
 
     const fs = '13px'
     const ff = '"Share Tech Mono", "Roboto Mono", monospace'
-    const wrapW = 194
+    const wrapW = PANEL_W - 16
 
     const lines: Phaser.GameObjects.Text[] = []
     const baseY = 66
     const lineH = 22
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 10; i++) {
       const t = this.add.text(8, baseY + i * lineH, '', {
         fontSize: fs, fontFamily: ff, color: '#9aa4b8',
         wordWrap: { width: wrapW },
@@ -1207,7 +1210,7 @@ export class GameScene extends Phaser.Scene {
 
   private ensurePanelVisible(): void {
     if (this.inspectPanel.x < 0) {
-      this.inspectPanel.setX(-210)
+      this.inspectPanel.setX(-PANEL_W)
       this.tweens.killTweensOf(this.inspectPanel)
       this.tweens.add({
         targets: this.inspectPanel,
@@ -1327,10 +1330,13 @@ export class GameScene extends Phaser.Scene {
       const chargeStr = maxCh > 0 ? `  CHG:${skill.charges}/${maxCh}` : ''
       lines[8].setText(`SP  [${spBar}]  ${spInt}/${max}${chargeStr}  ${statusMark}  ${recIcon} ${actIcon}`)
       lines[8].setColor(cDim)
+      lines[9].setText(skill.config.description)
+      lines[9].setColor(cDim)
     } else {
       lines[6].setText('')
       lines[7].setText('')
       lines[8].setText('')
+      lines[9].setText('')
     }
   }
 

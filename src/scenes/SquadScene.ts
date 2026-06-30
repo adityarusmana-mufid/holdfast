@@ -66,6 +66,7 @@ export class SquadScene extends Phaser.Scene {
     }).setOrigin(0.5, 0)
 
     makeNodeButton(this, W - 150, 18, 'Auto Fill', () => this.autoFill(), { w: 110, h: 34, textSize: '12px' })
+    makeNodeButton(this, W - 268, 18, '\u2716 Clear', () => this.clearSquad(), { w: 108, h: 34, textSize: '12px', role: 'danger' })
 
     const gridW = COLS * SLOT_W + (COLS - 1) * SLOT_GAP
     const gridH = ROWS * SLOT_H + (ROWS - 1) * SLOT_GAP
@@ -187,6 +188,15 @@ export class SquadScene extends Phaser.Scene {
       this.slots[i] = unit
       if (unit?.skills?.[0]) this.pickedSkills[i] = unit.skills[0].id
       this.drawSlot(this.slotContainers[i], unit)
+    }
+    this.persistSquad()
+  }
+
+  private clearSquad(): void {
+    for (let i = 0; i < 12; i++) {
+      this.slots[i] = null
+      delete this.pickedSkills[i]
+      this.drawSlot(this.slotContainers[i], null)
     }
     this.persistSquad()
   }

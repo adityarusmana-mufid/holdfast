@@ -50,7 +50,7 @@ export class EditorScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.fadeIn(200, 0, 0, 0)
+    this.cameras.main.fadeIn(200, 245, 245, 245)
     drawBgGradient(this)
 
     const paletteRightEdge = 10 + 140 + 10
@@ -575,14 +575,8 @@ enum EditMode { Paint, Erase }
 function drawBgGradient(scene: Phaser.Scene): void {
   const g = scene.add.graphics()
   const { width: w, height: h } = scene.scale
-  for (let y = 0; y < h; y++) {
-    const t = y / h
-    const r = Phaser.Math.Interpolation.Linear([0x1a, 0x1a], t)
-    const gv = Phaser.Math.Interpolation.Linear([0x1a, 0x1a], t)
-    const b = Phaser.Math.Interpolation.Linear([0x2e, 0x2e], t)
-    g.fillStyle(Phaser.Display.Color.GetColor(r, gv, b), 1)
-    g.fillRect(0, y, w, 1)
-  }
+  g.fillGradientStyle(0xF5F5F5, 0xF5F5F5, 0xF0F0F0, 0xE8E8E8)
+  g.fillRect(0, 0, w, h)
   g.setDepth(-100)
 }
 
@@ -602,24 +596,24 @@ function injectEditorStyles(): void {
   const s = document.createElement('style')
   s.textContent = `
 .editor-panel {
-  background: #1a1a2e;
-  border: 1px solid #2a2a4e;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
   border-radius: 6px;
   padding: 10px;
   font-family: "Share Tech Mono", "Roboto Mono", monospace;
   font-size: 13px;
-  color: #cccccc;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  color: #1a1a1a;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 .editor-panel .ep-title {
-  color: #00a2ff;
+  color: #1877F2;
   font-weight: bold;
   font-size: 12px;
   margin: 0 0 8px 0;
   cursor: pointer;
   user-select: none;
 }
-.editor-panel .ep-title:hover { color: #0091e0; }
+.editor-panel .ep-title:hover { color: #1468D4; }
 .ef-row {
   display: flex;
   justify-content: space-between;
@@ -628,44 +622,44 @@ function injectEditorStyles(): void {
   cursor: pointer;
   padding: 0 2px;
 }
-.ef-row:hover { background: #2a2a4e; border-radius: 3px; }
-.ef-label { color: #8888aa; }
-.ef-value { 
-  color: #cccccc; font-weight: bold; cursor: pointer;
+.ef-row:hover { background: #f5f5f5; border-radius: 3px; }
+.ef-label { color: #4B5563; }
+.ef-value {
+  color: #1a1a1a; font-weight: bold; cursor: pointer;
   padding: 1px 4px; border-radius: 3px;
 }
-.ef-value:hover { background: #2a3a5e; color: #00a2ff; }
+.ef-value:hover { background: #e8f0fe; color: #1877F2; }
 .ef-input {
   width: 60px; text-align: right;
   font-family: "Share Tech Mono", "Roboto Mono", monospace;
   font-size: 12px; font-weight: bold;
-  border: 1px solid #2a2a4e; border-radius: 3px; padding: 1px 4px;
-  background: #1a1a2e; color: #cccccc;
+  border: 1px solid #d0d0d0; border-radius: 3px; padding: 1px 4px;
+  background: #ffffff; color: #1a1a1a;
 }
-.ef-input:focus { outline: 1px solid #00a2ff; border-color: #00a2ff; }
+.ef-input:focus { outline: 1px solid #1877F2; border-color: #1877F2; }
 .ef-del { color: #d32f2f; cursor: pointer; padding: 0 2px; }
-.ef-del:hover { background: #3a1a1a; border-radius: 3px; }
-.ef-add { color: #00c853; cursor: pointer; margin-top: 4px; display: inline-block; }
-.ef-add:hover { background: #1a3a2a; border-radius: 3px; padding: 0 2px; }
+.ef-del:hover { background: #fde8e8; border-radius: 3px; }
+.ef-add { color: #1877F2; cursor: pointer; margin-top: 4px; display: inline-block; }
+.ef-add:hover { background: #e8f0fe; border-radius: 3px; padding: 0 2px; }
 .ef-cycle { cursor: pointer; font-weight: bold; }
-.ef-cycle:hover { color: #00a2ff; }
+.ef-cycle:hover { color: #1877F2; }
 .ef-header {
   display: flex; justify-content: space-between; align-items: center;
   cursor: pointer; user-select: none;
-  color: #00a2ff; font-weight: bold; font-size: 12px;
+  color: #1877F2; font-weight: bold; font-size: 12px;
   margin: 0 0 4px 0;
 }
-.ef-header:hover { color: #0091e0; }
+.ef-header:hover { color: #1468D4; }
 .ef-wave {
-  margin: 4px 0; padding: 4px; border: 1px solid #2a2a4e; border-radius: 4px;
-  background: #16162a;
+  margin: 4px 0; padding: 4px; border: 1px solid #e0e0e0; border-radius: 4px;
+  background: #f9f9f9;
 }
 .ef-entry { margin: 2px 0 2px 8px; font-size: 12px; }
 .route-item {
   display: flex; align-items: center; padding: 4px; cursor: pointer; border-radius: 3px;
 }
-.route-item:hover { background: #2a2a4e; }
-.route-item.selected { background: #2a3a5e; }
+.route-item:hover { background: #f0f4f8; }
+.route-item.selected { background: #e8f0fe; }
 .route-swatch { width: 16px; height: 16px; border-radius: 3px; margin-right: 8px; display: inline-block; }
 .ef-scroll { overflow-y: auto; max-height: 320px; }
 `

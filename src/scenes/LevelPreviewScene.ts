@@ -1,10 +1,16 @@
 import Phaser from 'phaser'
 import { LevelData, EnemyConfig } from '../types/index'
-import { Grid, TILE_SIZE, GRID_OFFSET_Y } from '../entities/Grid'
+import { Grid, TILE_SIZE } from '../entities/Grid'
 import { ENEMY_CONFIGS } from '../config/enemies'
-import { COLORS, FONTS, FONT_SIZE } from '../ui/Constants'
+import { FONTS, FONT_SIZE } from '../ui/Constants'
 import { makeNodeButton } from '../ui/Components'
-import { tutorialSquad } from '../shared/utils/levelHelpers'
+
+const PHI = (1 + Math.sqrt(5)) / 2
+const FRAME_W = Math.floor(1280 / PHI)
+const FRAME_H = Math.floor(720 / PHI)
+const FRAME_PAD = Math.floor((1280 - FRAME_W) / 2)
+const FRAME_TOP = Math.floor((720 - FRAME_H) / 2)
+const FRAME_BOT = 720 - FRAME_TOP - FRAME_H
 
 export class LevelPreviewScene extends Phaser.Scene {
   private levelId = ''
@@ -31,18 +37,29 @@ export class LevelPreviewScene extends Phaser.Scene {
     const data = this.levelData
     if (!data) { this.scene.stop(); return }
 
-    this.cameras.main.setBackgroundColor('#05001A')
+    this.cameras.main.setBackgroundColor('rgba(0,0,0,0)')
 
-    const gridGfx = this.add.graphics()
-    gridGfx.lineStyle(1, 0x4fc3f7, 0.06)
-    for (let x = 0; x <= W; x += 48) gridGfx.lineBetween(x, 0, x, H)
-    for (let y = 0; y <= H; y += 48) gridGfx.lineBetween(0, y, W, y)
+    const overlay = this.add.graphics()
+    overlay.fillStyle(0x500000, 0.55)
+    overlay.fillRect(0, 0, W, H)
+    overlay.setDepth(-90)
 
-    this.add.text(W / 2, 24, data.name, {
-      ...FONTS.h2, color: COLORS.text.primary,
-    }).setOrigin(0.5, 0)
+    const frameX = FRAME_PAD
+    const frameY = FRAME_TOP
+    const frameW = FRAME_W
+    const frameH = FRAME_H
 
-    const tabY = 66
+    const frame = this.add.graphics()
+    frame.fillStyle(0x2d2d2d, 1)
+    frame.fillRect(frameX - 3, frameY - 3, frameW + 6, frameH + 6)
+    frame.setDepth(-80)
+
+    const innerGfx = this.add.graphics()
+    innerGfx.fillStyle(0xF4F7FA, 1)
+    innerGfx.fillRect(frameX, frameY, frameW, frameH)
+    innerGfx.setDepth(-70)
+
+    const tabY = frameY + 8
     const tabs: { key: 'map' | 'intel'; x: number }[] = [
       { key: 'map', x: W / 2 - 80 },
       { key: 'intel', x: W / 2 + 80 },
@@ -52,23 +69,25 @@ export class LevelPreviewScene extends Phaser.Scene {
       makeNodeButton(this, tab.x - 70, tabY, label, () => {
         this.activeTab = tab.key
         this.rebuildContent()
-      }, { w: 140, h: 34, textSize: FONT_SIZE.sm })
+      }, { w: 140, h: 30, textSize: FONT_SIZE.xs }).setDepth(-60)
     }
 
     this.contentContainer = this.add.container(0, 0)
+    this.contentContainer.setDepth(-50)
     this.rebuildContent()
 
-    makeNodeButton(this, 16, 16, '< BACK', () => this.scene.stop(), {
-      w: 72, h: 32, textSize: '11px',
-    })
-    makeNodeButton(this, 94, 16, 'HOME', () => {
-      this.scene.start('ChapterSelectScene')
-    }, { w: 72, h: 32, textSize: '11px' })
+    this.add.text(W / 2, 22, data.name, {
+      ...FONTS.h2, color: '#ffffff',
+    }).setOrigin(0.5, 0).setDepth(-40)
 
-    const btnY = H - 48
-    makeNodeButton(this, W - 110, btnY - 17, 'ENTER', () => this.enterLevel(), {
-      w: 100, h: 40, role: 'primary',
-    })
+    makeNodeButton(this, 16, 16, '< BACK', () => { this.scene.stop() },
+      { w: 72, h: 32, textSize: '11px' }).setDepth(-40)
+    makeNodeButton(this, 94, 16, 'HOME', () => { this.scene.start('ChapterSelectScene') },
+      { w: 72, h: 32, textSize: '11px' }).setDepth(-40)
+
+    const btnY = H - 50
+    makeNodeButton(this, W - 110, btnY - 17, 'ENTER', () => this.enterLevel(),
+      { w: 100, h: 40, role: 'primary' }).setDepth(-40)
   }
 
   private rebuildContent(): void {
@@ -86,19 +105,34 @@ export class LevelPreviewScene extends Phaser.Scene {
     const data = this.levelData
     if (!data) return
 
-    const cols = data.cols
-    const rows = data.rows
-    const gridW = cols * TILE_SIZE
-    const availW = this.scale.width
-    const offsetX = Math.floor((availW - gridW) / 2)
+    const frameX = FRAME_PAD
+    const frameY = FRAME_TOP
+    const frameW = FRAME_W
+    const frameH = FRAME_H
 
-    this.mapGrid = new Grid(this, cols, rows, offsetX, GRID_OFFSET_Y)
+    const gridW = data.cols * TILE_SIZE
+    const gridH = data.rows * TILE_SIZE
+
+    const scale = gridW >= gridH
+      ? (frameW * 0.8) / gridW
+      : (frameH * 0.8) / gridH
+
+    const scaledW = gridW * scale
+    const scaledH = gridH * scale
+    const offsetX = frameX + (frameW - scaledW) / 2
+    const offsetY = frameY + (frameH - scaledH) / 2
+
+    this.mapGrid = new Grid(this, data.cols, data.rows, offsetX, offsetY)
     this.mapGrid.fromLevelData(data)
     this.mapGrid.render()
 
-    const H = this.scale.height
-    const gfx = this.add.graphics()
-    this.contentContainer.add(gfx)
+    const gridContainer = this.add.container(0, 0)
+    const tg = (this.mapGrid as any).tileGraphics as Phaser.GameObjects.Graphics
+    const gl = (this.mapGrid as any).gridLines as Phaser.GameObjects.Graphics
+    gridContainer.add(tg)
+    gridContainer.add(gl)
+    gridContainer.setScale(scale)
+    this.contentContainer.add(gridContainer)
 
     const stats = [
       `Waves: ${data.waves.length}`,
@@ -110,14 +144,14 @@ export class LevelPreviewScene extends Phaser.Scene {
     const totalEnemies = data.waves.reduce((s, w) => s + w.entries.reduce((a, e) => a + e.count, 0), 0)
     stats.push(`Total hostile: ${totalEnemies}`)
 
-    let py = H - 32
-    const px = this.scale.width - 180
+    const sx = frameX + frameW - 160
+    let sy = frameY + frameH - 8
     for (let i = stats.length - 1; i >= 0; i--) {
-      const t = this.add.text(px, py, stats[i], {
-        ...FONTS.small, color: COLORS.text.dim,
+      const t = this.add.text(sx, sy, stats[i], {
+        ...FONTS.small, color: '#4B5563',
       }).setOrigin(0, 1)
       this.contentContainer.add(t)
-      py -= 18
+      sy -= 18
     }
   }
 
@@ -125,9 +159,13 @@ export class LevelPreviewScene extends Phaser.Scene {
     const data = this.levelData
     if (!data) return
 
-    const W = this.scale.width
-    let px = 60
-    let py = 100
+    const W = 1280
+    const frameX = FRAME_PAD
+    const frameY = FRAME_TOP
+    const frameW = FRAME_W
+
+    let px = frameX + 20
+    let py = frameY + 48
 
     const seen = new Map<string, { config: EnemyConfig; total: number }>()
     for (const wave of data.waves) {
@@ -146,43 +184,43 @@ export class LevelPreviewScene extends Phaser.Scene {
     const entries = Array.from(seen.values())
     if (entries.length === 0) {
       const t = this.add.text(W / 2, py, 'No enemy data available', {
-        ...FONTS.body, color: COLORS.text.dim,
+        ...FONTS.body, color: '#4B5563',
       }).setOrigin(0.5, 0)
       this.contentContainer.add(t)
       return
     }
 
     for (const { config, total } of entries) {
-      const cardW = Math.min(340, W / entries.length - 24)
-      const cx = px + cardW / 2
+      const cardW = Math.min(340, frameW / entries.length - 24)
+      px += cardW / 2
 
       const bg = this.add.graphics()
-      bg.fillStyle(0x1A1A3E, 0.9)
-      bg.fillRect(px, py, cardW, 180)
-      bg.lineStyle(1, config.color, 0.4)
-      bg.strokeRect(px, py, cardW, 180)
+      bg.fillStyle(0xffffff, 0.8)
+      bg.fillRect(px - cardW / 2, py, cardW, 180)
+      bg.lineStyle(1, 0x0040FF, 0.08)
+      bg.strokeRect(px - cardW / 2, py, cardW, 180)
       this.contentContainer.add(bg)
 
       const icon = this.add.graphics()
       icon.fillStyle(config.color, 1)
-      icon.fillCircle(px + 20, py + 20, 12)
+      icon.fillCircle(px - cardW / 2 + 20, py + 20, 12)
       icon.fillStyle(0xffffff, 0.3)
-      icon.fillCircle(px + 20, py + 20, 6)
+      icon.fillCircle(px - cardW / 2 + 20, py + 20, 6)
       this.contentContainer.add(icon)
 
-      const name = this.add.text(px + 38, py + 6, config.name, {
-        ...FONTS.bodyBold, color: COLORS.text.primary,
+      const name = this.add.text(px - cardW / 2 + 38, py + 6, config.name, {
+        ...FONTS.bodyBold, color: '#0A0A0C',
       })
       this.contentContainer.add(name)
 
-      const countT = this.add.text(px + cardW - 10, py + 6, `x${total}`, {
-        ...FONTS.small, color: COLORS.text.dim,
+      const countT = this.add.text(px + cardW / 2 - 10, py + 6, `x${total}`, {
+        ...FONTS.small, color: '#4B5563',
       }).setOrigin(1, 0)
       this.contentContainer.add(countT)
 
       const desc = config.description ?? ''
-      const descT = this.add.text(px + 10, py + 30, desc, {
-        ...FONTS.small, color: COLORS.text.secondary, wordWrap: { width: cardW - 20 },
+      const descT = this.add.text(px - cardW / 2 + 10, py + 30, desc, {
+        ...FONTS.small, color: '#888888', wordWrap: { width: cardW - 20 },
       })
       this.contentContainer.add(descT)
 
@@ -194,16 +232,16 @@ export class LevelPreviewScene extends Phaser.Scene {
       ]
       let sy = py + 60
       for (const line of stats) {
-        const t = this.add.text(px + 10, sy, line, {
-          fontSize: FONT_SIZE.xs, color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        const t = this.add.text(px - cardW / 2 + 10, sy, line, {
+          fontSize: FONT_SIZE.xs, color: '#888888', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
         })
         this.contentContainer.add(t)
         sy += 16
       }
 
-      px += cardW + 16
+      px += cardW / 2 + 16
       if (px > W - 80) {
-        px = 60
+        px = frameX + 20
         py += 200
       }
     }

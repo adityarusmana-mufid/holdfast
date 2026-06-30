@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
-import { COLORS, FONTS, FONT_SERIF } from '../ui/Constants'
-import { makeNodeButton } from '../ui/Components'
+import { COLORS, FONTS, FONT_SERIF, FONT_SIZE, TOP_BAR } from '../ui/Constants'
+import { makeNodeButton, drawGridBg, drawCornerBrackets } from '../ui/Components'
 import { CHAPTERS } from '../config/chapters'
 
 const CARD_W = 200
@@ -15,21 +15,22 @@ export class ChapterSelectScene extends Phaser.Scene {
     const W = 1280
     const H = 720
 
-    this.add.graphics()
-      .fillStyle(0x05001A, 1)
-      .fillRect(0, 0, W, H)
+    this.cameras.main.fadeIn(300, 245, 245, 245)
 
-    this.add.text(W / 2, 30, 'HOLDFAST', {
-      ...FONTS.h1, color: COLORS.text.primary,
-    }).setOrigin(0.5, 0)
+    const bg = this.add.graphics()
+    bg.fillGradientStyle(0xF5F5F5, 0xF5F5F5, 0xF0F0F0, 0xE8E8E8)
+    bg.fillRect(0, 0, W, H)
+    bg.setDepth(-100)
 
-    this.add.text(W / 2, 72, 'Select a Chapter', {
+    drawGridBg(this, W, H, 2)
+
+    this.add.text(W / 2, TOP_BAR + 12, 'Select a Chapter', {
       ...FONTS.body, color: COLORS.text.secondary,
     }).setOrigin(0.5, 0)
 
     const totalW = CHAPTERS.length * CARD_W + (CHAPTERS.length - 1) * 24
     const startX = (W - totalW) / 2
-    const cardY = 170
+    const cardY = 160
 
     CHAPTERS.forEach((ch, i) => {
       const cx = startX + i * (CARD_W + 24) + CARD_W / 2
@@ -37,18 +38,17 @@ export class ChapterSelectScene extends Phaser.Scene {
       const c = this.add.container(cx, cardY)
       const shadow = this.add.graphics()
       const gfx = this.add.graphics()
-      c.add([shadow, gfx])
+      const brackets = this.add.graphics()
+      drawCornerBrackets(brackets, -CARD_W / 2, 0, CARD_W, CARD_H, 18, 0x0040FF, 0.20, 2)
+      c.add([shadow, gfx, brackets])
 
       const draw = (pressed: boolean): void => {
         shadow.clear()
         gfx.clear()
-        gfx.fillGradientStyle(
-          pressed ? COLORS.nodeButton.primaryTopPressed : COLORS.nodeButton.primaryTop,
-          pressed ? COLORS.nodeButton.primaryTopPressed : COLORS.nodeButton.primaryTop,
-          pressed ? COLORS.nodeButton.primaryBottomPressed : COLORS.nodeButton.primaryBottom,
-          pressed ? COLORS.nodeButton.primaryBottomPressed : COLORS.nodeButton.primaryBottom,
-        )
+        gfx.fillStyle(pressed ? 0xe8ecf0 : 0xF4F7FA, 1)
         gfx.fillRect(-CARD_W / 2, 0, CARD_W, CARD_H)
+        gfx.lineStyle(1, 0x0040FF, 0.08)
+        gfx.strokeRect(-CARD_W / 2, 0, CARD_W, CARD_H)
       }
 
       draw(false)
@@ -59,21 +59,21 @@ export class ChapterSelectScene extends Phaser.Scene {
       const numTxt = this.add.text(0, 24, `CHAPTER ${chNum}`, {
         fontSize: '12px',
         fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-        color: '#8a9aaa',
+        color: '#8E9AAF',
       }).setOrigin(0.5, 0)
 
       const titleTxt = this.add.text(0, 60, titleParts.join('\n'), {
         fontSize: '26px',
         fontFamily: FONT_SERIF,
         fontStyle: 'bold',
-        color: '#ffffff',
+        color: COLORS.text.primary,
         align: 'center',
       }).setOrigin(0.5, 0)
 
       const countTxt = this.add.text(0, CARD_H - 28, `${ch.levels.length} operation${ch.levels.length !== 1 ? 's' : ''}`, {
         fontSize: '12px',
         fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-        color: '#5d6d7d',
+        color: '#4B5563',
       }).setOrigin(0.5, 0)
 
       c.add([numTxt, titleTxt, countTxt])

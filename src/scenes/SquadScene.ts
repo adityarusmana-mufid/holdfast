@@ -54,17 +54,6 @@ export class SquadScene extends Phaser.Scene {
     const W = 1280
     const H = 720
 
-    this.add.text(W / 2, TOP_BAR + 4, 'SQUAD SELECTION', {
-      ...FONTS.h2, color: COLORS.text.primary,
-    }).setOrigin(0.5, 0)
-
-    const subtitle = this.levelId === 'menu'
-      ? 'Build and save your squad presets. Switch between 4 setups below.'
-      : 'Tap an empty slot to pick a unit. Current preset will be used for this operation.'
-    this.add.text(W / 2, TOP_BAR + 28, subtitle, {
-      ...FONTS.small, color: COLORS.text.dim,
-    }).setOrigin(0.5, 0)
-
     makeNodeButton(this, W - 150, 18, 'Auto Fill', () => this.autoFill(), { w: 110, h: 34, textSize: '12px' })
     makeNodeButton(this, W - 268, 18, '\u2716 Clear', () => this.clearSquad(), { w: 108, h: 34, textSize: '12px', role: 'danger' })
 

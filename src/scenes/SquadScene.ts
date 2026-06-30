@@ -136,21 +136,21 @@ export class SquadScene extends Phaser.Scene {
   }
 
   private onSlotClick(index: number): void {
-    if (this.slots[index] !== null) {
-      this.slots[index] = null
-      delete this.pickedSkills[index]
-      this.drawSlot(this.slotContainers[index], null)
-      this.persistSquad()
-      return
-    }
-
-    this.scene.launch('PickerScene', { slotIndex: index, squad: this.slots })
+    this.scene.launch('PickerScene', {
+      slotIndex: index,
+      currentUnit: this.slots[index],
+      currentSkillId: this.pickedSkills[index],
+    })
   }
 
-  receivePickedUnit(unit: UnitConfig, slotIndex: number, skillId?: string): void {
+  receivePickedUnit(unit: UnitConfig | null, slotIndex: number, skillId?: string): void {
     if (slotIndex < 0 || slotIndex >= this.slots.length) return
     this.slots[slotIndex] = unit
-    if (skillId) this.pickedSkills[slotIndex] = skillId
+    if (unit && skillId) {
+      this.pickedSkills[slotIndex] = skillId
+    } else {
+      delete this.pickedSkills[slotIndex]
+    }
     this.drawSlot(this.slotContainers[slotIndex], unit)
     this.persistSquad()
   }

@@ -141,7 +141,6 @@ export class SquadScene extends Phaser.Scene {
   }
 
   private persistSquad(): void {
-    const key = this.levelId === 'menu' ? 'menu_squad' : this.levelId
     savePreset(this.activePresetIndex, this.slots.map(s => s?.id ?? null))
     savePresetSkills(this.activePresetIndex, this.pickedSkills)
   }

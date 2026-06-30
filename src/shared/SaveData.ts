@@ -83,26 +83,6 @@ export function getCompletion(levelId: string): LevelCompletion | undefined {
   return loadSave().levelCompletions[levelId]
 }
 
-export function saveSquad(levelId: string, slotIds: (string | null)[]): void {
-  const data = loadSave()
-  data.squads[levelId] = slotIds
-  persist(data)
-}
-
-export function loadSquad(levelId: string): (string | null)[] | undefined {
-  return loadSave().squads[levelId]
-}
-
-export function savePickedSkills(levelId: string, skills: Record<number, string>): void {
-  const data = loadSave()
-  data.squadSkills[levelId] = skills
-  persist(data)
-}
-
-export function loadPickedSkills(levelId: string): Record<number, string> | undefined {
-  return loadSave().squadSkills[levelId]
-}
-
 export function savePreset(index: number, slotIds: (string | null)[]): void {
   const data = loadSave()
   data.presets[`preset_${index}`] = slotIds

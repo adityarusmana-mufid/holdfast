@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 import { Direction, UnitConfig, DeployedUnit } from '../types/index'
 import { Grid, TILE_SIZE } from './Grid'
 import { FONT_SIZE } from '../ui/Constants'
+import { drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon } from '../ui/Components'
 
 export class UnitSprite {
   private scene: Phaser.Scene
@@ -77,6 +78,52 @@ export class UnitSprite {
 
   private drawBody(config: UnitConfig, size: number, facing: Direction): void {
     const half = size / 2
+
+    if (config.id === 'core_caster') {
+      this.drawCoreCasterIcon(size, facing)
+      return
+    }
+    if (config.id === 'splash_caster') {
+      drawSplashCasterIcon(this.body, 0, 0, size, config.color)
+      return
+    }
+    if (config.id === 'blast_caster') {
+      drawBlastCasterIcon(this.body, 0, 0, size, config.color)
+      return
+    }
+    if (config.id === 'chain_caster') {
+      drawChainCasterIcon(this.body, 0, 0, size, config.color)
+      return
+    }
+    if (config.id === 'mech_accord_caster') {
+      drawMechAccordCasterIcon(this.body, 0, 0, size, config.color)
+      return
+    }
+    if (config.id === 'protector') {
+      drawProtectorIcon(this.body, 0, 0, size, config.color)
+      return
+    }
+    if (config.id === 'guardian') {
+      drawGuardianIcon(this.body, 0, 0, size, config.color)
+      return
+    }
+    if (config.id === 'juggernaut') {
+      drawJuggernautIcon(this.body, 0, 0, size, config.color)
+      return
+    }
+    if (config.id === 'fortress_defender') {
+      drawFortressIcon(this.body, 0, 0, size, config.color)
+      return
+    }
+    if (config.id === 'arts_protector') {
+      drawArtsProtectorIcon(this.body, 0, 0, size, config.color)
+      return
+    }
+    if (config.id === 'sentry_protector') {
+      drawSentryProtectorIcon(this.body, 0, 0, size, config.color)
+      return
+    }
+
     this.body.fillStyle(config.color, 1)
 
     if (config.type === 'ground') {
@@ -120,6 +167,10 @@ export class UnitSprite {
       this.body.lineStyle(2, 0x00a2ff, 0.4)
       this.body.strokeTriangle(tri[0].x, tri[0].y, tri[1].x, tri[1].y, tri[2].x, tri[2].y)
     }
+  }
+
+  private drawCoreCasterIcon(size: number, _facing: Direction): void {
+    drawCoreCasterIcon(this.body, 0, 0, size, this.config.color, 0x00a2ff, 0.4)
   }
 
   private drawHp(size: number): void {

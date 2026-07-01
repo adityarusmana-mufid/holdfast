@@ -2,7 +2,7 @@ import Phaser from 'phaser'
 import { UnitConfig, UnitTrait } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONTS, FONT_SIZE, BORDER_STYLE, CORNER_BRACKET_SIZE, TOP_BAR, SIDEBAR_W } from '../ui/Constants'
-import { makeNodeButton, drawGridBg, drawCornerBrackets, drawUnitCard, drawRangeMiniGrid, UNIT_CARD_W, UNIT_CARD_H } from '../ui/Components'
+import { makeNodeButton, drawGridBg, drawCornerBrackets, drawUnitCard, drawRangeMiniGrid, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, UNIT_CARD_W, UNIT_CARD_H } from '../ui/Components'
 
 const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
   [UnitTrait.BlocksTwo]: 'Blocks up to 2 enemies',
@@ -19,6 +19,7 @@ const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
   [UnitTrait.CannotBeHealed]: 'Cannot be healed by allies',
   [UnitTrait.SlowOnHit]: 'Slows enemies on hit',
   [UnitTrait.ChainJump]: 'Attack chains to nearby enemies',
+  [UnitTrait.DroneRamp]: 'Drone ramps up damage on the same target',
   [UnitTrait.LinearAoE]: 'Hits all enemies in a line',
   [UnitTrait.TargetingLowestDef]: 'Prioritizes lowest DEF target',
   [UnitTrait.RangedWhenNotBlocking]: 'Uses ranged attack when not blocking',
@@ -210,7 +211,29 @@ export class PickerScene extends Phaser.Scene {
       const iconTop = ly + 8
       const cx = lx + CARD_W / 2
       const icon = this.add.graphics()
-      if (unit.type === 'ground') {
+      if (unit.id === 'core_caster') {
+        drawCoreCasterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'splash_caster') {
+        drawSplashCasterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'blast_caster') {
+        drawBlastCasterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'chain_caster') {
+        drawChainCasterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'mech_accord_caster') {
+        drawMechAccordCasterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'protector') {
+        drawProtectorIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'guardian') {
+        drawGuardianIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'juggernaut') {
+        drawJuggernautIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'fortress_defender') {
+        drawFortressIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'arts_protector') {
+        drawArtsProtectorIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'sentry_protector') {
+        drawSentryProtectorIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.type === 'ground') {
         icon.fillStyle(unit.color, 1)
         icon.fillRect(cx - iconSize / 2, iconTop, iconSize, iconSize)
         icon.fillStyle(0xffffff, 0.2)

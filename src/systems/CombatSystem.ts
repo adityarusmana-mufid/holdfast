@@ -44,6 +44,7 @@ export class CombatSystem {
   private pendingAttacks: PendingAttack[] = []
   private nextAttackId = 0
   private enemiesInWindUp: Set<number> = new Set()
+  private droneRampState: Map<UnitSprite, { lastEnemyId: string | null; ramp: number }> = new Map()
 
   constructor(grid: Grid, events: CombatEvents) {
     this.grid = grid
@@ -421,10 +422,12 @@ export class CombatSystem {
 
   private applyDamage(unit: UnitSprite, target: EnemySprite, atkOverride?: number): void {
     const damage = this.calculateDamage(unit, target, atkOverride)
-    target.takeDamage(damage)
+    const droneBonus = this.getDroneRampDamage(unit, target)
+    const total = damage + droneBonus
+    target.takeDamage(total)
 
-    if (damage > 0) {
-      this.events.onDamageDealt(damage, target, unit.config.damageType)
+    if (total > 0) {
+      this.events.onDamageDealt(total, target, unit.config.damageType)
     }
     if (!target.alive) {
       this.events.onEnemyKilled(target, unit)
@@ -480,6 +483,34 @@ export class CombatSystem {
       return Math.max(Math.floor(atk * 0.05), atk - target.config.armor)
     }
     return Math.max(Math.floor(atk * 0.05), Math.floor(atk * (1 - target.config.res / 100)))
+  }
+
+  private getDroneRampDamage(unit: UnitSprite, target: EnemySprite): number {
+    if (!this.hasTrait(unit, UnitTrait.DroneRamp)) return 0
+    const traitConfig = unit.config.traits.find(t => t.traitId === UnitTrait.DroneRamp)
+    if (!traitConfig) return 0
+
+    let state = this.droneRampState.get(unit)
+    if (!state) {
+      state = { lastEnemyId: null, ramp: 0 }
+      this.droneRampState.set(unit, state)
+    }
+
+    const targetTile = target.getCurrentTile()
+    if (!targetTile) return 0
+    const targetId = `${targetTile.row},${targetTile.col}`
+    if (state.lastEnemyId !== targetId) {
+      state.lastEnemyId = targetId
+      state.ramp = 0
+    }
+
+    const base = traitConfig.rampBasePercent ?? 0.2
+    const increment = traitConfig.rampIncrement ?? 0.15
+    const maxPercent = traitConfig.rampMaxPercent ?? 1.1
+    const currentPercent = Math.min(base + state.ramp * increment, maxPercent)
+    state.ramp++
+
+    return Math.floor(unit.config.atk * currentPercent)
   }
 
   private calcDamage(atk: number, def: number, res: number, type: DamageType): number {

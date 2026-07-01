@@ -96,6 +96,7 @@ export enum UnitTrait {
   LongRangeAttack = 'long_range_attack',
   PassiveDPRegen = 'passive_dp_regen',
   DeployAnywhere = 'deploy_anywhere',
+  DroneRamp = 'drone_ramp',
 }
 
 export interface UnitTraitConfig {
@@ -106,6 +107,9 @@ export interface UnitTraitConfig {
   maxTargets?: number
   damageFalloff?: number
   damageMultiplier?: number
+  rampBasePercent?: number
+  rampIncrement?: number
+  rampMaxPercent?: number
 }
 
 export type StatusEffectType = 'slow' | 'stun' | 'root'

@@ -349,6 +349,52 @@ export const SKILLS: Record<string, SkillConfig[]> = {
       effect: { type: 'enhanceAttack', atkMultiplier: 1.8, targetCount: 99 },
     },
   ],
+  sentry_protector: [
+    {
+      id: 'sentry_s1', name: 'Discharge',
+      description: 'ATK +50%, ASPD +30. Lasts 25s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 30, spInitial: 10,
+      durationType: 'duration', duration: 25,
+      effect: { type: 'statBuff', atkMultiplier: 1.5, aspdBonus: 30 },
+    },
+    {
+      id: 'sentry_s2', name: 'Taser Strike',
+      description: 'Next attack deals 250% ATK and stuns target for 1s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 6, spInitial: 0,
+      durationType: 'instant',
+      effect: { type: 'enhanceAttack', atkMultiplier: 2.5, binds: true },
+    },
+    {
+      id: 'sentry_s3', name: 'Sentry Mode',
+      description: 'ATK +80%, DEF +50%, attacks hit all enemies in range. Lasts 30s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 75, spInitial: 50,
+      durationType: 'duration', duration: 30,
+      effect: { type: 'statToggle', atkMultiplier: 1.8, defMultiplier: 1.5, attackAllBlocked: true },
+    },
+  ],
+  arts_protector: [
+    {
+      id: 'arts_protector_s1', name: 'Arts Infusion',
+      description: 'ATK +50%. Lasts 30s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 35, spInitial: 20,
+      durationType: 'duration', duration: 30,
+      effect: { type: 'statBuff', atkMultiplier: 1.5 },
+    },
+    {
+      id: 'arts_protector_s2', name: 'Thermal Strike',
+      description: 'Next attack deals 200% ATK as true damage. Stuns target for 1s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 5, spInitial: 0,
+      durationType: 'instant',
+      effect: { type: 'enhanceAttack', atkMultiplier: 2, trueDamage: true, binds: true },
+    },
+    {
+      id: 'arts_protector_s3', name: 'Arts Bulwark',
+      description: 'ATK +80%, blocks +1. Lasts 25s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 70, spInitial: 50,
+      durationType: 'duration', duration: 25,
+      effect: { type: 'statBuff', atkMultiplier: 1.8, blockBonus: 1 },
+    },
+  ],
   juggernaut: [
     {
       id: 'juggernaut_s1', name: 'DEF Up γ',
@@ -716,6 +762,29 @@ export const SKILLS: Record<string, SkillConfig[]> = {
       spRecovery: 'auto', activation: 'manual', spCost: 35, spInitial: 15,
       durationType: 'duration', duration: 8,
       effect: { type: 'special', description: 'maelstrom_pull_slow' },
+    },
+  ],
+  mech_accord_caster: [
+    {
+      id: 'mech_accord_s1', name: 'Drone Overclock',
+      description: 'ASPD +50, ATK +25%. Lasts 25s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 40, spInitial: 10,
+      durationType: 'duration', duration: 25,
+      effect: { type: 'statBuff', aspdBonus: 50, atkMultiplier: 1.25 },
+    },
+    {
+      id: 'mech_accord_s2', name: 'Volley Fire',
+      description: 'Next attack deals 180% ATK Arts damage and strikes 3 times. Stores up to 2 charges.',
+      spRecovery: 'offensive', activation: 'auto', spCost: 6, spInitial: 0,
+      charges: 2, durationType: 'instant',
+      effect: { type: 'enhanceAttack', atkMultiplier: 1.8, hitCount: 3 },
+    },
+    {
+      id: 'mech_accord_s3', name: 'Swarm Surge',
+      description: 'Drone +2, ATK +60%, attacks slow enemies by 50% for 0.5s. Lasts 25s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 50, spInitial: 15,
+      durationType: 'duration', duration: 25,
+      effect: { type: 'statBuff', atkMultiplier: 1.6 },
     },
   ],
 }

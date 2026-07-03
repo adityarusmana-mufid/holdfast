@@ -2,7 +2,7 @@ import Phaser from 'phaser'
 import { Direction, UnitConfig, DeployedUnit } from '../types/index'
 import { Grid, TILE_SIZE } from './Grid'
 import { FONT_SIZE } from '../ui/Constants'
-import { drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon } from '../ui/Components'
+import { drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon } from '../ui/Components'
 
 export class UnitSprite {
   private scene: Phaser.Scene
@@ -121,6 +121,14 @@ export class UnitSprite {
     }
     if (config.id === 'sentry_protector') {
       drawSentryProtectorIcon(this.body, 0, 0, size, config.color)
+      return
+    }
+    if (config.id === 'pioneer') {
+      drawPioneerIcon(this.body, 0, 0, size, config.color)
+      return
+    }
+    if (config.id === 'charger') {
+      drawChargerIcon(this.body, 0, 0, size, config.color)
       return
     }
 

@@ -10,7 +10,7 @@ import { CombatSystem } from '../systems/CombatSystem'
 import { HealingSystem } from '../systems/HealingSystem'
 import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONT_SIZE, SIDEBAR_W as PANEL_W } from '../ui/Constants'
-import { makeNodeButton, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon } from '../ui/Components'
+import { makeNodeButton, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon } from '../ui/Components'
 import { spawnProjectile, playSwing, showWindUp, flashDamage, spawnChainBolt, spawnSplashRing, spawnExpandRing, spawnBurstParticles, spawnBuffParticles, spawnSparkHit, spawnHealCross } from '../effects/CombatEffects'
 import { SkillSystem } from '../systems/SkillSystem'
 import { saveCompletion } from '../shared/SaveData'
@@ -1468,6 +1468,10 @@ export class GameScene extends Phaser.Scene {
       drawArtsProtectorIcon(icon, iconX, iconY, iconSize, unit.color)
     } else if (unit.id === 'sentry_protector') {
       drawSentryProtectorIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'pioneer') {
+      drawPioneerIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'charger') {
+      drawChargerIcon(icon, iconX, iconY, iconSize, unit.color)
     } else if (unit.type === 'ground') {
       icon.fillStyle(unit.color, 1)
       icon.fillRect(iconX - iconSize / 2, iconY - iconSize / 2, iconSize, iconSize)

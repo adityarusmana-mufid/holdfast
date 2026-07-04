@@ -2,7 +2,7 @@ import Phaser from 'phaser'
 import { UnitConfig, UnitTrait } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONTS, FONT_SIZE, BORDER_STYLE, CORNER_BRACKET_SIZE, TOP_BAR, SIDEBAR_W } from '../ui/Constants'
-import { makeNodeButton, drawGridBg, drawCornerBrackets, drawUnitCard, drawRangeMiniGrid, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, UNIT_CARD_W, UNIT_CARD_H } from '../ui/Components'
+import { makeNodeButton, drawGridBg, drawCornerBrackets, drawUnitCard, drawRangeMiniGrid, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, drawInstructorGuardIcon, UNIT_CARD_W, UNIT_CARD_H } from '../ui/Components'
 
 const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
   [UnitTrait.BlocksTwo]: 'Blocks up to 2 enemies',
@@ -240,6 +240,8 @@ export class PickerScene extends Phaser.Scene {
         drawLordGuardIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
       } else if (unit.id === 'arts_fighter') {
         drawArtsFighterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'instructor_guard') {
+        drawInstructorGuardIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
       } else if (unit.id === 'pioneer') {
         drawPioneerIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
       } else if (unit.id === 'charger') {

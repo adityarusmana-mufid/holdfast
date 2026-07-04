@@ -437,7 +437,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     damageType: 'kinetic',
     attackInterval: 1.3,
     rangePattern: RANGE_PATTERNS.meleeFront,
-    altRangePattern: RANGE_PATTERNS.meleeCross,
+    altRangePattern: RANGE_PATTERNS.lordRanged,
     blockCount: 2,
     dpCost: 16,
     redeployTime: 15,

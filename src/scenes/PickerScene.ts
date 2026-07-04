@@ -2,7 +2,7 @@ import Phaser from 'phaser'
 import { UnitConfig, UnitTrait } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONTS, FONT_SIZE, BORDER_STYLE, CORNER_BRACKET_SIZE, TOP_BAR, SIDEBAR_W } from '../ui/Constants'
-import { makeNodeButton, drawGridBg, drawCornerBrackets, drawUnitCard, drawRangeMiniGrid, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, drawInstructorGuardIcon, drawFighterIcon, drawSwordmasterIcon, UNIT_CARD_W, UNIT_CARD_H } from '../ui/Components'
+import { makeNodeButton, drawGridBg, drawCornerBrackets, drawUnitCard, drawRangeMiniGrid, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, drawInstructorGuardIcon, drawFighterIcon, drawSwordmasterIcon, drawSolobladeIcon, UNIT_CARD_W, UNIT_CARD_H } from '../ui/Components'
 
 const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
   [UnitTrait.BlocksTwo]: 'Blocks up to 2 enemies',
@@ -246,6 +246,8 @@ export class PickerScene extends Phaser.Scene {
         drawFighterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
       } else if (unit.id === 'swordmaster') {
         drawSwordmasterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'soloblade') {
+        drawSolobladeIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
       } else if (unit.id === 'pioneer') {
         drawPioneerIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
       } else if (unit.id === 'charger') {

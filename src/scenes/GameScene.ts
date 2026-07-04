@@ -781,7 +781,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showRangePreview(config: UnitConfig, pos: Position, facing: Direction): void {
-    const tiles = positionsInRange(pos, config.rangePattern, this.grid.rows, this.grid.cols, facing)
+    const tiles = positionsInRange(pos, config.altRangePattern ?? config.rangePattern, this.grid.rows, this.grid.cols, facing)
     this.rangePreview.clear()
     this.rangePreview.setAlpha(1)
     for (const t of tiles) {

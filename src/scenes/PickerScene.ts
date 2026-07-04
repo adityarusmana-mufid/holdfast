@@ -426,7 +426,7 @@ export class PickerScene extends Phaser.Scene {
       sy += 18
     }
 
-    const rangePattern = unit.rangePattern
+    const rangePattern = unit.altRangePattern ?? unit.rangePattern
 
     const rangeHeaderH = 14
     const rangePadTop = 10

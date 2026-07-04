@@ -347,6 +347,15 @@ describe('CombatSystem', () => {
       expect(params.atk).toBe(160)
     })
 
+    it('applies 120% ATK with RangedAttack120 trait', () => {
+      const unit = makeUnit({
+        traits: [{ traitId: UnitTrait.RangedWhenNotBlocking }, { traitId: UnitTrait.RangedAttack120 }],
+        altRangePattern: [[0, 0], [0, -1], [0, 1]],
+      })
+      const params = cs.getAttackParams(unit, [])
+      expect(params.atk).toBe(240)
+    })
+
     it('sets useAoE with RangedAoEWhenNotBlocking', () => {
       const unit = makeUnit({
         traits: [{ traitId: UnitTrait.RangedAoEWhenNotBlocking }],

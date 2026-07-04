@@ -72,6 +72,7 @@ export enum UnitTrait {
   DPOnKill = 'dp_on_kill',
   FullRefundRetreat = 'full_refund_retreat',
   RangedAttack80 = 'ranged_attack_80',
+  RangedAttack120 = 'ranged_attack_120',
   AoESplash = 'aoe_splash',
   ArtsDamage = 'arts_damage',
   FastAttack = 'fast_attack',

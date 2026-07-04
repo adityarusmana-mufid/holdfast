@@ -222,6 +222,10 @@ export class CombatSystem {
       atk = Math.floor(atk * 0.8)
     }
 
+    if (this.hasTrait(unit, UnitTrait.RangedAttack120)) {
+      atk = Math.floor(atk * 1.2)
+    }
+
     const rangePattern = skillRange ?? unit.config.altRangePattern ?? unit.config.rangePattern
     const useAoE = this.hasTrait(unit, UnitTrait.RangedAoEWhenNotBlocking)
 

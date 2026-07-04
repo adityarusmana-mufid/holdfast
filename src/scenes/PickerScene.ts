@@ -10,6 +10,7 @@ const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
   [UnitTrait.DPOnKill]: 'Gains DP per kill',
   [UnitTrait.FullRefundRetreat]: 'Full DP refund on retreat',
   [UnitTrait.RangedAttack80]: '80% ATK when attacking at range',
+  [UnitTrait.RangedAttack120]: '120% ATK when attacking at range',
   [UnitTrait.AoESplash]: 'AoE splash damage around target',
   [UnitTrait.ArtsDamage]: 'Deals thermal damage',
   [UnitTrait.FastAttack]: 'Fast attack speed',

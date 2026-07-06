@@ -717,6 +717,29 @@ export const SKILLS: Record<string, SkillConfig[]> = {
       effect: { type: 'heal', amountMultiplier: 1, range: 'allies' },
     },
   ],
+  chain_medic: [
+    {
+      id: 'chain_medic_s1', name: 'Chain Burst',
+      description: 'Next heal jumps to +2 more allies (5 total), no falloff for first bounce.',
+      spRecovery: 'auto', activation: 'auto', spCost: 5, spInitial: 0,
+      durationType: 'instant',
+      effect: { type: 'heal', amountMultiplier: 1.5, range: 'ally' },
+    },
+    {
+      id: 'chain_medic_s2', name: 'Resilient Link',
+      description: 'ATK +40%, healing chain falloff reduced to 15%. Lasts 25s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 30, spInitial: 10,
+      durationType: 'duration', duration: 25,
+      effect: { type: 'statBuff', atkMultiplier: 1.4 },
+    },
+    {
+      id: 'chain_medic_s3', name: 'Vital Surge',
+      description: 'ATK +80%, chain jumps to 5 allies. Restores 30% of max HP to all in range. Lasts 20s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 55, spInitial: 20,
+      durationType: 'duration', duration: 20,
+      effect: { type: 'statBuff', atkMultiplier: 1.8 },
+    },
+  ],
   roadblock: [],
   pusher: [
     {

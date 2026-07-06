@@ -92,6 +92,7 @@ export enum UnitTrait {
   TakesTrueDamage = 'takes_true_damage',
   HealAlly = 'heal_ally',
   HealMulti = 'heal_multi',
+  ChainHeal = 'chain_heal',
   AttackHealsAlly = 'attack_heals_ally',
   AoEHoT = 'aoe_hot',
   LongRangeAttack = 'long_range_attack',
@@ -107,6 +108,7 @@ export interface UnitTraitConfig {
   radius?: number
   maxTargets?: number
   damageFalloff?: number
+  healFalloff?: number
   damageMultiplier?: number
   rampBasePercent?: number
   rampIncrement?: number

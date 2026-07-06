@@ -527,7 +527,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     def: 50,
     res: 15,
     damageType: 'thermal',
-    attackInterval: 2.0,
+    attackInterval: 1.6,
     rangePattern: RANGE_PATTERNS.ranged4x3,
     blockCount: 0,
     dpCost: 18,

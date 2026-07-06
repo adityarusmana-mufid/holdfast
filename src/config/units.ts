@@ -616,7 +616,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     dpCost: 14,
     redeployTime: 15,
     color: 0xd35400,
-    traits: [{ traitId: UnitTrait.AoEMelee }, { traitId: UnitTrait.HealOnAttack, value: 50 }],
+    traits: [{ traitId: UnitTrait.AoEMelee }, { traitId: UnitTrait.HealOnAttack, value: 50 }, { traitId: UnitTrait.CannotBeHealed }],
     skills: SKILLS['reaper'],
   },
   {

@@ -551,7 +551,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     res: 0,
     damageType: 'kinetic',
     attackInterval: 2.85,
-    rangePattern: RANGE_PATTERNS.ranged4x3,
+    rangePattern: [[-2,-1],[-2,0],[-2,1],[-1,-1],[-1,0],[-1,1],[0,-1],[0,0],[0,1],[1,-1],[1,0],[1,1]],
     blockCount: 0,
     dpCost: 17,
     redeployTime: 15,

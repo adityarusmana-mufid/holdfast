@@ -10,7 +10,7 @@ import { CombatSystem } from '../systems/CombatSystem'
 import { HealingSystem } from '../systems/HealingSystem'
 import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONT_SIZE, SIDEBAR_W as PANEL_W } from '../ui/Constants'
-import { makeNodeButton, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, drawInstructorGuardIcon, drawFighterIcon, drawSwordmasterIcon, drawSolobladeIcon, drawReaperIcon, drawEarthshakerIcon, drawCrusherIcon, drawMedicIcon } from '../ui/Components'
+import { makeNodeButton, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, drawInstructorGuardIcon, drawFighterIcon, drawSwordmasterIcon, drawSolobladeIcon, drawReaperIcon, drawEarthshakerIcon, drawCrusherIcon, drawMedicIcon, drawMultiMedicIcon } from '../ui/Components'
 import { spawnProjectile, playSwing, showWindUp, flashDamage, spawnChainBolt, spawnSplashRing, spawnExpandRing, spawnBurstParticles, spawnBuffParticles, spawnSparkHit, spawnHealCross } from '../effects/CombatEffects'
 import { SkillSystem } from '../systems/SkillSystem'
 import { saveCompletion } from '../shared/SaveData'
@@ -1490,6 +1490,8 @@ export class GameScene extends Phaser.Scene {
       drawCrusherIcon(icon, iconX, iconY, iconSize, unit.color)
     } else if (unit.id === 'medic_st') {
       drawMedicIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'medic_multi') {
+      drawMultiMedicIcon(icon, iconX, iconY, iconSize, unit.color)
     } else if (unit.id === 'pioneer') {
       drawPioneerIcon(icon, iconX, iconY, iconSize, unit.color)
     } else if (unit.id === 'charger') {

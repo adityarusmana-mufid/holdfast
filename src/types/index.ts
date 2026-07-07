@@ -86,6 +86,7 @@ export enum UnitTrait {
   AoEMelee = 'aoe_melee',
   AoEMeleeBlockCapped = 'aoe_melee_block_capped',
   TargetingLowestDef = 'targeting_lowest_def',
+  TargetingAerial = 'targeting_aerial',
   RangedWhenNotBlocking = 'ranged_when_not_blocking',
   RangedAoEWhenNotBlocking = 'ranged_aoe_when_not_blocking',
   ConditionalDamage120 = 'conditional_damage_120',

@@ -355,6 +355,11 @@ export class CombatSystem {
       return this.findLowestDef(inRange)
     }
 
+    if (this.hasTrait(unit, UnitTrait.TargetingAerial)) {
+      const aerial = inRange.filter(e => e.config.isAerial)
+      if (aerial.length > 0) return this.findClosestToGoal(aerial)
+    }
+
     return this.findClosestToGoal(inRange)
   }
 

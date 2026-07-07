@@ -183,7 +183,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     dpCost: 12,
     redeployTime: 15,
     color: 0xf39c12,
-    traits: [],
+    traits: [{ traitId: UnitTrait.TargetingAerial }],
     skills: SKILLS['sniper'],
   },
   {

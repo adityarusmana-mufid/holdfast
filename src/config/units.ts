@@ -217,7 +217,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     def: 70,
     res: 0,
     damageType: 'kinetic',
-    attackInterval: 1.6,
+    attackInterval: 2.7,
     rangePattern: RANGE_PATTERNS.deadeyeCross,
     blockCount: 0,
     dpCost: 15,

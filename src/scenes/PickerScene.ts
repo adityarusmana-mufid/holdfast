@@ -2,7 +2,7 @@ import Phaser from 'phaser'
 import { UnitConfig, UnitTrait } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
 import { COLORS, FONTS, FONT_SIZE, BORDER_STYLE, CORNER_BRACKET_SIZE, TOP_BAR, SIDEBAR_W } from '../ui/Constants'
-import { makeNodeButton, drawGridBg, drawCornerBrackets, drawUnitCard, drawRangeMiniGrid, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, drawInstructorGuardIcon, drawFighterIcon, drawSwordmasterIcon, drawSolobladeIcon, drawReaperIcon, drawEarthshakerIcon, drawCrusherIcon, drawMedicIcon, drawMultiMedicIcon, drawIncantationMedicIcon, drawChainMedicIcon, drawMarksmanIcon, drawArtillerymanIcon, drawDeadeyeIcon, drawHeavyshooterIcon, UNIT_CARD_W, UNIT_CARD_H } from '../ui/Components'
+import { makeNodeButton, drawGridBg, drawCornerBrackets, drawUnitCard, drawRangeMiniGrid, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, drawInstructorGuardIcon, drawFighterIcon, drawSwordmasterIcon, drawSolobladeIcon, drawReaperIcon, drawEarthshakerIcon, drawCrusherIcon, drawMedicIcon, drawMultiMedicIcon, drawIncantationMedicIcon, drawChainMedicIcon, drawMarksmanIcon, drawArtillerymanIcon, drawDeadeyeIcon, drawHeavyshooterIcon, drawSpreadshooterIcon, UNIT_CARD_W, UNIT_CARD_H } from '../ui/Components'
 
 const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
   [UnitTrait.BlocksTwo]: 'Blocks up to 2 enemies',
@@ -25,6 +25,7 @@ const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
   [UnitTrait.TargetingLowestDef]: 'Prioritizes lowest DEF target',
   [UnitTrait.RangedWhenNotBlocking]: 'Uses ranged attack when not blocking',
   [UnitTrait.RangedAoEWhenNotBlocking]: 'Ranged AoE when not blocking',
+  [UnitTrait.SpreadAttack]: 'Attacks all enemies in range',
   [UnitTrait.AttackHealsAlly]: 'Attack also heals an ally',
   [UnitTrait.HealAlly]: 'Heals a wounded ally',
   [UnitTrait.AoEHoT]: 'Area health over time',
@@ -270,6 +271,8 @@ export class PickerScene extends Phaser.Scene {
         drawDeadeyeIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
       } else if (unit.id === 'heavyshooter') {
         drawHeavyshooterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'spreadshooter') {
+        drawSpreadshooterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
       } else if (unit.id === 'pioneer') {
         drawPioneerIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
       } else if (unit.id === 'charger') {

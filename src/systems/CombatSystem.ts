@@ -201,7 +201,8 @@ export class CombatSystem {
   private getAttackParams(unit: UnitSprite, enemies: EnemySprite[]): AttackParams {
     const isBlocking = this.isBlocking(unit, enemies)
     const hasRangedMode = this.hasTrait(unit, UnitTrait.RangedWhenNotBlocking) ||
-      this.hasTrait(unit, UnitTrait.RangedAoEWhenNotBlocking)
+      this.hasTrait(unit, UnitTrait.RangedAoEWhenNotBlocking) ||
+      this.hasTrait(unit, UnitTrait.SpreadAttack)
 
     let atk = unit.config.atk
 
@@ -227,7 +228,7 @@ export class CombatSystem {
     }
 
     const rangePattern = skillRange ?? unit.config.altRangePattern ?? unit.config.rangePattern
-    const useAoE = this.hasTrait(unit, UnitTrait.RangedAoEWhenNotBlocking)
+    const useAoE = this.hasTrait(unit, UnitTrait.RangedAoEWhenNotBlocking) || this.hasTrait(unit, UnitTrait.SpreadAttack)
 
     return { rangePattern, atk, useAoE }
   }

@@ -171,6 +171,7 @@ export class SquadScene extends Phaser.Scene {
       'bard_supporter',
       'pusher',
       'puller',
+      'executor',
     ]
     for (let i = 0; i < 12; i++) {
       const unit = UNIT_CONFIGS.find(u => u.id === picks[i]) ?? null

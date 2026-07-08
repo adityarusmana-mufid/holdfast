@@ -881,4 +881,20 @@ export const SKILLS: Record<string, SkillConfig[]> = {
       effect: { type: 'enhanceAttack', atkMultiplier: 1.8, splash: { radius: 2, damageMultiplier: 0.5 } },
     },
   ],
+  executor: [
+    {
+      id: 'executor_s1', name: 'Rapid Response',
+      description: 'DEF +80%, ATK +30%. Lasts 15s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 20, spInitial: 5,
+      durationType: 'duration', duration: 15,
+      effect: { type: 'statBuff', defMultiplier: 1.8, atkMultiplier: 1.3 },
+    },
+    {
+      id: 'executor_s2', name: 'Execution',
+      description: 'ATK +150%. Next attack deals 2.5x damage.',
+      spRecovery: 'auto', activation: 'auto', spCost: 8, spInitial: 0,
+      durationType: 'instant',
+      effect: { type: 'enhanceAttack', atkMultiplier: 2.5 },
+    },
+  ],
 }

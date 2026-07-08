@@ -906,4 +906,20 @@ export const SKILLS: Record<string, SkillConfig[]> = {
       effect: { type: 'statBuff', atkMultiplier: 1.6, defMultiplier: 1.4 },
     },
   ],
+  geek: [
+    {
+      id: 'geek_s1', name: 'Stimulant Injection',
+      description: 'Self: ATK +40%, ASPD +25. Lasts 15s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 25, spInitial: 10,
+      durationType: 'duration', duration: 15,
+      effect: { type: 'statBuff', atkMultiplier: 1.4, aspdBonus: 25 },
+    },
+    {
+      id: 'geek_s2', name: 'Tactical Override',
+      description: 'Nearby ally gains ATK +50%, ASPD +30 for 12s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 30, spInitial: 10,
+      durationType: 'instant',
+      effect: { type: 'buffAlly', atkMultiplier: 1.5, aspdBonus: 30, duration: 12 },
+    },
+  ],
 }

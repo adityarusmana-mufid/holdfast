@@ -248,8 +248,11 @@ export class GameScene extends Phaser.Scene {
           if (distPull > 0) {
             const tRow = Math.max(0, Math.min(this.grid.rows - 1, tile.row + Math.sign(dRow)))
             const tCol = Math.max(0, Math.min(this.grid.cols - 1, tile.col + Math.sign(dCol)))
-            target.displaceTo(tRow, tCol)
-            if (this.enemyManager) this.enemyManager.onEnemyDisplaced(target)
+            const tt = this.grid.tiles[tRow][tCol]
+            if (tt.type !== TileType.Ranged && tt.type !== TileType.Wall) {
+              target.displaceTo(tRow, tCol)
+              if (this.enemyManager) this.enemyManager.onEnemyDisplaced(target)
+            }
           }
           const artsDmg = Math.max(1, Math.floor(unit.config.atk * 2.1 * 0.05), Math.floor(unit.config.atk * 2.1 - target.config.armor))
           target.takeDamage(artsDmg)
@@ -395,8 +398,11 @@ export class GameScene extends Phaser.Scene {
             const dCol = unit.col - eTile.col
             const tRow = Math.max(0, Math.min(this.grid.rows - 1, eTile.row + Math.sign(dRow)))
             const tCol = Math.max(0, Math.min(this.grid.cols - 1, eTile.col + Math.sign(dCol)))
-            enemy.displaceTo(tRow, tCol)
-            if (this.enemyManager) this.enemyManager.onEnemyDisplaced(enemy)
+            const tt = this.grid.tiles[tRow][tCol]
+            if (tt.type !== TileType.Ranged && tt.type !== TileType.Wall) {
+              enemy.displaceTo(tRow, tCol)
+              if (this.enemyManager) this.enemyManager.onEnemyDisplaced(enemy)
+            }
             const dmg = Math.max(1, Math.floor(unit.config.atk * 2.2 * 0.05), Math.floor(unit.config.atk * 2.2 - enemy.config.armor))
             enemy.takeDamage(dmg)
             if (dmg > 0) this.showDamageNumber(dmg, enemy, 'kinetic')
@@ -1102,9 +1108,12 @@ export class GameScene extends Phaser.Scene {
           const dCol = du.col - eTile.col
           const tRow = Math.max(0, Math.min(this.grid.rows - 1, eTile.row + Math.sign(dRow)))
           const tCol = Math.max(0, Math.min(this.grid.cols - 1, eTile.col + Math.sign(dCol)))
-          enemy.displaceTo(tRow, tCol)
-          enemy.applyStatusEffect({ type: 'slow', remainingDuration: 1.5, factor: 0.5 })
-          if (this.enemyManager) this.enemyManager.onEnemyDisplaced(enemy)
+          const tt = this.grid.tiles[tRow][tCol]
+          if (tt.type !== TileType.Ranged && tt.type !== TileType.Wall) {
+            enemy.displaceTo(tRow, tCol)
+            enemy.applyStatusEffect({ type: 'slow', remainingDuration: 1.5, factor: 0.5 })
+            if (this.enemyManager) this.enemyManager.onEnemyDisplaced(enemy)
+          }
         }
       }
       this.combatSystem.update(delta * speed, this.unitSprites, enemies)

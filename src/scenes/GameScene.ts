@@ -223,8 +223,18 @@ export class GameScene extends Phaser.Scene {
           deployed.nextAttackPushStunWall = false
           const dRow = tile.row - unit.row
           const dCol = tile.col - unit.col
-          const tRow = Math.max(0, Math.min(this.grid.rows - 1, tile.row + Math.sign(dRow)))
-          const tCol = Math.max(0, Math.min(this.grid.cols - 1, tile.col + Math.sign(dCol)))
+          let tRow: number, tCol: number
+          if (dRow === 0 && dCol === 0) {
+            const pushDir: Record<string, [number, number]> = { up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1] }
+            const [dr, dc] = pushDir[unit.facing] ?? [-1, 0]
+            tRow = tile.row + dr
+            tCol = tile.col + dc
+          } else {
+            tRow = tile.row + Math.sign(dRow)
+            tCol = tile.col + Math.sign(dCol)
+          }
+          tRow = Math.max(0, Math.min(this.grid.rows - 1, tRow))
+          tCol = Math.max(0, Math.min(this.grid.cols - 1, tCol))
           target.displaceTo(tRow, tCol)
           target.applyStatusEffect({ type: 'stun', remainingDuration: 2.5, factor: 0 })
           if (this.enemyManager) this.enemyManager.onEnemyDisplaced(target)

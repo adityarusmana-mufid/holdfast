@@ -834,4 +834,28 @@ export const SKILLS: Record<string, SkillConfig[]> = {
       skillRangePattern: [[-3,-1],[-3,0],[-3,1],[-2,-1],[-2,0],[-2,1],[-1,-1],[-1,0],[-1,1],[0,0]],
     },
   ],
+  besieger: [
+    {
+      id: 'besieger_s1', name: 'Power Strike γ',
+      description: 'Next attack deals 210% ATK.',
+      spRecovery: 'offensive', activation: 'auto', spCost: 4, spInitial: 0,
+      durationType: 'instant',
+      effect: { type: 'enhanceAttack', atkMultiplier: 2.1 },
+    },
+    {
+      id: 'besieger_s2', name: 'Bombardment',
+      description: 'ATK +80%, ASPD +20. Lasts 20s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 30, spInitial: 10,
+      durationType: 'duration', duration: 20,
+      effect: { type: 'enhanceAttack', atkMultiplier: 1.8, aspdBonus: 20 },
+    },
+    {
+      id: 'besieger_s3', name: 'Siege Mode',
+      description: 'ATK +100%, range extended by +1 column to each side. Lasts 15s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 45, spInitial: 20,
+      durationType: 'duration', duration: 15,
+      effect: { type: 'enhanceAttack', atkMultiplier: 2.0 },
+      skillRangePattern: [[-4,-2],[-4,-1],[-4,0],[-4,1],[-4,2],[-3,-3],[-3,-2],[-3,-1],[-3,0],[-3,1],[-3,2],[-3,3],[-2,-3],[-2,-2],[-2,-1],[-2,0],[-2,1],[-2,2],[-2,3],[0,0]],
+    },
+  ],
 }

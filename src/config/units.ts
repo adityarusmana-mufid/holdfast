@@ -821,7 +821,7 @@ export const UNIT_CONFIGS: UnitConfig[] = [
     dpCost: 14,
     redeployTime: 70,
     color: 0x7c4dff,
-    traits: [{ traitId: UnitTrait.DeployAnywhere }, { traitId: UnitTrait.TargetingAerial }],
+    traits: [{ traitId: UnitTrait.DeployAnywhere }],
     skills: SKILLS['puller'],
   },
 ]

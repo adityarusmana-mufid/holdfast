@@ -89,6 +89,7 @@ export enum UnitTrait {
   TargetingAerial = 'targeting_aerial',
   RangedWhenNotBlocking = 'ranged_when_not_blocking',
   RangedAoEWhenNotBlocking = 'ranged_aoe_when_not_blocking',
+  SpreadAttack = 'spread_attack',
   ConditionalDamage120 = 'conditional_damage_120',
   TakesTrueDamage = 'takes_true_damage',
   HealAlly = 'heal_ally',

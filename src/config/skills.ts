@@ -810,4 +810,28 @@ export const SKILLS: Record<string, SkillConfig[]> = {
       effect: { type: 'statBuff', atkMultiplier: 1.6 },
     },
   ],
+  spreadshooter: [
+    {
+      id: 'spreadshooter_s1', name: 'Power Strike γ',
+      description: 'Next attack deals 210% ATK.',
+      spRecovery: 'offensive', activation: 'auto', spCost: 4, spInitial: 0,
+      durationType: 'instant',
+      effect: { type: 'enhanceAttack', atkMultiplier: 2.1 },
+    },
+    {
+      id: 'spreadshooter_s2', name: 'Scatter Blast',
+      description: 'ATK +60%, ASPD +30. Lasts 20s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 30, spInitial: 10,
+      durationType: 'duration', duration: 20,
+      effect: { type: 'enhanceAttack', atkMultiplier: 1.6, aspdBonus: 30 },
+    },
+    {
+      id: 'spreadshooter_s3', name: 'Drum-fed Spree',
+      description: 'ATK +40%, ASPD +60, range extended by 1 row. Lasts 15s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 40, spInitial: 15,
+      durationType: 'duration', duration: 15,
+      effect: { type: 'enhanceAttack', atkMultiplier: 1.4, aspdBonus: 60 },
+      skillRangePattern: [[-3,-1],[-3,0],[-3,1],[-2,-1],[-2,0],[-2,1],[-1,-1],[-1,0],[-1,1],[0,0]],
+    },
+  ],
 }

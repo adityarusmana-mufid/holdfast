@@ -897,4 +897,13 @@ export const SKILLS: Record<string, SkillConfig[]> = {
       effect: { type: 'enhanceAttack', atkMultiplier: 2.5 },
     },
   ],
+  ambusher: [
+    {
+      id: 'ambusher_s1', name: 'Shadow Burst',
+      description: 'ATK +60%, DEF +40%. Lasts 20s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 30, spInitial: 10,
+      durationType: 'duration', duration: 20,
+      effect: { type: 'statBuff', atkMultiplier: 1.6, defMultiplier: 1.4 },
+    },
+  ],
 }

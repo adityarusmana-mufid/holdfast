@@ -65,6 +65,7 @@ function makeEnemy(overrides: Record<string, any> = {}) {
     blocked: false,
     blockerUnitKey: null as string | null,
     statusEffects: [] as any[],
+    bonusAtk: 0,
     config: {
       id: 'test_enemy',
       atk: 150,
@@ -76,6 +77,7 @@ function makeEnemy(overrides: Record<string, any> = {}) {
       attackInterval: 2.0,
       isAerial: false,
       color: 0xff4444,
+      behavior: { type: 'standard' } as const,
       ...overrides,
     },
     getCurrentTile() { return { row: this._tileRow ?? 5, col: this._tileCol ?? 5 } },

@@ -35,6 +35,8 @@ export class EnemyManager {
   private enemiesDealtWith: number = 0
   private preludeActive: boolean = false
   private preludeTimer: number = 0
+  private healerTimers: Map<number, number> = new Map()
+  private summonerTimers: Map<number, number> = new Map()
 
   constructor(scene: Phaser.Scene, grid: Grid, depSystem: DeploymentSystem, events: EnemyManagerEvents) {
     this.scene = scene
@@ -53,6 +55,8 @@ export class EnemyManager {
     this.enemiesDealtWith = 0
     this.totalEnemyCount = waves.reduce((sum, w) =>
       sum + w.entries.reduce((s, e) => s + e.count, 0), 0)
+    this.healerTimers.clear()
+    this.summonerTimers.clear()
   }
 
   startBattle(): void {
@@ -115,6 +119,7 @@ export class EnemyManager {
     this.updateBlocking()
     this.updateVisualStacking()
     this.updateObjectiveCheck()
+    this.updateBehaviors(delta)
     this.removeDead()
   }
 
@@ -280,6 +285,98 @@ export class EnemyManager {
     })
   }
 
+  updateBehaviors(delta: number): void {
+    const units = this.depSystem.getAllUnits().map(u => ({ row: u.row, col: u.col }))
+    for (const enemy of this.enemies) {
+      if (!enemy.alive) continue
+      enemy.updateDetection(units)
+
+      if (enemy.behavior.type === 'healer') {
+        const bh = enemy.behavior
+        const timer = this.healerTimers.get(enemy.id) ?? 0
+        const newTimer = timer + delta
+        if (newTimer >= bh.healInterval) {
+          this.healerTimers.set(enemy.id, newTimer - bh.healInterval)
+          this.handleHealerTick(enemy)
+        } else {
+          this.healerTimers.set(enemy.id, newTimer)
+        }
+      }
+
+      if (enemy.behavior.type === 'buffer') {
+        this.handleBufferTick(enemy)
+      }
+
+      if (enemy.behavior.type === 'summoner') {
+        const bh = enemy.behavior
+        const timer = this.summonerTimers.get(enemy.id) ?? 0
+        const newTimer = timer + delta
+        if (newTimer >= bh.spawnInterval) {
+          this.summonerTimers.set(enemy.id, newTimer - bh.spawnInterval)
+          this.handleSummonerTick(enemy)
+        } else {
+          this.summonerTimers.set(enemy.id, newTimer)
+        }
+      }
+    }
+  }
+
+  private handleHealerTick(enemy: EnemySprite): void {
+    if (enemy.behavior.type !== 'healer') return
+    const behavior = enemy.behavior
+    const tile = enemy.getCurrentTile()
+    if (!tile) return
+    let best: EnemySprite | null = null
+    let lowestPct = 1
+    for (const e of this.enemies) {
+      if (!e.alive || e === enemy) continue
+      const et = e.getCurrentTile()
+      if (!et) continue
+      const dist = Math.abs(et.row - tile.row) + Math.abs(et.col - tile.col)
+      if (dist <= behavior.healRange) {
+        const pct = e.currentHp / e.config.hp
+        if (pct < lowestPct) {
+          lowestPct = pct
+          best = e
+        }
+      }
+    }
+    if (best) {
+      best.currentHp = Math.min(best.currentHp + behavior.healAmount, best.config.hp)
+    }
+  }
+
+  private handleBufferTick(enemy: EnemySprite): void {
+    if (enemy.behavior.type !== 'buffer') return
+    const behavior = enemy.behavior
+    const tile = enemy.getCurrentTile()
+    if (!tile) return
+    for (const e of this.enemies) {
+      if (!e.alive || e === enemy) continue
+      const et = e.getCurrentTile()
+      if (!et) continue
+      const dist = Math.abs(et.row - tile.row) + Math.abs(et.col - tile.col)
+      if (dist <= behavior.buffRange) {
+        e.bonusAtk = behavior.buffAtk
+      }
+    }
+  }
+
+  private handleSummonerTick(enemy: EnemySprite): void {
+    if (enemy.behavior.type !== 'summoner') return
+    const behavior = enemy.behavior
+    const route = this.currentRoute
+    if (!route) return
+    const spawnConfig = ENEMY_CONFIGS.find(c => c.id === behavior.spawnType)
+    if (!spawnConfig) return
+    for (let i = 0; i < behavior.spawnCount; i++) {
+      const path: Position[] = [route.spawn, ...route.waypoints, route.goal]
+      if (path.length < 2) continue
+      const minion = new EnemySprite(this.scene, this.grid, spawnConfig, path)
+      this.enemies.push(minion)
+    }
+  }
+
   getEnemies(): EnemySprite[] {
     return this.enemies
   }
@@ -347,6 +444,8 @@ export class EnemyManager {
   cleanup(): void {
     for (const e of this.enemies) e.destroy()
     this.enemies = []
+    this.healerTimers.clear()
+    this.summonerTimers.clear()
   }
 }
 

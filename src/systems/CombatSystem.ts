@@ -16,6 +16,7 @@ export interface CombatEvents {
   onEnemyAttackCancelled?: (attackId: number) => void
   onChainJump?: (unit: UnitSprite, from: EnemySprite, to: EnemySprite) => void
   onSplashAoE?: (unit: UnitSprite, center: EnemySprite, radius: number) => void
+  onExplosion?: (position: { row: number; col: number }, damage: number, radius: number, damageType: DamageType) => void
   effectiveUnitAttack?: (unit: UnitSprite) => { atk: number; damageType: DamageType; hitCount: number } | null
   effectiveUnitDef?: (unit: UnitSprite) => number | null
 }
@@ -138,7 +139,8 @@ export class CombatSystem {
       if (!target) continue
 
       const def = this.getUnitEffectiveDef(target)
-      const damage = this.calcDamage(enemy.config.atk, def, target.config.res, enemy.config.damageType)
+      const effectiveAtk = enemy.config.atk + (enemy.bonusAtk ?? 0)
+      const damage = this.calcDamage(effectiveAtk, def, target.config.res, enemy.config.damageType)
       const attackId = this.nextAttackId++
       this.enemiesInWindUp.add(enemy.id)
       this.pendingAttacks.push({ attackId, enemy, target, damage, elapsed: 0, duration: ENEMY_WIND_UP_DURATION })
@@ -261,6 +263,7 @@ export class CombatSystem {
         this.events.onDamageDealt(splashDmg, target, splashConfig.damageType ?? unit.config.damageType)
       }
       if (!target.alive) {
+        this.checkExploderKill(target)
         this.events.onEnemyKilled(target, unit)
       }
       this.applySlow(unit, target)
@@ -304,6 +307,7 @@ export class CombatSystem {
         this.events.onDamageDealt(chainDmg, next, unit.config.damageType)
       }
       if (!next.alive) {
+        this.checkExploderKill(next)
         this.events.onEnemyKilled(next, unit)
       }
     }
@@ -399,6 +403,7 @@ export class CombatSystem {
       this.events.onDamageDealt(damage, target, unit.config.damageType)
     }
     if (!target.alive) {
+      this.checkExploderKill(target)
       this.events.onEnemyKilled(target, unit)
     } else {
       this.applySlow(unit, target)
@@ -458,6 +463,15 @@ export class CombatSystem {
     if (type === 'true') return atk
     if (type === 'kinetic') return Math.max(Math.floor(atk * 0.05), atk - def)
     return Math.max(Math.floor(atk * 0.05), Math.floor(atk * (1 - res / 100)))
+  }
+
+  private checkExploderKill(enemy: EnemySprite): void {
+    if (!enemy.alive && enemy.behavior.type === 'exploder') {
+      const tile = enemy.getCurrentTile()
+      if (tile && this.events.onExplosion) {
+        this.events.onExplosion(tile, enemy.behavior.explosionDamage, enemy.behavior.explosionRadius, enemy.behavior.damageType)
+      }
+    }
   }
 
   private processPendingAttacks(dt: number): void {

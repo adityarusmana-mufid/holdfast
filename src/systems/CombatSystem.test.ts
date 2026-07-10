@@ -14,6 +14,7 @@ const noopEvents = {
   onHealApplied: () => {},
   onUnitDamageDealt: () => {},
   onUnitDeath: () => {},
+  onExplosion: () => {},
 }
 
 function makeCs(): CombatSystem {

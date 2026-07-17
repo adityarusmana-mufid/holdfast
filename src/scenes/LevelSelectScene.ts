@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
-import { FONTS, FONT_SIZE, COLORS } from '../ui/Constants'
-import { makeNodeButton } from '../ui/Components'
+import { FONTS, FONT_SIZE, COLORS, TOP_BAR } from '../ui/Constants'
+import { makeNodeButton, drawGridBg } from '../ui/Components'
 import { getLevelIdsForChapter, getLevelData, CHAPTERS } from '../config/chapters'
 import { isLevelUnlocked, getCompletion } from '../shared/SaveData'
 import { tutorialSquad } from '../shared/utils/levelHelpers'
@@ -108,18 +108,15 @@ export class LevelSelectScene extends Phaser.Scene {
     const ch = CHAPTERS.find(c => c.id === this.chapterId)
     const levelIds = getLevelIdsForChapter(this.chapterId)
 
-    this.cameras.main.setBackgroundColor('#f0f2f5')
+    this.cameras.main.setBackgroundColor('#f4f7fa')
 
-    const gridGfx = this.add.graphics()
-    gridGfx.lineStyle(1, 0xcfd8dc, 0.15)
-    for (let x = 0; x <= W; x += 48) gridGfx.lineBetween(x, 0, x, H)
-    for (let y = 0; y <= H; y += 48) gridGfx.lineBetween(0, y, W, y)
+    drawGridBg(this, W, H)
 
-    this.add.text(W / 2, 32, ch?.title ?? 'Levels', {
-      ...FONTS.h2, color: '#1a1a2e',
+    this.add.text(W / 2, TOP_BAR + 4, ch?.title ?? 'Levels', {
+      ...FONTS.h2, color: COLORS.text.primary,
     }).setOrigin(0.5, 0)
 
-    this.add.text(W / 2, 66, ch?.subtitle ?? '', {
+    this.add.text(W / 2, TOP_BAR + 30, ch?.subtitle ?? '', {
       ...FONTS.body, color: '#4a5a6a',
     }).setOrigin(0.5, 0)
 
@@ -292,7 +289,7 @@ export class LevelSelectScene extends Phaser.Scene {
     const bg = this.add.graphics()
     bg.fillStyle(0xffffff, 1)
     bg.fillRect(0, 0, this.infoPanelW, H)
-    bg.lineStyle(1, 0xccd0d6, 0.6)
+    bg.lineStyle(1, 0x0040FF, 0.08)
     bg.beginPath()
     bg.moveTo(0, 0)
     bg.lineTo(0, H)

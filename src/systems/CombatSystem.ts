@@ -1,7 +1,7 @@
 import { Grid } from '../entities/Grid'
 import { EnemySprite } from '../entities/Enemy'
 import { UnitSprite } from '../entities/Unit'
-import { Position, UnitTrait, TileType, DamageType } from '../types/index'
+import { Position, UnitTrait, TileType, DamageType, DeployedUnit } from '../types/index'
 import { positionsInRange } from '../shared/utils/GridMath'
 
 export interface CombatEvents {
@@ -44,6 +44,7 @@ export class CombatSystem {
   private pendingAttacks: PendingAttack[] = []
   private nextAttackId = 0
   private enemiesInWindUp: Set<number> = new Set()
+  private droneRampState: Map<UnitSprite, { lastEnemyId: string | null; ramp: number }> = new Map()
 
   constructor(grid: Grid, events: CombatEvents) {
     this.grid = grid
@@ -68,15 +69,19 @@ export class CombatSystem {
       } else if (this.hasTrait(unit, UnitTrait.LinearAoE)) {
         this.executeLinearAoEAttack(unit, enemies)
       } else if (this.hasTrait(unit, UnitTrait.AoEMelee)) {
-        this.executeAoEMeleeAttack(unit, enemies, params)
+        const hitCount = this.executeAoEMeleeAttack(unit, enemies, params)
         if (this.hasTrait(unit, UnitTrait.HealOnAttack)) {
           const traitConfig = unit.config.traits.find(t => t.traitId === UnitTrait.HealOnAttack)
-          const healAmount = traitConfig?.value ?? 50
-          const healed = unit.heal(healAmount)
+          const healAmount = (traitConfig?.value ?? 50)
+          const cappedHits = Math.min(hitCount, unit.config.blockCount)
+          const totalHeal = healAmount * Math.max(1, cappedHits)
+          const healed = unit.heal(totalHeal)
           if (healed > 0 && this.events.onHealApplied) {
             this.events.onHealApplied(unit, healed, unit)
           }
         }
+      } else if (this.hasTrait(unit, UnitTrait.AoEMeleeBlockCapped)) {
+        this.executeBlockCappedAttack(unit, enemies, params)
       } else {
         const target = this.findTarget(unit, enemies, params.rangePattern)
         if (!target || !target.alive) continue
@@ -186,10 +191,18 @@ export class CombatSystem {
     })
   }
 
+  private getSkillRangePattern(unit: UnitSprite): number[][] | null {
+    const du = unit.deployedUnit
+    if (!du?.skillState?.isActive) return null
+    const skillConfig = du.skillState.config
+    return skillConfig.skillRangePattern ?? null
+  }
+
   private getAttackParams(unit: UnitSprite, enemies: EnemySprite[]): AttackParams {
     const isBlocking = this.isBlocking(unit, enemies)
     const hasRangedMode = this.hasTrait(unit, UnitTrait.RangedWhenNotBlocking) ||
-      this.hasTrait(unit, UnitTrait.RangedAoEWhenNotBlocking)
+      this.hasTrait(unit, UnitTrait.RangedAoEWhenNotBlocking) ||
+      this.hasTrait(unit, UnitTrait.SpreadAttack)
 
     let atk = unit.config.atk
 
@@ -200,16 +213,22 @@ export class CombatSystem {
       }
     }
 
+    const skillRange = this.getSkillRangePattern(unit)
+
     if (!hasRangedMode || isBlocking) {
-      return { rangePattern: unit.config.rangePattern, atk, useAoE: false }
+      return { rangePattern: skillRange ?? unit.config.rangePattern, atk, useAoE: false }
     }
 
     if (this.hasTrait(unit, UnitTrait.RangedAttack80)) {
       atk = Math.floor(atk * 0.8)
     }
 
-    const rangePattern = unit.config.altRangePattern ?? unit.config.rangePattern
-    const useAoE = this.hasTrait(unit, UnitTrait.RangedAoEWhenNotBlocking)
+    if (this.hasTrait(unit, UnitTrait.RangedAttack120)) {
+      atk = Math.floor(atk * 1.2)
+    }
+
+    const rangePattern = skillRange ?? unit.config.altRangePattern ?? unit.config.rangePattern
+    const useAoE = this.hasTrait(unit, UnitTrait.RangedAoEWhenNotBlocking) || this.hasTrait(unit, UnitTrait.SpreadAttack)
 
     return { rangePattern, atk, useAoE }
   }
@@ -232,12 +251,27 @@ export class CombatSystem {
     }
   }
 
-  private executeAoEMeleeAttack(unit: UnitSprite, enemies: EnemySprite[], params: AttackParams): void {
+  private executeAoEMeleeAttack(unit: UnitSprite, enemies: EnemySprite[], params: AttackParams): number {
     const targets = this.getEnemiesInRange(unit, enemies, params.rangePattern)
+    let hitCount = 0
     for (const target of targets) {
       if (!target.alive) continue
       this.events.onUnitAttackInitiated?.(unit, target, unit.config.damageType)
       this.applyDamage(unit, target, params.atk)
+      hitCount++
+    }
+    return hitCount
+  }
+
+  private executeBlockCappedAttack(unit: UnitSprite, enemies: EnemySprite[], params: AttackParams): void {
+    const targets = this.getEnemiesInRange(unit, enemies, params.rangePattern)
+    const maxTargets = unit.config.blockCount
+    let count = 0
+    for (const target of targets) {
+      if (!target.alive || count >= maxTargets) continue
+      this.events.onUnitAttackInitiated?.(unit, target, unit.config.damageType)
+      this.applyDamage(unit, target, params.atk)
+      count++
     }
   }
 
@@ -322,6 +356,11 @@ export class CombatSystem {
       return this.findLowestDef(inRange)
     }
 
+    if (this.hasTrait(unit, UnitTrait.TargetingAerial)) {
+      const aerial = inRange.filter(e => e.config.isAerial)
+      if (aerial.length > 0) return this.findClosestToGoal(aerial)
+    }
+
     return this.findClosestToGoal(inRange)
   }
 
@@ -393,10 +432,12 @@ export class CombatSystem {
 
   private applyDamage(unit: UnitSprite, target: EnemySprite, atkOverride?: number): void {
     const damage = this.calculateDamage(unit, target, atkOverride)
-    target.takeDamage(damage)
+    const droneBonus = this.getDroneRampDamage(unit, target)
+    const total = damage + droneBonus
+    target.takeDamage(total)
 
-    if (damage > 0) {
-      this.events.onDamageDealt(damage, target, unit.config.damageType)
+    if (total > 0) {
+      this.events.onDamageDealt(total, target, unit.config.damageType)
     }
     if (!target.alive) {
       this.events.onEnemyKilled(target, unit)
@@ -452,6 +493,34 @@ export class CombatSystem {
       return Math.max(Math.floor(atk * 0.05), atk - target.config.armor)
     }
     return Math.max(Math.floor(atk * 0.05), Math.floor(atk * (1 - target.config.res / 100)))
+  }
+
+  private getDroneRampDamage(unit: UnitSprite, target: EnemySprite): number {
+    if (!this.hasTrait(unit, UnitTrait.DroneRamp)) return 0
+    const traitConfig = unit.config.traits.find(t => t.traitId === UnitTrait.DroneRamp)
+    if (!traitConfig) return 0
+
+    let state = this.droneRampState.get(unit)
+    if (!state) {
+      state = { lastEnemyId: null, ramp: 0 }
+      this.droneRampState.set(unit, state)
+    }
+
+    const targetTile = target.getCurrentTile()
+    if (!targetTile) return 0
+    const targetId = `${targetTile.row},${targetTile.col}`
+    if (state.lastEnemyId !== targetId) {
+      state.lastEnemyId = targetId
+      state.ramp = 0
+    }
+
+    const base = traitConfig.rampBasePercent ?? 0.2
+    const increment = traitConfig.rampIncrement ?? 0.15
+    const maxPercent = traitConfig.rampMaxPercent ?? 1.1
+    const currentPercent = Math.min(base + state.ramp * increment, maxPercent)
+    state.ramp++
+
+    return Math.floor(unit.config.atk * currentPercent)
   }
 
   private calcDamage(atk: number, def: number, res: number, type: DamageType): number {

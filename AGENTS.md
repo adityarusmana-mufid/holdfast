@@ -13,6 +13,10 @@
 - Testing: Vitest (planned)
 - Deployment: Static web/itch.io
 
+## Design Philosophy
+
+Holdfast is a **premium, mission-based tactical tower defense** inspired by Arknights' combat — not a live-service game with gacha progression. All units are available from the start; no rarity, no pulls, no banners, no grinding. Satisfaction comes from mastering mechanics, not accumulating numeric upgrades. Full spec: `docs/superpowers/specs/2026-06-30-design-philosophy.md`
+
 ## Key Design Decisions
 | Decision | Choice | Rationale |
 |----------|--------|-----------|

@@ -167,17 +167,46 @@ export const RANGE_PATTERNS: Record<string, number[][]> = {
   })(),
   pointBlank: [[-1, 0]],
   line4: [[-1, 0], [-2, 0], [-3, 0], [-4, 0]],
+  // Fortress Defender: self tile + 3×2 block at distance 3-4 + 1×1 extension at distance 5
+  // (matches wiki: 2×2 minimum range gap, 2×3 ahead, 1×1 extension at E2)
+  fortressRanged: [[-5, 0], [-4, -1], [-4, 0], [-4, 1], [-3, -1], [-3, 0], [-3, 1], [0, 0]],
+  // Sentry Protector: self tile + 2 tiles ahead (long-range melee hybrid)
+  sentryRanged: [[-2, 0], [-1, 0], [0, 0]],
   meleeCross: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]],
   meleeExtended: [[-2, -1], [-2, 0], [-2, 1], [-1, -1], [-1, 0], [-1, 1], [0, 0]],
+  surrounding8: [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
   ranged5x3: (() => {
     const tiles: number[][] = []
-    for (let r = -5; r <= -1; r++) {
-      for (let c = -1; c <= 1; c++) {
+    for (let r = -4; r <= 0; r++) {
+      for (let c = 0; c <= 2; c++) {
         tiles.push([r, c])
       }
     }
     return tiles
   })(),
+  // ponytail: Core Caster — 3-wide × 4-deep rectangle. Unit at back-center, range extends forward.
+  coreCaster: [
+    [-3, 0],
+    [-2, -1], [-2, 0], [-2, 1],
+    [-1, -1], [-1, 0], [-1, 1],
+    [0, -1], [0, 0], [0, 1],
+  ],
+  // ponytail: Bard — diamond shape, range 2 in all directions. 13 tiles total (incl. unit).
+  bard: [
+    [-2, 0],
+    [-1, -1], [-1, 0], [-1, 1],
+    [0, -2], [0, -1], [0, 0], [0, 1], [0, 2],
+    [1, -1], [1, 0], [1, 1],
+    [2, 0],
+  ],
+deadeyeCross: [
+    [0, -2], [0, -1], [0, 0], [0, 1], [0, 2],
+    [-1, -2], [-1, -1], [-1, 0], [-1, 1], [-1, 2],
+    [-2, -2], [-2, -1], [-2, 0], [-2, 1], [-2, 2],
+    [-3, -1], [-3, 0], [-3, 1],
+    [-4, 0],
+  ],
+  lordRanged: [[-3, 0], [-2, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 0], [0, 1]],
 }
 
 export function posKey(pos: Position): string {

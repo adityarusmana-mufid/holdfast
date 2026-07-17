@@ -5,12 +5,9 @@ import { ENEMY_CONFIGS } from '../config/enemies'
 import { FONTS, FONT_SIZE } from '../ui/Constants'
 import { makeNodeButton } from '../ui/Components'
 
-const PHI = (1 + Math.sqrt(5)) / 2
-const FRAME_W = Math.floor(1280 / PHI)
-const FRAME_H = Math.floor(720 / PHI)
-const FRAME_PAD = Math.floor((1280 - FRAME_W) / 2)
-const FRAME_TOP = Math.floor((720 - FRAME_H) / 2)
-const FRAME_BOT = 720 - FRAME_TOP - FRAME_H
+const FRAME_PAD = 40
+const FRAME_TOP = 80
+const FRAME_BOT = 60
 
 export class LevelPreviewScene extends Phaser.Scene {
   private levelId = ''
@@ -46,8 +43,8 @@ export class LevelPreviewScene extends Phaser.Scene {
 
     const frameX = FRAME_PAD
     const frameY = FRAME_TOP
-    const frameW = FRAME_W
-    const frameH = FRAME_H
+    const frameW = W - FRAME_PAD * 2
+    const frameH = H - FRAME_TOP - FRAME_BOT
 
     const frame = this.add.graphics()
     frame.fillStyle(0x2d2d2d, 1)
@@ -105,10 +102,12 @@ export class LevelPreviewScene extends Phaser.Scene {
     const data = this.levelData
     if (!data) return
 
+    const W = 1280
+    const H = 720
     const frameX = FRAME_PAD
     const frameY = FRAME_TOP
-    const frameW = FRAME_W
-    const frameH = FRAME_H
+    const frameW = W - FRAME_PAD * 2
+    const frameH = H - FRAME_TOP - FRAME_BOT
 
     const gridW = data.cols * TILE_SIZE
     const gridH = data.rows * TILE_SIZE
@@ -162,7 +161,7 @@ export class LevelPreviewScene extends Phaser.Scene {
     const W = 1280
     const frameX = FRAME_PAD
     const frameY = FRAME_TOP
-    const frameW = FRAME_W
+    const frameW = W - FRAME_PAD * 2
 
     let px = frameX + 20
     let py = frameY + 48

@@ -1,4 +1,5 @@
 import { SkillConfig } from '../types/index'
+import { RANGE_PATTERNS } from '../shared/utils/GridMath'
 
 export const SKILLS: Record<string, SkillConfig[]> = {
   pioneer: [
@@ -307,6 +308,8 @@ export const SKILLS: Record<string, SkillConfig[]> = {
       spRecovery: 'auto', activation: 'auto', spCost: 4, spInitial: 0,
       durationType: 'instant',
       effect: { type: 'heal', amountMultiplier: 1.8, range: 'ally' },
+      skillRangePattern: RANGE_PATTERNS.surrounding8,
+      charges: 3,
     },
     {
       id: 'guardian_s2', name: 'Medicine Dispensing',
@@ -344,6 +347,52 @@ export const SKILLS: Record<string, SkillConfig[]> = {
       spRecovery: 'auto', activation: 'manual', spCost: 55, spInitial: 25,
       durationType: 'duration', duration: 20,
       effect: { type: 'enhanceAttack', atkMultiplier: 1.8, targetCount: 99 },
+    },
+  ],
+  sentry_protector: [
+    {
+      id: 'sentry_s1', name: 'Discharge',
+      description: 'ATK +50%, ASPD +30. Lasts 25s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 30, spInitial: 10,
+      durationType: 'duration', duration: 25,
+      effect: { type: 'statBuff', atkMultiplier: 1.5, aspdBonus: 30 },
+    },
+    {
+      id: 'sentry_s2', name: 'Taser Strike',
+      description: 'Next attack deals 250% ATK and stuns target for 1s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 6, spInitial: 0,
+      durationType: 'instant',
+      effect: { type: 'enhanceAttack', atkMultiplier: 2.5, binds: true },
+    },
+    {
+      id: 'sentry_s3', name: 'Sentry Mode',
+      description: 'ATK +80%, DEF +50%, attacks hit all enemies in range. Lasts 30s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 75, spInitial: 50,
+      durationType: 'duration', duration: 30,
+      effect: { type: 'statToggle', atkMultiplier: 1.8, defMultiplier: 1.5, attackAllBlocked: true },
+    },
+  ],
+  arts_protector: [
+    {
+      id: 'arts_protector_s1', name: 'Arts Infusion',
+      description: 'ATK +50%. Lasts 30s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 35, spInitial: 20,
+      durationType: 'duration', duration: 30,
+      effect: { type: 'statBuff', atkMultiplier: 1.5 },
+    },
+    {
+      id: 'arts_protector_s2', name: 'Thermal Strike',
+      description: 'Next attack deals 200% ATK as true damage. Stuns target for 1s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 5, spInitial: 0,
+      durationType: 'instant',
+      effect: { type: 'enhanceAttack', atkMultiplier: 2, trueDamage: true, binds: true },
+    },
+    {
+      id: 'arts_protector_s3', name: 'Arts Bulwark',
+      description: 'ATK +80%, blocks +1. Lasts 25s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 70, spInitial: 50,
+      durationType: 'duration', duration: 25,
+      effect: { type: 'statBuff', atkMultiplier: 1.8, blockBonus: 1 },
     },
   ],
   juggernaut: [
@@ -668,6 +717,29 @@ export const SKILLS: Record<string, SkillConfig[]> = {
       effect: { type: 'heal', amountMultiplier: 1, range: 'allies' },
     },
   ],
+  chain_medic: [
+    {
+      id: 'chain_medic_s1', name: 'Chain Burst',
+      description: 'Next heal jumps to +2 more allies (5 total), no falloff for first bounce.',
+      spRecovery: 'auto', activation: 'auto', spCost: 5, spInitial: 0,
+      durationType: 'instant',
+      effect: { type: 'heal', amountMultiplier: 1.5, range: 'ally' },
+    },
+    {
+      id: 'chain_medic_s2', name: 'Resilient Link',
+      description: 'ATK +40%, healing chain falloff reduced to 15%. Lasts 25s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 30, spInitial: 10,
+      durationType: 'duration', duration: 25,
+      effect: { type: 'statBuff', atkMultiplier: 1.4 },
+    },
+    {
+      id: 'chain_medic_s3', name: 'Vital Surge',
+      description: 'ATK +80%, chain jumps to 5 allies. Restores 30% of max HP to all in range. Lasts 20s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 55, spInitial: 20,
+      durationType: 'duration', duration: 20,
+      effect: { type: 'statBuff', atkMultiplier: 1.8 },
+    },
+  ],
   roadblock: [],
   pusher: [
     {
@@ -713,6 +785,125 @@ export const SKILLS: Record<string, SkillConfig[]> = {
       spRecovery: 'auto', activation: 'manual', spCost: 35, spInitial: 15,
       durationType: 'duration', duration: 8,
       effect: { type: 'special', description: 'maelstrom_pull_slow' },
+    },
+  ],
+  mech_accord_caster: [
+    {
+      id: 'mech_accord_s1', name: 'Drone Overclock',
+      description: 'ASPD +50, ATK +25%. Lasts 25s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 40, spInitial: 10,
+      durationType: 'duration', duration: 25,
+      effect: { type: 'statBuff', aspdBonus: 50, atkMultiplier: 1.25 },
+    },
+    {
+      id: 'mech_accord_s2', name: 'Volley Fire',
+      description: 'Next attack deals 180% ATK Arts damage and strikes 3 times. Stores up to 2 charges.',
+      spRecovery: 'offensive', activation: 'auto', spCost: 6, spInitial: 0,
+      charges: 2, durationType: 'instant',
+      effect: { type: 'enhanceAttack', atkMultiplier: 1.8, hitCount: 3 },
+    },
+    {
+      id: 'mech_accord_s3', name: 'Swarm Surge',
+      description: 'Drone +2, ATK +60%, attacks slow enemies by 50% for 0.5s. Lasts 25s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 50, spInitial: 15,
+      durationType: 'duration', duration: 25,
+      effect: { type: 'statBuff', atkMultiplier: 1.6 },
+    },
+  ],
+  spreadshooter: [
+    {
+      id: 'spreadshooter_s1', name: 'Power Strike γ',
+      description: 'Next attack deals 210% ATK.',
+      spRecovery: 'offensive', activation: 'auto', spCost: 4, spInitial: 0,
+      durationType: 'instant',
+      effect: { type: 'enhanceAttack', atkMultiplier: 2.1 },
+    },
+    {
+      id: 'spreadshooter_s2', name: 'Scatter Blast',
+      description: 'ATK +60%, ASPD +30. Lasts 20s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 30, spInitial: 10,
+      durationType: 'duration', duration: 20,
+      effect: { type: 'enhanceAttack', atkMultiplier: 1.6, aspdBonus: 30 },
+    },
+    {
+      id: 'spreadshooter_s3', name: 'Drum-fed Spree',
+      description: 'ATK +40%, ASPD +60, range extended by 1 row. Lasts 15s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 40, spInitial: 15,
+      durationType: 'duration', duration: 15,
+      effect: { type: 'enhanceAttack', atkMultiplier: 1.4, aspdBonus: 60 },
+      skillRangePattern: [[-3,-1],[-3,0],[-3,1],[-2,-1],[-2,0],[-2,1],[-1,-1],[-1,0],[-1,1],[0,0]],
+    },
+  ],
+  besieger: [
+    {
+      id: 'besieger_s1', name: 'Power Strike γ',
+      description: 'Next attack deals 210% ATK.',
+      spRecovery: 'offensive', activation: 'auto', spCost: 4, spInitial: 0,
+      durationType: 'instant',
+      effect: { type: 'enhanceAttack', atkMultiplier: 2.1 },
+    },
+    {
+      id: 'besieger_s2', name: 'Bombardment',
+      description: 'ATK +80%, ASPD +20. Lasts 20s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 30, spInitial: 10,
+      durationType: 'duration', duration: 20,
+      effect: { type: 'enhanceAttack', atkMultiplier: 1.8, aspdBonus: 20 },
+    },
+    {
+      id: 'besieger_s3', name: 'Siege Mode',
+      description: 'ATK +100%, range extended by +1 column to each side. Lasts 15s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 45, spInitial: 20,
+      durationType: 'duration', duration: 15,
+      effect: { type: 'enhanceAttack', atkMultiplier: 2.0 },
+      skillRangePattern: [[-4,-2],[-4,-1],[-4,0],[-4,1],[-4,2],[-3,-3],[-3,-2],[-3,-1],[-3,0],[-3,1],[-3,2],[-3,3],[-2,-3],[-2,-2],[-2,-1],[-2,0],[-2,1],[-2,2],[-2,3],[0,0]],
+    },
+  ],
+  flinger: [
+    {
+      id: 'flinger_s1', name: 'Power Strike γ',
+      description: 'Next attack deals 210% ATK.',
+      spRecovery: 'offensive', activation: 'auto', spCost: 4, spInitial: 0,
+      durationType: 'instant',
+      effect: { type: 'enhanceAttack', atkMultiplier: 2.1 },
+    },
+    {
+      id: 'flinger_s2', name: 'Concussive Blast',
+      description: 'ATK +50%, ASPD +30. Lasts 20s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 30, spInitial: 10,
+      durationType: 'duration', duration: 20,
+      effect: { type: 'enhanceAttack', atkMultiplier: 1.5, aspdBonus: 30 },
+    },
+    {
+      id: 'flinger_s3', name: 'Boomerang Volley',
+      description: 'ATK +80%, shockwave radius +1. Lasts 15s.',
+      spRecovery: 'offensive', activation: 'manual', spCost: 40, spInitial: 15,
+      durationType: 'duration', duration: 15,
+      effect: { type: 'enhanceAttack', atkMultiplier: 1.8, splash: { radius: 2, damageMultiplier: 0.5 } },
+    },
+  ],
+  executor: [
+    {
+      id: 'executor_s1', name: 'Rapid Response',
+      description: 'DEF +80%, ATK +30%. Lasts 15s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 20, spInitial: 5,
+      durationType: 'duration', duration: 15,
+      effect: { type: 'statBuff', defMultiplier: 1.8, atkMultiplier: 1.3 },
+    },
+    {
+      id: 'executor_s2', name: 'Execution',
+      description: 'ATK +150%. Next attack deals 2.5x damage.',
+      spRecovery: 'auto', activation: 'auto', spCost: 8, spInitial: 0,
+      durationType: 'instant',
+      effect: { type: 'enhanceAttack', atkMultiplier: 2.5 },
+    },
+  ],
+  ambusher: [
+    {
+      id: 'ambusher_s1', name: 'Shadow Burst',
+      description: 'ATK +60%, DEF +40%. Lasts 20s.',
+      spRecovery: 'auto', activation: 'manual', spCost: 30, spInitial: 10,
+      durationType: 'duration', duration: 20,
+      effect: { type: 'statBuff', atkMultiplier: 1.6, defMultiplier: 1.4 },
     },
   ],
 }

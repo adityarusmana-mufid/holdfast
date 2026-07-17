@@ -1,6 +1,6 @@
 import { Grid } from '../entities/Grid'
 import { UnitSprite } from '../entities/Unit'
-import { UnitTrait, Position, TileType } from '../types/index'
+import { UnitTrait, Position, TileType, DeployedUnit } from '../types/index'
 import { positionsInRange } from '../shared/utils/GridMath'
 
 const REPAIR_NODE_HEAL_RATE = 30
@@ -137,9 +137,18 @@ export class HealingSystem {
     }
   }
 
+  private getSkillRangePattern(unit: UnitSprite): number[][] | null {
+    const du = unit.deployedUnit
+    if (!du?.skillState?.isActive) return null
+    const skillConfig = du.skillState.config
+    return skillConfig.skillRangePattern ?? null
+  }
+
   private getAlliesInRange(unit: UnitSprite, allies: UnitSprite[]): UnitSprite[] {
+    const skillRange = this.getSkillRangePattern(unit)
+    const rangePattern = skillRange ?? unit.config.rangePattern
     const unitPos: Position = { row: unit.row, col: unit.col }
-    const rangeTiles = positionsInRange(unitPos, unit.config.rangePattern, this.grid.rows, this.grid.cols, unit.facing)
+    const rangeTiles = positionsInRange(unitPos, rangePattern, this.grid.rows, this.grid.cols, unit.facing)
     const rangeSet = new Set(rangeTiles.map(p => `${p.row},${p.col}`))
 
     return allies.filter(a => {

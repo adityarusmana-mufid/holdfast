@@ -1634,9 +1634,10 @@ export class GameScene extends Phaser.Scene {
 
       const bg = container.getAt(0) as Phaser.GameObjects.Graphics
       bg.clear()
-      bg.fillStyle(isSelected ? 0x0004EB : 0x0D0D30, 1)
+      bg.fillStyle(0xFFFFFF, 1)
       bg.fillRect(0, 0, 96, 128)
-      bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x4488FF : 0x6B7280, 1)
+      bg.lineStyle(isSelected ? 3 : 1, 0x0040FF, isSelected ? 0.35 : 0.08)
+      bg.strokeRect(0, 0, 96, 128)
       bg.setAlpha(!canAfford && !onCooldown ? 0.45 : 1)
 
       const skillLabel = container.getAt(3) as Phaser.GameObjects.Text

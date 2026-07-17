@@ -72,6 +72,7 @@ export enum UnitTrait {
   DPOnKill = 'dp_on_kill',
   FullRefundRetreat = 'full_refund_retreat',
   RangedAttack80 = 'ranged_attack_80',
+  RangedAttack120 = 'ranged_attack_120',
   AoESplash = 'aoe_splash',
   ArtsDamage = 'arts_damage',
   FastAttack = 'fast_attack',
@@ -83,18 +84,23 @@ export enum UnitTrait {
   ChainJump = 'chain_jump',
   LinearAoE = 'linear_aoe',
   AoEMelee = 'aoe_melee',
+  AoEMeleeBlockCapped = 'aoe_melee_block_capped',
   TargetingLowestDef = 'targeting_lowest_def',
+  TargetingAerial = 'targeting_aerial',
   RangedWhenNotBlocking = 'ranged_when_not_blocking',
   RangedAoEWhenNotBlocking = 'ranged_aoe_when_not_blocking',
+  SpreadAttack = 'spread_attack',
   ConditionalDamage120 = 'conditional_damage_120',
   TakesTrueDamage = 'takes_true_damage',
   HealAlly = 'heal_ally',
   HealMulti = 'heal_multi',
+  ChainHeal = 'chain_heal',
   AttackHealsAlly = 'attack_heals_ally',
   AoEHoT = 'aoe_hot',
   LongRangeAttack = 'long_range_attack',
   PassiveDPRegen = 'passive_dp_regen',
   DeployAnywhere = 'deploy_anywhere',
+  DroneRamp = 'drone_ramp',
 }
 
 export interface UnitTraitConfig {
@@ -104,7 +110,11 @@ export interface UnitTraitConfig {
   radius?: number
   maxTargets?: number
   damageFalloff?: number
+  healFalloff?: number
   damageMultiplier?: number
+  rampBasePercent?: number
+  rampIncrement?: number
+  rampMaxPercent?: number
 }
 
 export type StatusEffectType = 'slow' | 'stun' | 'root'
@@ -145,6 +155,15 @@ export interface UnitConfig {
   skills: SkillConfig[]
 }
 
+export type EnemyBehavior =
+  | { type: 'standard' }
+  | { type: 'exploder'; explosionDamage: number; explosionRadius: number; damageType: DamageType }
+  | { type: 'stealth'; detectionRange: number }
+  | { type: 'healer'; healAmount: number; healInterval: number; healRange: number }
+  | { type: 'buffer'; buffAtk: number; buffRange: number }
+  | { type: 'shielded'; shieldHp: number }
+  | { type: 'summoner'; spawnType: string; spawnInterval: number; spawnCount: number }
+
 export interface EnemyConfig {
   id: string
   name: string
@@ -160,6 +179,7 @@ export interface EnemyConfig {
   isAerial?: boolean
   attackRange?: number
   description?: string
+  behavior: EnemyBehavior
 }
 
 export type SpRecoveryType = 'auto' | 'offensive' | 'defensive'
@@ -199,6 +219,7 @@ export interface SkillConfig {
   duration?: number
   charges?: number
   effect: SkillEffect
+  skillRangePattern?: number[][]
 }
 
 export interface SkillState {

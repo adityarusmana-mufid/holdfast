@@ -5,6 +5,7 @@ const AUTO_SP_RATE = 1
 export interface SkillEvents {
   onSkillActivated?: (unit: DeployedUnit) => void
   onSkillDeactivated?: (unit: DeployedUnit) => void
+  onChargeChanged?: (unit: DeployedUnit, current: number, max: number) => void
 }
 
 export class SkillSystem {
@@ -34,6 +35,7 @@ export class SkillSystem {
     if (state.charges >= maxCh) return
     state.currentSp -= state.config.spCost
     state.charges++
+    this.events.onChargeChanged?.(unit, state.charges, maxCh)
   }
 
   private tryAutoTrigger(unit: DeployedUnit): void {
@@ -106,6 +108,7 @@ export class SkillSystem {
     state.charges--
     state.spLocked = false
     this.events.onSkillActivated?.(unit)
+    this.events.onChargeChanged?.(unit, state.charges, state.config.charges ?? 0)
     return true
   }
 
@@ -117,6 +120,7 @@ export class SkillSystem {
     const maxCh = config.charges ?? 0
     if (maxCh > 0 && state.charges > 0) {
       state.charges--
+      this.events.onChargeChanged?.(unit, state.charges, maxCh)
     } else {
       state.currentSp -= config.spCost
     }
@@ -158,9 +162,8 @@ export class SkillSystem {
     if (!state) return 0
     const maxCh = state.config.charges ?? 0
     if (maxCh > 0) {
-      const totalSp = state.charges * state.config.spCost + state.currentSp
-      const maxSp = maxCh * state.config.spCost
-      return totalSp / maxSp
+      if (state.charges >= maxCh) return 1
+      return state.currentSp / state.config.spCost
     }
     return state.currentSp / state.config.spCost
   }

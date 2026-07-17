@@ -1,8 +1,8 @@
 import Phaser from 'phaser'
 import { UnitConfig, UnitTrait } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
-import { COLORS, FONTS, FONT_SIZE } from '../ui/Constants'
-import { makeNodeButton } from '../ui/Components'
+import { COLORS, FONTS, FONT_SIZE, BORDER_STYLE, CORNER_BRACKET_SIZE, TOP_BAR, SIDEBAR_W } from '../ui/Constants'
+import { makeNodeButton, drawGridBg, drawCornerBrackets, drawUnitCard, drawRangeMiniGrid, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, drawInstructorGuardIcon, drawFighterIcon, drawSwordmasterIcon, drawSolobladeIcon, drawReaperIcon, drawEarthshakerIcon, drawCrusherIcon, drawMedicIcon, drawMultiMedicIcon, drawIncantationMedicIcon, drawChainMedicIcon, drawMarksmanIcon, drawArtillerymanIcon, drawDeadeyeIcon, drawHeavyshooterIcon, drawSpreadshooterIcon, drawBesiegerIcon, drawFlingerIcon, drawPusherIcon, drawPullerIcon, drawExecutorIcon, drawAmbusherIcon, UNIT_CARD_W, UNIT_CARD_H } from '../ui/Components'
 
 const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
   [UnitTrait.BlocksTwo]: 'Blocks up to 2 enemies',
@@ -10,6 +10,7 @@ const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
   [UnitTrait.DPOnKill]: 'Gains DP per kill',
   [UnitTrait.FullRefundRetreat]: 'Full DP refund on retreat',
   [UnitTrait.RangedAttack80]: '80% ATK when attacking at range',
+  [UnitTrait.RangedAttack120]: '120% ATK when attacking at range',
   [UnitTrait.AoESplash]: 'AoE splash damage around target',
   [UnitTrait.ArtsDamage]: 'Deals thermal damage',
   [UnitTrait.FastAttack]: 'Fast attack speed',
@@ -19,10 +20,12 @@ const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
   [UnitTrait.CannotBeHealed]: 'Cannot be healed by allies',
   [UnitTrait.SlowOnHit]: 'Slows enemies on hit',
   [UnitTrait.ChainJump]: 'Attack chains to nearby enemies',
+  [UnitTrait.DroneRamp]: 'Drone ramps up damage on the same target',
   [UnitTrait.LinearAoE]: 'Hits all enemies in a line',
   [UnitTrait.TargetingLowestDef]: 'Prioritizes lowest DEF target',
   [UnitTrait.RangedWhenNotBlocking]: 'Uses ranged attack when not blocking',
   [UnitTrait.RangedAoEWhenNotBlocking]: 'Ranged AoE when not blocking',
+  [UnitTrait.SpreadAttack]: 'Attacks all enemies in range',
   [UnitTrait.AttackHealsAlly]: 'Attack also heals an ally',
   [UnitTrait.HealAlly]: 'Heals a wounded ally',
   [UnitTrait.AoEHoT]: 'Area health over time',
@@ -30,11 +33,10 @@ const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
   [UnitTrait.PassiveDPRegen]: 'Passive DP generation',
 }
 
-const SIDEBAR_W = 210
-const CARD_W = 160
-const CARD_H = 220
-const CARD_GAP = 12
 const FILTER_W = 52
+const CARD_W = UNIT_CARD_W
+const CARD_H = UNIT_CARD_H
+const CARD_GAP = 12
 const ARCHETYPE_ORDER = ['all', 'vanguard', 'guard', 'defender', 'sniper', 'caster', 'medic', 'supporter', 'specialist']
 const ARCHETYPE_COLORS: Record<string, number> = {
   all: 0x78909c,
@@ -71,10 +73,14 @@ export class PickerScene extends Phaser.Scene {
     super({ key: 'PickerScene' })
   }
 
-  init(data: { slotIndex: number; squad: (UnitConfig | null)[] }): void {
+  private pendingUnit: UnitConfig | null = null
+
+  init(data: { slotIndex: number; currentUnit?: UnitConfig | null; currentSkillId?: string }): void {
     this.slotIndex = data.slotIndex
     this.available = UNIT_CONFIGS
     this.pickedUnit = null
+    this.pendingUnit = data.currentUnit ?? null
+    this.selectedSkillId = data.currentSkillId ?? ''
     this.cardScrollX = 0
   }
 
@@ -90,10 +96,6 @@ export class PickerScene extends Phaser.Scene {
     sidebarBg.fillStyle(0xe8ecf0, 1)
     sidebarBg.fillRect(0, 0, SIDEBAR_W, this.H)
 
-    this.add.text(SIDEBAR_W / 2, 20, 'SELECT UNIT', {
-      ...FONTS.h3, color: COLORS.text.primary,
-    }).setOrigin(0.5, 0)
-
     this.infoContainer = this.add.container(0, 0)
 
     this.confirmBtn = this.add.container(-100, -100)
@@ -108,9 +110,14 @@ export class PickerScene extends Phaser.Scene {
 
     this.activeFilter = null
     this.startX = SIDEBAR_W + 12
-    this.startY = 16
+    this.startY = TOP_BAR + 8
     this.buildFilterButtons()
     this.buildCardGrid()
+
+    if (this.pendingUnit) {
+      this.selectCard(this.pendingUnit)
+      this.pendingUnit = null
+    }
   }
 
   private buildFilterButtons(): void {
@@ -118,11 +125,11 @@ export class PickerScene extends Phaser.Scene {
     const fx = this.W - FILTER_W - 6
     const btnSize = 44
     const gap = 4
-    const startY = 48
+    const startY = TOP_BAR + 8
 
     const stripBg = this.add.graphics()
     stripBg.fillStyle(0xe8ecf0, 0.6)
-    stripBg.fillRect(fx - 2, 48, FILTER_W + 4, ARCHETYPE_ORDER.length * (btnSize + gap) + 8)
+    stripBg.fillRect(fx - 2, TOP_BAR + 8, FILTER_W + 4, ARCHETYPE_ORDER.length * (btnSize + gap) + 8)
 
     ARCHETYPE_ORDER.forEach((key, i) => {
       const by = startY + i * (btnSize + gap)
@@ -130,9 +137,9 @@ export class PickerScene extends Phaser.Scene {
 
       const bg = this.add.graphics()
       bg.fillStyle(key === this.activeFilter ? color : 0xffffff, key === this.activeFilter ? 0.9 : 0.5)
-      bg.fillRoundedRect(fx, by, btnSize, btnSize, 4)
+      bg.fillRect(fx, by, btnSize, btnSize)
       bg.lineStyle(key === this.activeFilter ? 2 : 1, color, key === this.activeFilter ? 1 : 0.4)
-      bg.strokeRoundedRect(fx, by, btnSize, btnSize, 4)
+      bg.strokeRect(fx, by, btnSize, btnSize)
 
       const label = key === 'all' ? 'ALL' : key.substring(0, 2).toUpperCase()
       const txt = this.add.text(fx + btnSize / 2, by + btnSize / 2, label, {
@@ -157,16 +164,16 @@ export class PickerScene extends Phaser.Scene {
     this.cardScrollContainer.destroy()
     this.cardContainers = []
     this.startX = SIDEBAR_W + 12
-    this.startY = 16
+    this.startY = TOP_BAR + 8
 
     for (const fb of this.filterBtns) {
       const isActive = (fb.key === 'all' && this.activeFilter === null) || fb.key === this.activeFilter
       const color = ARCHETYPE_COLORS[fb.key] ?? 0x78909c
       fb.bg.clear()
       fb.bg.fillStyle(isActive ? color : 0xffffff, isActive ? 0.9 : 0.5)
-      fb.bg.fillRoundedRect(0, 0, 36, 36, 4)
+      fb.bg.fillRect(0, 0, 36, 36)
       fb.bg.lineStyle(isActive ? 2 : 1, color, isActive ? 1 : 0.4)
-      fb.bg.strokeRoundedRect(0, 0, 36, 36, 4)
+      fb.bg.strokeRect(0, 0, 36, 36)
       fb.label.setColor(isActive ? '#ffffff' : COLORS.text.dim)
     }
 
@@ -194,39 +201,121 @@ export class PickerScene extends Phaser.Scene {
       const ly = row * (CARD_H + CARD_GAP)
 
       const bg = this.add.graphics()
-      bg.fillStyle(0xffffff, 1)
-      bg.fillRoundedRect(lx, ly, CARD_W, CARD_H, 6)
-      bg.lineStyle(2, unit.color, 0.6)
-      bg.strokeRoundedRect(lx, ly, CARD_W, CARD_H, 6)
+      bg.fillStyle(0xF4F7FA, 1)
+      bg.fillRect(lx, ly, CARD_W, CARD_H)
+      bg.lineStyle(1, 0x0040FF, BORDER_STYLE.subtleAlpha)
+      bg.strokeRect(lx, ly, CARD_W, CARD_H)
       bg.setInteractive(new Phaser.Geom.Rectangle(lx, ly, CARD_W, CARD_H), Phaser.Geom.Rectangle.Contains)
       if (bg.input) bg.input.cursor = 'pointer'
       this.cardScrollContainer.add(bg)
 
-      const iconSize = 80
-      const iconTop = ly + 40
+      const iconSize = 48
+      const iconTop = ly + 8
+      const cx = lx + CARD_W / 2
       const icon = this.add.graphics()
-      if (unit.type === 'ground') {
+      if (unit.id === 'core_caster') {
+        drawCoreCasterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'splash_caster') {
+        drawSplashCasterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'blast_caster') {
+        drawBlastCasterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'chain_caster') {
+        drawChainCasterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'mech_accord_caster') {
+        drawMechAccordCasterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'protector') {
+        drawProtectorIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'guardian') {
+        drawGuardianIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'juggernaut') {
+        drawJuggernautIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'fortress_defender') {
+        drawFortressIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'arts_protector') {
+        drawArtsProtectorIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'sentry_protector') {
+        drawSentryProtectorIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'centurion_guard') {
+        drawCenturionGuardIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'lord_guard') {
+        drawLordGuardIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'arts_fighter') {
+        drawArtsFighterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'instructor_guard') {
+        drawInstructorGuardIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'fighter') {
+        drawFighterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'swordmaster') {
+        drawSwordmasterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'soloblade') {
+        drawSolobladeIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'reaper') {
+        drawReaperIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'earthshaker') {
+        drawEarthshakerIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'crusher') {
+        drawCrusherIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'medic_st') {
+        drawMedicIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'medic_multi') {
+        drawMultiMedicIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'incantation_medic') {
+        drawIncantationMedicIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'chain_medic') {
+        drawChainMedicIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'sniper') {
+        drawMarksmanIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'artilleryman') {
+        drawArtillerymanIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'deadeye') {
+        drawDeadeyeIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'heavyshooter') {
+        drawHeavyshooterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'spreadshooter') {
+        drawSpreadshooterIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'besieger') {
+        drawBesiegerIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'flinger') {
+        drawFlingerIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'pusher') {
+        drawPusherIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'puller') {
+        drawPullerIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'executor') {
+        drawExecutorIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'ambusher') {
+        drawAmbusherIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'pioneer') {
+        drawPioneerIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.id === 'charger') {
+        drawChargerIcon(icon, cx, iconTop + iconSize / 2, iconSize, unit.color)
+      } else if (unit.type === 'ground') {
         icon.fillStyle(unit.color, 1)
-        icon.fillRoundedRect(lx + CARD_W / 2 - iconSize / 2, iconTop, iconSize, iconSize, 8)
+        icon.fillRect(cx - iconSize / 2, iconTop, iconSize, iconSize)
         icon.fillStyle(0xffffff, 0.2)
-        icon.fillRoundedRect(lx + CARD_W / 2 - iconSize / 4, iconTop + iconSize / 4, iconSize / 2, iconSize / 2, 4)
+        icon.fillRect(cx - iconSize / 4, iconTop + iconSize / 4, iconSize / 2, iconSize / 2)
       } else {
         icon.fillStyle(unit.color, 1)
-        icon.fillTriangle(lx + CARD_W / 2, iconTop, lx + CARD_W / 2 - iconSize / 2, iconTop + iconSize, lx + CARD_W / 2 + iconSize / 2, iconTop + iconSize)
+        icon.fillTriangle(cx, iconTop, cx - iconSize / 2, iconTop + iconSize, cx + iconSize / 2, iconTop + iconSize)
         icon.fillStyle(0xffffff, 0.2)
-        icon.fillTriangle(lx + CARD_W / 2, iconTop + iconSize / 4, lx + CARD_W / 2 - iconSize / 4, iconTop + iconSize * 0.75, lx + CARD_W / 2 + iconSize / 4, iconTop + iconSize * 0.75)
+        icon.fillTriangle(cx, iconTop + iconSize / 4, cx - iconSize / 4, iconTop + iconSize * 0.75, cx + iconSize / 4, iconTop + iconSize * 0.75)
       }
       this.cardScrollContainer.add(icon)
 
-      const label = this.add.text(lx + CARD_W / 2, ly + 132, unit.subtypeLabel, {
-        fontSize: FONT_SIZE.xs, color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center', wordWrap: { width: CARD_W - 12 },
+      const label = this.add.text(cx, ly + 76, unit.subtypeLabel, {
+        ...FONTS.small, color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center', wordWrap: { width: CARD_W - 8 },
       }).setOrigin(0.5)
       this.cardScrollContainer.add(label)
 
-      const arch = this.add.text(lx + CARD_W / 2, ly + 157, unit.archetype.toUpperCase(), {
+      const arch = this.add.text(cx, ly + 102, unit.archetype.toUpperCase(), {
         fontSize: FONT_SIZE.xs, color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
       }).setOrigin(0.5)
       this.cardScrollContainer.add(arch)
+
+      const dpText = this.add.text(lx + 6, ly + 4, `${unit.dpCost} DP`, {
+        fontSize: FONT_SIZE.xs, color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      })
+      this.cardScrollContainer.add(dpText)
 
       this.cardContainers.push({ bg, unit, lx, ly })
     })
@@ -285,14 +374,41 @@ export class PickerScene extends Phaser.Scene {
   }
 
   private selectCard(unit: UnitConfig): void {
+    if (this.pickedUnit && this.pickedUnit.id === unit.id) {
+      this.pickedUnit = null
+      this.selectedSkillId = ''
+      for (const cc of this.cardContainers) {
+        cc.bg.clear()
+        cc.bg.fillStyle(0xF4F7FA, 1)
+        cc.bg.fillRect(cc.lx, cc.ly, CARD_W, CARD_H)
+        cc.bg.lineStyle(1, 0x0040FF, BORDER_STYLE.subtleAlpha)
+        cc.bg.strokeRect(cc.lx, cc.ly, CARD_W, CARD_H)
+      }
+      const old = this.cardScrollContainer.getByName('brackets')
+      if (old) old.destroy()
+      this.infoContainer.removeAll(true)
+      this.showConfirm()
+      return
+    }
     this.pickedUnit = unit
     for (const cc of this.cardContainers) {
       const isSelected = cc.unit.id === unit.id
       cc.bg.clear()
-      cc.bg.fillStyle(0xffffff, 1)
-      cc.bg.fillRoundedRect(cc.lx, cc.ly, CARD_W, CARD_H, 6)
-      cc.bg.lineStyle(isSelected ? 3 : 2, isSelected ? 0x00a2ff : cc.unit.color, isSelected ? 1 : 0.6)
-      cc.bg.strokeRoundedRect(cc.lx, cc.ly, CARD_W, CARD_H, 6)
+      cc.bg.fillStyle(0xF4F7FA, 1)
+      cc.bg.fillRect(cc.lx, cc.ly, CARD_W, CARD_H)
+      cc.bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x0040FF : 0x0040FF, isSelected ? 0.35 : BORDER_STYLE.subtleAlpha)
+      cc.bg.strokeRect(cc.lx, cc.ly, CARD_W, CARD_H)
+    }
+    // remove old brackets if any
+    const old = this.cardScrollContainer.getByName('brackets')
+    if (old) old.destroy()
+    const sel = this.cardContainers.find(cc => cc.unit.id === unit.id)
+    if (sel) {
+      const brackets = this.add.graphics()
+      brackets.setName('brackets')
+      brackets.setDepth(1)
+      drawCornerBrackets(brackets, sel.lx, sel.ly, CARD_W, CARD_H, CORNER_BRACKET_SIZE, 0x0040FF, 0.30, 2)
+      this.cardScrollContainer.add(brackets)
     }
     this.showInfo(unit)
     this.showConfirm()
@@ -301,26 +417,8 @@ export class PickerScene extends Phaser.Scene {
   private showInfo(unit: UnitConfig): void {
     this.infoContainer.removeAll(true)
     const px = 8
-    let py = 60
+    let py = TOP_BAR + 8
 
-    const iconSize = 72
-    const cx = SIDEBAR_W / 2
-    const icon = this.add.graphics()
-    const iy = 92 - iconSize / 2
-    if (unit.type === 'ground') {
-      icon.fillStyle(unit.color, 1)
-      icon.fillRoundedRect(cx - iconSize / 2, iy, iconSize, iconSize, 8)
-      icon.fillStyle(0xffffff, 0.2)
-      icon.fillRoundedRect(cx - iconSize / 4, iy + iconSize / 4, iconSize / 2, iconSize / 2, 4)
-    } else {
-      icon.fillStyle(unit.color, 1)
-      icon.fillTriangle(cx, iy, cx - iconSize / 2, iy + iconSize, cx + iconSize / 2, iy + iconSize)
-      icon.fillStyle(0xffffff, 0.2)
-      icon.fillTriangle(cx, iy + iconSize / 4, cx - iconSize / 4, iy + iconSize * 0.75, cx + iconSize / 4, iy + iconSize * 0.75)
-    }
-    this.infoContainer.add(icon)
-
-    py = iy + iconSize + 12
     const name = this.add.text(px, py, unit.subtypeLabel, {
       ...FONTS.h3, color: COLORS.text.primary,
     })
@@ -333,24 +431,95 @@ export class PickerScene extends Phaser.Scene {
     this.infoContainer.add(arch)
 
     py += 20
-    const dmIcon = unit.damageType === 'thermal' ? '~' : unit.damageType === 'true' ? '!!' : '>'
+
+    const dividerX = SIDEBAR_W / 2 + 2
+    const panelGap = 6
+    const panelW = (SIDEBAR_W - 16 - panelGap) / 2
+    const statsX = 8
+    const rangeX = statsX + panelW + panelGap
+    const panelTop = py
+
+    const statsDmIcon = unit.damageType === 'thermal' ? '~' : unit.damageType === 'true' ? '!!' : '>'
     const statsLines = [
-      `HP: ${unit.hp}`,
-      `ATK: ${dmIcon}${unit.atk}`,
-      `DEF: ${unit.def}  |  RES: ${unit.res}%`,
-      `BLK: ${unit.blockCount}  |  DP: ${unit.dpCost}`,
-      `Interval: ${unit.attackInterval.toFixed(2)}s`,
-      unit.canBeHealed === false ? 'Cannot be healed' : 'Can be healed',
+      `HP  ${unit.hp}`,
+      `ATK ${statsDmIcon}${unit.atk}`,
+      `DEF ${unit.def}`,
+      `RES ${unit.res}%`,
+      `BLK ${unit.blockCount}`,
+      `DP  ${unit.dpCost}`,
+      `I   ${unit.attackInterval.toFixed(2)}s`,
     ]
+
+    const statsBg = this.add.graphics()
+    statsBg.fillStyle(0xE8EDF2, 1)
+    statsBg.fillRect(statsX, panelTop, panelW, 1)
+    this.infoContainer.add(statsBg)
+
+    let sy = panelTop + 6
     for (const line of statsLines) {
-      const t = this.add.text(px, py, line, {
-        fontSize: '13px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      const lineBg = this.add.graphics()
+      lineBg.fillStyle(0xF4F7FA, 1)
+      lineBg.fillRect(statsX + 4, sy, panelW - 8, 16)
+      this.infoContainer.add(lineBg)
+
+      const t = this.add.text(statsX + 8, sy, line, {
+        fontSize: '11px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       })
       this.infoContainer.add(t)
-      py += 18
+      sy += 18
     }
 
-    py += 8
+    const rangePattern = unit.altRangePattern ?? unit.rangePattern
+
+    const rangeHeaderH = 14
+    const rangePadTop = 10
+    const rangePadBot = 10
+    const rangePadX = 10
+    const RANGE_PANEL_H = 130
+    const gridAreaW = panelW - rangePadX * 2
+    const gridAreaH = RANGE_PANEL_H - rangeHeaderH - rangePadTop - rangePadBot
+
+    let cols = 1, rows = 1
+    {
+      let minR = 0, maxR = 0, minC = 0, maxC = 0
+      for (const [r, c] of rangePattern) {
+        if (r < minR) minR = r
+        if (r > maxR) maxR = r
+        if (c < minC) minC = c
+        if (c > maxC) maxC = c
+      }
+      cols = maxC - minC + 1
+      rows = maxR - minR + 1
+    }
+    // ponytail: fixed cell size keeps the mini-grid visually consistent across units.
+    // Sized to fit the largest pattern (deadeyeCross: 7 cols × 5 rows) inside the panel.
+    const FIXED_CELL = 12
+    const cellSize = FIXED_CELL
+
+    const rangeBg = this.add.graphics()
+    rangeBg.fillStyle(0x4B5563, 1)
+    rangeBg.fillRect(rangeX, panelTop, panelW, RANGE_PANEL_H)
+    this.infoContainer.add(rangeBg)
+
+    const rHeader = this.add.text(rangeX + 8, panelTop + 1, 'RANGE', {
+      fontSize: '10px', color: '#E8EDF2', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    })
+    this.infoContainer.add(rHeader)
+
+    const gridW = cols * cellSize
+    const gridH = rows * cellSize
+    const gridOx = rangeX + rangePadX + Math.floor((gridAreaW - gridW) / 2)
+    const gridOy = panelTop + rangeHeaderH + rangePadTop + Math.floor((gridAreaH - gridH) / 2)
+    drawRangeMiniGrid(this, this.infoContainer, rangePattern, gridOx, gridOy, {
+      facing: 'right',
+      cellSize,
+      theme: 'dark',
+    })
+
+    const panelBottom = Math.max(sy + 6, panelTop + RANGE_PANEL_H + 4)
+    py = panelBottom
+
+    py += 4
     const tHeader = this.add.text(px, py, 'TRAITS', {
       fontSize: '13px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
@@ -402,10 +571,10 @@ export class PickerScene extends Phaser.Scene {
       const rowH = 52
 
       const bg = this.add.graphics()
-      bg.fillStyle(isSelected ? 0x00a2ff : 0xf5f7f9, 1)
-      bg.fillRoundedRect(4, rowY, SIDEBAR_W - 8, rowH, 4)
-      bg.lineStyle(isSelected ? 2 : 1, isSelected ? 0x00a2ff : 0xcfd8dc, isSelected ? 1 : 0.6)
-      bg.strokeRoundedRect(4, rowY, SIDEBAR_W - 8, rowH, 4)
+      bg.fillStyle(isSelected ? 0x0040FF : 0xf5f7f9, isSelected ? 0.9 : 1)
+      bg.fillRect(4, rowY, SIDEBAR_W - 8, rowH)
+      bg.lineStyle(isSelected ? 2 : 1, 0x0040FF, isSelected ? 0.35 : BORDER_STYLE.subtleAlpha)
+      bg.strokeRect(4, rowY, SIDEBAR_W - 8, rowH)
       bg.setInteractive(new Phaser.Geom.Rectangle(4, rowY, SIDEBAR_W - 8, rowH), Phaser.Geom.Rectangle.Contains)
       if (bg.input) bg.input.cursor = 'pointer'
       bg.on('pointerdown', () => this.selectSkill(skill.id))
@@ -434,10 +603,10 @@ export class PickerScene extends Phaser.Scene {
     for (const sr of this.skillRects) {
       const isSel = sr.id === skillId
       sr.g.clear()
-      sr.g.fillStyle(isSel ? 0x00a2ff : 0xf5f7f9, 1)
-      sr.g.fillRoundedRect(4, sr.y, SIDEBAR_W - 8, 52, 4)
-      sr.g.lineStyle(isSel ? 2 : 1, isSel ? 0x00a2ff : 0xcfd8dc, isSel ? 1 : 0.6)
-      sr.g.strokeRoundedRect(4, sr.y, SIDEBAR_W - 8, 52, 4)
+      sr.g.fillStyle(isSel ? 0x0040FF : 0xf5f7f9, isSel ? 0.9 : 1)
+      sr.g.fillRect(4, sr.y, SIDEBAR_W - 8, 52)
+      sr.g.lineStyle(isSel ? 2 : 1, 0x0040FF, isSel ? 0.35 : BORDER_STYLE.subtleAlpha)
+      sr.g.strokeRect(4, sr.y, SIDEBAR_W - 8, 52)
     }
     const containerChildren = this.infoContainer.getAll()
     for (const child of containerChildren) {
@@ -460,6 +629,12 @@ export class PickerScene extends Phaser.Scene {
 
   private showConfirm(): void {
     if (this.confirmBtn) this.confirmBtn.destroy()
+    if (!this.pickedUnit) {
+      this.confirmBtn = makeNodeButton(this, 10, this.H - 48, 'Confirm', () => this.confirmPick(), {
+        w: SIDEBAR_W - 20, h: 34, textSize: FONT_SIZE.xs, role: 'primary',
+      })
+      return
+    }
     const skillName = this.pickedUnit?.skills?.find(s => s.id === this.selectedSkillId)?.name ?? ''
     const label = skillName ? `Deploy with ${skillName}` : `Confirm (${this.pickedUnit?.subtypeLabel ?? ''})`
     this.confirmBtn = makeNodeButton(this, 10, this.H - 48, label, () => this.confirmPick(), {
@@ -468,7 +643,7 @@ export class PickerScene extends Phaser.Scene {
   }
 
   private confirmPick(): void {
-    if (!this.pickedUnit || this.slotIndex < 0) return
+    if (this.slotIndex < 0) return
     const squad = this.scene.get('SquadScene') as any
     if (squad.receivePickedUnit) {
       squad.receivePickedUnit(this.pickedUnit, this.slotIndex, this.selectedSkillId || undefined)

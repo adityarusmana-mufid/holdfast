@@ -14,6 +14,7 @@ const noopEvents = {
   onHealApplied: () => {},
   onUnitDamageDealt: () => {},
   onUnitDeath: () => {},
+  onExplosion: () => {},
 }
 
 function makeCs(): CombatSystem {
@@ -65,6 +66,7 @@ function makeEnemy(overrides: Record<string, any> = {}) {
     blocked: false,
     blockerUnitKey: null as string | null,
     statusEffects: [] as any[],
+    bonusAtk: 0,
     config: {
       id: 'test_enemy',
       atk: 150,
@@ -76,6 +78,7 @@ function makeEnemy(overrides: Record<string, any> = {}) {
       attackInterval: 2.0,
       isAerial: false,
       color: 0xff4444,
+      behavior: { type: 'standard' } as const,
       ...overrides,
     },
     getCurrentTile() { return { row: this._tileRow ?? 5, col: this._tileCol ?? 5 } },
@@ -239,6 +242,69 @@ describe('CombatSystem', () => {
     })
   })
 
+  describe('droneRamp', () => {
+    it('deals bonus drone damage on hit with DroneRamp trait', () => {
+      const unit = makeUnit({
+        atk: 200,
+        traits: [{ traitId: UnitTrait.DroneRamp, rampBasePercent: 0.2, rampIncrement: 0.15, rampMaxPercent: 1.1 }],
+      })
+      const enemy = makeEnemy({ armor: 0, res: 0, currentHp: 5000 })
+      enemy._tileRow = 2; enemy._tileCol = 3
+      const result = (cs as any).getDroneRampDamage(unit, enemy)
+      // First hit: 200 * 0.2 = 40
+      expect(result).toBe(40)
+    })
+
+    it('ramps up damage on consecutive hits on same target', () => {
+      const unit = makeUnit({
+        atk: 200,
+        traits: [{ traitId: UnitTrait.DroneRamp, rampBasePercent: 0.2, rampIncrement: 0.15, rampMaxPercent: 1.1 }],
+      })
+      const enemy = makeEnemy({ armor: 0, res: 0, currentHp: 10000 })
+      enemy._tileRow = 2; enemy._tileCol = 3
+      const h1 = (cs as any).getDroneRampDamage(unit, enemy) // 20%
+      const h2 = (cs as any).getDroneRampDamage(unit, enemy) // 35%
+      const h3 = (cs as any).getDroneRampDamage(unit, enemy) // 50%
+      expect(h1).toBe(40)   // 200 * 0.2
+      expect(h2).toBe(70)   // 200 * 0.35
+      expect(h3).toBe(100)  // 200 * 0.5
+    })
+
+    it('resets ramp when switching targets', () => {
+      const unit = makeUnit({
+        atk: 200,
+        traits: [{ traitId: UnitTrait.DroneRamp, rampBasePercent: 0.2, rampIncrement: 0.15, rampMaxPercent: 1.1 }],
+      })
+      const enemy1 = makeEnemy({ armor: 0, res: 0, currentHp: 10000 })
+      enemy1._tileRow = 2; enemy1._tileCol = 3
+      const enemy2 = makeEnemy({ armor: 0, res: 0, currentHp: 10000 })
+      enemy2._tileRow = 5; enemy2._tileCol = 5
+      ;(cs as any).getDroneRampDamage(unit, enemy1) // hit 1 on enemy1: 20% = 40
+      ;(cs as any).getDroneRampDamage(unit, enemy1) // hit 2 on enemy1: 35% = 70
+      const h1 = (cs as any).getDroneRampDamage(unit, enemy2) // hit 1 on enemy2: 20% = 40
+      expect(h1).toBe(40)
+    })
+
+    it('caps at max percent', () => {
+      const unit = makeUnit({
+        atk: 100,
+        traits: [{ traitId: UnitTrait.DroneRamp, rampBasePercent: 0.2, rampIncrement: 0.3, rampMaxPercent: 0.5 }],
+      })
+      const enemy = makeEnemy({ armor: 0, res: 0, currentHp: 5000 })
+      enemy._tileRow = 2; enemy._tileCol = 3
+      ;(cs as any).getDroneRampDamage(unit, enemy) // 20%
+      const h2 = (cs as any).getDroneRampDamage(unit, enemy) // 50% (capped, would be 50% without cap)
+      expect(h2).toBe(50) // 100 * 0.5
+    })
+
+    it('returns 0 without DroneRamp trait', () => {
+      const unit = makeUnit({ atk: 200, traits: [] })
+      const enemy = makeEnemy()
+      enemy._tileRow = 2; enemy._tileCol = 3
+      expect((cs as any).getDroneRampDamage(unit, enemy)).toBe(0)
+    })
+  })
+
   describe('healAllyOnAttack', () => {
     it('heals lowest HP ally in range', () => {
       const unit = makeUnit({ atk: 200, rangePattern: [[0, 0], [1, 0]], traits: [{ traitId: UnitTrait.AttackHealsAlly }] })
@@ -282,6 +348,15 @@ describe('CombatSystem', () => {
       })
       const params = cs.getAttackParams(unit, [])
       expect(params.atk).toBe(160)
+    })
+
+    it('applies 120% ATK with RangedAttack120 trait', () => {
+      const unit = makeUnit({
+        traits: [{ traitId: UnitTrait.RangedWhenNotBlocking }, { traitId: UnitTrait.RangedAttack120 }],
+        altRangePattern: [[0, 0], [0, -1], [0, 1]],
+      })
+      const params = cs.getAttackParams(unit, [])
+      expect(params.atk).toBe(240)
     })
 
     it('sets useAoE with RangedAoEWhenNotBlocking', () => {

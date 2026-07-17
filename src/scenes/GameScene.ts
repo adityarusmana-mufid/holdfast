@@ -9,8 +9,8 @@ import { EnemyManager } from '../systems/EnemyManager'
 import { CombatSystem } from '../systems/CombatSystem'
 import { HealingSystem } from '../systems/HealingSystem'
 import { UNIT_CONFIGS } from '../config/units'
-import { COLORS, FONT_SIZE } from '../ui/Constants'
-import { makeNodeButton } from '../ui/Components'
+import { COLORS, FONT_SIZE, SIDEBAR_W as PANEL_W } from '../ui/Constants'
+import { makeNodeButton, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, drawInstructorGuardIcon, drawFighterIcon, drawSwordmasterIcon, drawSolobladeIcon, drawReaperIcon, drawEarthshakerIcon, drawCrusherIcon, drawMedicIcon, drawMultiMedicIcon, drawIncantationMedicIcon, drawChainMedicIcon, drawMarksmanIcon, drawArtillerymanIcon, drawDeadeyeIcon, drawHeavyshooterIcon, drawSpreadshooterIcon, drawBesiegerIcon, drawFlingerIcon, drawPusherIcon, drawPullerIcon, drawExecutorIcon, drawAmbusherIcon } from '../ui/Components'
 import { spawnProjectile, playSwing, showWindUp, flashDamage, spawnChainBolt, spawnSplashRing, spawnExpandRing, spawnBurstParticles, spawnBuffParticles, spawnSparkHit, spawnHealCross } from '../effects/CombatEffects'
 import { SkillSystem } from '../systems/SkillSystem'
 import { saveCompletion } from '../shared/SaveData'
@@ -175,6 +175,19 @@ export class GameScene extends Phaser.Scene {
           }
         }
       },
+      onExplosion: (pos, damage, radius, damageType) => {
+        const units = this.unitSprites?.filter(u => {
+          if (!u.isAlive()) return false
+          const dist = Math.abs(u.row - pos.row) + Math.abs(u.col - pos.col)
+          return dist <= radius
+        }) ?? []
+        for (const u of units) {
+          const dealt = u.takeDamage(damage)
+          if (dealt > 0) {
+            this.showUnitDamageNumber(dealt, u, damageType)
+          }
+        }
+      },
       onDamageDealt: (damage: number, enemy: EnemySprite, damageType: string) => {
         this.showDamageNumber(damage, enemy, damageType)
       },
@@ -223,8 +236,18 @@ export class GameScene extends Phaser.Scene {
           deployed.nextAttackPushStunWall = false
           const dRow = tile.row - unit.row
           const dCol = tile.col - unit.col
-          const tRow = Math.max(0, Math.min(this.grid.rows - 1, tile.row + Math.sign(dRow || 1)))
-          const tCol = Math.max(0, Math.min(this.grid.cols - 1, tile.col + Math.sign(dCol || 1)))
+          let tRow: number, tCol: number
+          if (dRow === 0 && dCol === 0) {
+            const pushDir: Record<string, [number, number]> = { up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1] }
+            const [dr, dc] = pushDir[unit.facing] ?? [-1, 0]
+            tRow = tile.row + dr
+            tCol = tile.col + dc
+          } else {
+            tRow = tile.row + Math.sign(dRow)
+            tCol = tile.col + Math.sign(dCol)
+          }
+          tRow = Math.max(0, Math.min(this.grid.rows - 1, tRow))
+          tCol = Math.max(0, Math.min(this.grid.cols - 1, tCol))
           target.displaceTo(tRow, tCol)
           target.applyStatusEffect({ type: 'stun', remainingDuration: 2.5, factor: 0 })
           if (this.enemyManager) this.enemyManager.onEnemyDisplaced(target)
@@ -238,8 +261,11 @@ export class GameScene extends Phaser.Scene {
           if (distPull > 0) {
             const tRow = Math.max(0, Math.min(this.grid.rows - 1, tile.row + Math.sign(dRow)))
             const tCol = Math.max(0, Math.min(this.grid.cols - 1, tile.col + Math.sign(dCol)))
-            target.displaceTo(tRow, tCol)
-            if (this.enemyManager) this.enemyManager.onEnemyDisplaced(target)
+            const tt = this.grid.tiles[tRow][tCol]
+            if (tt.type !== TileType.Ranged && tt.type !== TileType.Wall) {
+              target.displaceTo(tRow, tCol)
+              if (this.enemyManager) this.enemyManager.onEnemyDisplaced(target)
+            }
           }
           const artsDmg = Math.max(1, Math.floor(unit.config.atk * 2.1 * 0.05), Math.floor(unit.config.atk * 2.1 - target.config.armor))
           target.takeDamage(artsDmg)
@@ -385,8 +411,11 @@ export class GameScene extends Phaser.Scene {
             const dCol = unit.col - eTile.col
             const tRow = Math.max(0, Math.min(this.grid.rows - 1, eTile.row + Math.sign(dRow)))
             const tCol = Math.max(0, Math.min(this.grid.cols - 1, eTile.col + Math.sign(dCol)))
-            enemy.displaceTo(tRow, tCol)
-            if (this.enemyManager) this.enemyManager.onEnemyDisplaced(enemy)
+            const tt = this.grid.tiles[tRow][tCol]
+            if (tt.type !== TileType.Ranged && tt.type !== TileType.Wall) {
+              enemy.displaceTo(tRow, tCol)
+              if (this.enemyManager) this.enemyManager.onEnemyDisplaced(enemy)
+            }
             const dmg = Math.max(1, Math.floor(unit.config.atk * 2.2 * 0.05), Math.floor(unit.config.atk * 2.2 - enemy.config.armor))
             enemy.takeDamage(dmg)
             if (dmg > 0) this.showDamageNumber(dmg, enemy, 'kinetic')
@@ -429,6 +458,10 @@ export class GameScene extends Phaser.Scene {
           }
           spawnExpandRing(this, pos.x, pos.y, 0x00bcd4, dispRadius * 2, 400)
         }
+      },
+      onChargeChanged: (unit, current, max) => {
+        const sprite = this.unitSprites.find(u => u.deployedUnit === unit)
+        if (sprite) sprite.updateCharges(current, max)
       },
       onSkillDeactivated: (unit) => {
         this.flashMessage(`SKILL END // ${unit.skillState?.config.name ?? 'END'}`, 0xff9100)
@@ -777,7 +810,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showRangePreview(config: UnitConfig, pos: Position, facing: Direction): void {
-    const tiles = positionsInRange(pos, config.rangePattern, this.grid.rows, this.grid.cols, facing)
+    const tiles = positionsInRange(pos, config.altRangePattern ?? config.rangePattern, this.grid.rows, this.grid.cols, facing)
     this.rangePreview.clear()
     this.rangePreview.setAlpha(1)
     for (const t of tiles) {
@@ -884,7 +917,7 @@ export class GameScene extends Phaser.Scene {
     this.unitPreview.fillStyle(config.color, 0.35)
 
     if (config.type === 'ground') {
-      this.unitPreview.fillRoundedRect(center.x - half, center.y - half, size, size, 4)
+      this.unitPreview.fillRect(center.x - half, center.y - half, size, size)
     } else {
       this.unitPreview.fillTriangle(center.x, center.y - half, center.x - half, center.y + half, center.x + half, center.y + half)
     }
@@ -892,7 +925,7 @@ export class GameScene extends Phaser.Scene {
     const halfSmall = size / 4
     this.unitPreview.fillStyle(0xffffff, 0.15)
     if (config.type === 'ground') {
-      this.unitPreview.fillRoundedRect(center.x - halfSmall, center.y - halfSmall, halfSmall * 2, halfSmall * 2, 2)
+      this.unitPreview.fillRect(center.x - halfSmall, center.y - halfSmall, halfSmall * 2, halfSmall * 2)
     } else {
       this.unitPreview.fillTriangle(center.x, center.y - halfSmall / 2, center.x - halfSmall, center.y + halfSmall, center.x + halfSmall, center.y + halfSmall)
     }
@@ -1088,9 +1121,12 @@ export class GameScene extends Phaser.Scene {
           const dCol = du.col - eTile.col
           const tRow = Math.max(0, Math.min(this.grid.rows - 1, eTile.row + Math.sign(dRow)))
           const tCol = Math.max(0, Math.min(this.grid.cols - 1, eTile.col + Math.sign(dCol)))
-          enemy.displaceTo(tRow, tCol)
-          enemy.applyStatusEffect({ type: 'slow', remainingDuration: 1.5, factor: 0.5 })
-          if (this.enemyManager) this.enemyManager.onEnemyDisplaced(enemy)
+          const tt = this.grid.tiles[tRow][tCol]
+          if (tt.type !== TileType.Ranged && tt.type !== TileType.Wall) {
+            enemy.displaceTo(tRow, tCol)
+            enemy.applyStatusEffect({ type: 'slow', remainingDuration: 1.5, factor: 0.5 })
+            if (this.enemyManager) this.enemyManager.onEnemyDisplaced(enemy)
+          }
         }
       }
       this.combatSystem.update(delta * speed, this.unitSprites, enemies)
@@ -1109,7 +1145,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   private buildInspectPanel(): void {
-    const PANEL_W = 210
     const H = this.scale.height
 
     this.inspectPanel = this.add.container(0, 0)
@@ -1134,12 +1169,12 @@ export class GameScene extends Phaser.Scene {
 
     const fs = '13px'
     const ff = '"Share Tech Mono", "Roboto Mono", monospace'
-    const wrapW = 194
+    const wrapW = PANEL_W - 16
 
     const lines: Phaser.GameObjects.Text[] = []
     const baseY = 66
     const lineH = 22
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 10; i++) {
       const t = this.add.text(8, baseY + i * lineH, '', {
         fontSize: fs, fontFamily: ff, color: '#9aa4b8',
         wordWrap: { width: wrapW },
@@ -1207,7 +1242,7 @@ export class GameScene extends Phaser.Scene {
 
   private ensurePanelVisible(): void {
     if (this.inspectPanel.x < 0) {
-      this.inspectPanel.setX(-210)
+      this.inspectPanel.setX(-PANEL_W)
       this.tweens.killTweensOf(this.inspectPanel)
       this.tweens.add({
         targets: this.inspectPanel,
@@ -1327,10 +1362,13 @@ export class GameScene extends Phaser.Scene {
       const chargeStr = maxCh > 0 ? `  CHG:${skill.charges}/${maxCh}` : ''
       lines[8].setText(`SP  [${spBar}]  ${spInt}/${max}${chargeStr}  ${statusMark}  ${recIcon} ${actIcon}`)
       lines[8].setColor(cDim)
+      lines[9].setText(skill.config.description)
+      lines[9].setColor(cDim)
     } else {
       lines[6].setText('')
       lines[7].setText('')
       lines[8].setText('')
+      lines[9].setText('')
     }
   }
 
@@ -1431,20 +1469,97 @@ export class GameScene extends Phaser.Scene {
     const isSelected = this.selectedSquadIndex === squadIndex
 
     const bg = this.add.graphics()
-    bg.fillStyle(0xffffff, 1)
-    bg.fillRoundedRect(0, 0, cardW, cardH, 6)
-    bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x00a2ff : 0xcfd8dc, 1)
+    bg.fillStyle(0xFFFFFF, 1)
+    bg.fillRect(0, 0, cardW, cardH)
+    bg.lineStyle(isSelected ? 3 : 1, 0x0040FF, isSelected ? 0.35 : 0.08)
+    bg.strokeRect(0, 0, cardW, cardH)
     bg.setAlpha(!canAfford && !onCooldown ? 0.45 : 1)
 
     const iconX = cardW / 2
     const iconY = 44
     const iconSize = 48
     const icon = this.add.graphics()
-    if (unit.type === 'ground') {
+    if (unit.id === 'core_caster') {
+      drawCoreCasterIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'splash_caster') {
+      drawSplashCasterIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'blast_caster') {
+      drawBlastCasterIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'chain_caster') {
+      drawChainCasterIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'mech_accord_caster') {
+      drawMechAccordCasterIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'protector') {
+      drawProtectorIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'guardian') {
+      drawGuardianIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'juggernaut') {
+      drawJuggernautIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'fortress_defender') {
+      drawFortressIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'arts_protector') {
+      drawArtsProtectorIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'sentry_protector') {
+      drawSentryProtectorIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'centurion_guard') {
+      drawCenturionGuardIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'lord_guard') {
+      drawLordGuardIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'arts_fighter') {
+      drawArtsFighterIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'instructor_guard') {
+      drawInstructorGuardIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'fighter') {
+      drawFighterIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'swordmaster') {
+      drawSwordmasterIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'soloblade') {
+      drawSolobladeIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'reaper') {
+      drawReaperIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'earthshaker') {
+      drawEarthshakerIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'crusher') {
+      drawCrusherIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'medic_st') {
+      drawMedicIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'medic_multi') {
+      drawMultiMedicIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'incantation_medic') {
+      drawIncantationMedicIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'chain_medic') {
+      drawChainMedicIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'sniper') {
+      drawMarksmanIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'artilleryman') {
+      drawArtillerymanIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'deadeye') {
+      drawDeadeyeIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'heavyshooter') {
+      drawHeavyshooterIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'spreadshooter') {
+      drawSpreadshooterIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'besieger') {
+      drawBesiegerIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'flinger') {
+      drawFlingerIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'pusher') {
+      drawPusherIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'puller') {
+      drawPullerIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'executor') {
+      drawExecutorIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'ambusher') {
+      drawAmbusherIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'pioneer') {
+      drawPioneerIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.id === 'charger') {
+      drawChargerIcon(icon, iconX, iconY, iconSize, unit.color)
+    } else if (unit.type === 'ground') {
       icon.fillStyle(unit.color, 1)
-      icon.fillRoundedRect(iconX - iconSize / 2, iconY - iconSize / 2, iconSize, iconSize, 6)
+      icon.fillRect(iconX - iconSize / 2, iconY - iconSize / 2, iconSize, iconSize)
       icon.fillStyle(0xffffff, 0.2)
-      icon.fillRoundedRect(iconX - iconSize / 4, iconY - iconSize / 4, iconSize / 2, iconSize / 2, 3)
+      icon.fillRect(iconX - iconSize / 4, iconY - iconSize / 4, iconSize / 2, iconSize / 2)
     } else {
       icon.fillStyle(unit.color, 1)
       icon.fillTriangle(iconX, iconY - iconSize / 2, iconX - iconSize / 2, iconY + iconSize / 2, iconX + iconSize / 2, iconY + iconSize / 2)
@@ -1519,9 +1634,10 @@ export class GameScene extends Phaser.Scene {
 
       const bg = container.getAt(0) as Phaser.GameObjects.Graphics
       bg.clear()
-      bg.fillStyle(isSelected ? 0xe3f2fd : 0xffffff, 1)
-      bg.fillRoundedRect(0, 0, 96, 128, 6)
-      bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x00a2ff : 0xcfd8dc, 1)
+      bg.fillStyle(0xFFFFFF, 1)
+      bg.fillRect(0, 0, 96, 128)
+      bg.lineStyle(isSelected ? 3 : 1, 0x0040FF, isSelected ? 0.35 : 0.08)
+      bg.strokeRect(0, 0, 96, 128)
       bg.setAlpha(!canAfford && !onCooldown ? 0.45 : 1)
 
       const skillLabel = container.getAt(3) as Phaser.GameObjects.Text
@@ -1825,7 +1941,7 @@ export class GameScene extends Phaser.Scene {
 
     const bg = this.add.graphics()
     bg.fillStyle(0x1a1a2e, 0.85)
-    bg.fillRoundedRect(0, 0, W, 72, 6)
+    bg.fillRect(0, 0, W, 72)
 
     const icon = this.add.graphics()
     icon.fillStyle(config.color, 1)
@@ -2001,8 +2117,8 @@ export class GameScene extends Phaser.Scene {
 
     const panel = this.add.graphics()
     panel.setDepth(61)
-    panel.fillStyle(0xffffff, 1)
-    panel.fillRoundedRect(0, pY, w, pH, { tl: 14, tr: 14, bl: 0, br: 0 })
+    panel.fillStyle(0x0D0D30, 1)
+    panel.fillRect(0, pY, w, pH)
 
     const cx = 34
     const cy = pY + pH / 2

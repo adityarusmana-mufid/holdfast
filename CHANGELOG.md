@@ -1,3 +1,11 @@
+## [2026-06-30] Phase — HomeBridge Visual Theming
+- **New effects system** (`src/effects/`): Icosahedron (3D wireframe with perspective projection + rotation), FireflyEffect (floating glowing dots with firefly.png), SmokeAmbient (slow cloud layer with smoke-texture.png), MouseParallax (lerp-based container offset on pointer move)
+- **HomeBridgeScene restructured**: Off-white gradient bg (`#F5F5F5`), tech orange (`#FF6A00`) icosahedron centerpiece, warm orange fireflies, cool ambient smoke, dark grey title, tech orange accent line. TERMINAL button in orange (primary), SQUAD/EDITOR in Meta blue (`#1877F2`, secondary)
+- **Palette expansion** (`src/ui/Constants.ts`): Added `COLOR_SHADE.techOrange` and `COLOR_SHADE.techBlue`. Updated neutral 700 to `#1A1A1A` dark grey
+- **Asset pipeline** (`BootScene.ts`): Added preload for 3 PNG textures (firefly, particle, smoke-texture) from arknights-particle
+- **Design reference** (`docs/superpowers/specs/2026-06-30-homebridge-visual-theme.md`): Portal 2 "Clean" aesthetic documented as styling reference
+- **Build verified**: `tsc && vite build` passes
+
 ## [2026-06-25] Phase — Three New Mechanics: Barriers, Stun Generator, Displacement
 - **Barriers** (`src/config/units.ts`): Deployable unit with blockCount=3, 0 ATK, very high HP. Cheap DP cost (5). Blocks enemies in place without attacking — roadblock mechanic for TR-8.
 - **Stun Generator** (`src/config/units.ts`, `src/config/skills.ts`): Ranged deployable with EMP Burst skill (manual activation, 15 SP). Applies 5-second stun to all enemies within 2 tiles. Stun prevents all movement. New status effect type `'stun'` in `types/index.ts`.

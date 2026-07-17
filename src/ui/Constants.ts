@@ -41,14 +41,16 @@ export const SPACING = {
 }
 
 export const COLOR_SHADE = {
-  primary: { 500: 0x00a2ff, 600: 0x0091e6, 700: 0x007acc },
+  primary: { 500: 0x0040FF, 600: 0x0030CC, 700: 0x002099 },
+  techOrange: { 500: 0xFF6A00, 600: 0xE05E00, 700: 0xC04F00 },
+  techBlue: { 500: 0x1877F2, 600: 0x1468D4, 700: 0x1057B4 },
   success: { 500: 0x00c853, 600: 0x00b34a, 700: 0x009e41 },
   danger: { 500: 0xd32f2f, 600: 0xbd2a2a, 700: 0xa72525 },
-  neutral: { 100: 0xf4f6f8, 200: 0xe8ecf0, 300: 0xd5dbe3, 400: 0xccd0d6, 500: 0x8a8a9a, 600: 0x4a4a5a, 700: 0x1a1a2e },
+  neutral: { 100: 0xF4F7FA, 200: 0xE8EDF2, 300: 0xD5DBE3, 400: 0xCCD0D6, 500: 0x8E9AAF, 600: 0x4B5563, 700: 0x1A1A1A },
 }
 
 export const COLORS = {
-  panel: { bg: 0xf0f2f5, border: COLOR_SHADE.primary[500], header: COLOR_SHADE.primary[500] },
+  panel: { bg: 0xE8EDF2, border: COLOR_SHADE.primary[500], header: COLOR_SHADE.primary[500] },
   palette: {
     floor: 0xebeff5,
     wall: 0xd5dbe3,
@@ -59,32 +61,55 @@ export const COLORS = {
     goal: 0xd4f5de,
   },
   text: {
-    primary: '#1a1a2e',
-    secondary: '#4a4a5a',
-    dim: '#5d6d7d',
-    accent: '#00a2ff',
+    primary: '#0A0A0C',
+    secondary: '#4B5563',
+    dim: '#8E9AAF',
+    accent: '#0040FF',
     success: '#00c853',
     warning: '#ff9100',
     danger: '#d32f2f',
   },
   bg: COLOR_SHADE.neutral[100],
-  button: { bg: 0xffffff, hover: COLOR_SHADE.primary[500], active: COLOR_SHADE.primary[600], border: COLOR_SHADE.primary[500] },
+  button: { bg: 0x0040FF, hover: 0x0030CC, active: 0x002099, border: 0x0040FF },
   nodeButton: {
-    defaultTop: 0xd5dbe3,
-    defaultBottom: 0xc0c4cc,
-    defaultTopPressed: 0xc0c4cc,
-    defaultBottomPressed: 0xa8acb4,
-    primaryTop: 0x4a4a4a,
-    primaryBottom: 0x303030,
-    primaryTopPressed: 0x383838,
-    primaryBottomPressed: 0x282828,
+    defaultTop: 0x0A0A0C,
+    defaultBottom: 0x000000,
+    defaultTopPressed: 0x000000,
+    defaultBottomPressed: 0x0A0A0C,
+    primaryTop: 0x0040FF,
+    primaryBottom: 0x0030CC,
+    primaryTopPressed: 0x0030CC,
+    primaryBottomPressed: 0x002099,
     dangerTop: 0x5a2020,
     dangerBottom: 0x3a1010,
     dangerTopPressed: 0x4a1818,
     dangerBottomPressed: 0x2a0c0c,
   },
-  damage: { kinetic: '#1a1a2e', thermal: '#9c27b0' },
+  damage: { kinetic: '#0A0A0C', thermal: '#9c27b0' },
 }
+
+export const CORNER_BRACKET_SIZE = 16
+
+export const BUTTON_BEVEL = 0.08
+
+export const BORDER_STYLE = {
+  subtle: 0x0040FF,
+  subtleAlpha: 0.08,
+  hover: 0x0040FF,
+  hoverAlpha: 0.18,
+  active: 0x0040FF,
+  activeAlpha: 0.35,
+}
+
+export const GRID_BG = {
+  spacing: 40,
+  color: 0x0040FF,
+  alpha: 0.015,
+}
+
+export const TOP_BAR = 64
+
+export const SIDEBAR_W = 280
 
 export function hex(color: number): string {
   return '#' + color.toString(16).padStart(6, '0')

@@ -7,6 +7,10 @@ interface SaveData {
   levelCompletions: Record<string, LevelCompletion>
   squads: Record<string, (string | null)[]>
   squadSkills: Record<string, Record<number, string>>
+  presets: Record<string, (string | null)[]>
+  presetSkills: Record<string, Record<number, string>>
+  presetNames: Record<number, string>
+  activePreset: number
 }
 
 const SAVE_KEY = 'holdfast_save'
@@ -16,20 +20,48 @@ function loadSave(): SaveData {
     const raw = localStorage.getItem(SAVE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
-      return {
+      const data: SaveData = {
         levelCompletions: parsed.levelCompletions ?? {},
         squads: parsed.squads ?? {},
         squadSkills: parsed.squadSkills ?? {},
+        presets: {},
+        presetSkills: {},
+        presetNames: { 0: 'Preset 1', 1: 'Preset 2', 2: 'Preset 3', 3: 'Preset 4' },
+        activePreset: 0,
       }
+      if (!parsed.presets && parsed.squads?.['menu_squad']) {
+        data.presets['preset_0'] = parsed.squads['menu_squad']
+        if (parsed.squadSkills?.['menu_squad']) {
+          data.presetSkills['preset_0'] = parsed.squadSkills['menu_squad']
+        }
+      }
+      for (let i = 0; i < 4; i++) {
+        const key = `preset_${i}`
+        data.presets[key] = parsed.presets?.[key] ?? new Array(12).fill(null)
+        data.presetSkills[key] = parsed.presetSkills?.[key] ?? {}
+      }
+      if (parsed.presetNames) data.presetNames = parsed.presetNames
+      if (typeof parsed.activePreset === 'number') data.activePreset = parsed.activePreset
+      return data
     }
   } catch { /* ignore */ }
-  return { levelCompletions: {}, squads: {}, squadSkills: {} }
+  return {
+    levelCompletions: {}, squads: {}, squadSkills: {},
+    presets: { preset_0: new Array(12).fill(null), preset_1: new Array(12).fill(null), preset_2: new Array(12).fill(null), preset_3: new Array(12).fill(null) },
+    presetSkills: { preset_0: {}, preset_1: {}, preset_2: {}, preset_3: {} },
+    presetNames: { 0: 'Preset 1', 1: 'Preset 2', 2: 'Preset 3', 3: 'Preset 4' },
+    activePreset: 0,
+  }
+}
+
+function persist(data: SaveData): void {
+  localStorage.setItem(SAVE_KEY, JSON.stringify(data))
 }
 
 export function saveCompletion(levelId: string, stars: number, enemiesDefeated: number): void {
   const data = loadSave()
   data.levelCompletions[levelId] = { stars, enemiesDefeated }
-  localStorage.setItem(SAVE_KEY, JSON.stringify(data))
+  persist(data)
 }
 
 export function isDevMode(): boolean {
@@ -51,24 +83,44 @@ export function getCompletion(levelId: string): LevelCompletion | undefined {
   return loadSave().levelCompletions[levelId]
 }
 
-export function saveSquad(levelId: string, slotIds: (string | null)[]): void {
+export function savePreset(index: number, slotIds: (string | null)[]): void {
   const data = loadSave()
-  data.squads[levelId] = slotIds
-  localStorage.setItem(SAVE_KEY, JSON.stringify(data))
+  data.presets[`preset_${index}`] = slotIds
+  persist(data)
 }
 
-export function loadSquad(levelId: string): (string | null)[] | undefined {
-  return loadSave().squads[levelId]
+export function loadPreset(index: number): (string | null)[] {
+  return loadSave().presets[`preset_${index}`] ?? new Array(12).fill(null)
 }
 
-export function savePickedSkills(levelId: string, skills: Record<number, string>): void {
+export function savePresetSkills(index: number, skills: Record<number, string>): void {
   const data = loadSave()
-  data.squadSkills[levelId] = skills
-  localStorage.setItem(SAVE_KEY, JSON.stringify(data))
+  data.presetSkills[`preset_${index}`] = skills
+  persist(data)
 }
 
-export function loadPickedSkills(levelId: string): Record<number, string> | undefined {
-  return loadSave().squadSkills[levelId]
+export function loadPresetSkills(index: number): Record<number, string> {
+  return loadSave().presetSkills[`preset_${index}`] ?? {}
+}
+
+export function setActivePreset(index: number): void {
+  const data = loadSave()
+  data.activePreset = index
+  persist(data)
+}
+
+export function getActivePreset(): number {
+  return loadSave().activePreset ?? 0
+}
+
+export function setPresetName(index: number, name: string): void {
+  const data = loadSave()
+  data.presetNames[index] = name
+  persist(data)
+}
+
+export function getPresetName(index: number): string {
+  return loadSave().presetNames?.[index] ?? `Preset ${index + 1}`
 }
 
 export function resetAllProgress(): void {

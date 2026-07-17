@@ -175,6 +175,19 @@ export class GameScene extends Phaser.Scene {
           }
         }
       },
+      onExplosion: (pos, damage, radius, damageType) => {
+        const units = this.unitSprites?.filter(u => {
+          if (!u.isAlive()) return false
+          const dist = Math.abs(u.row - pos.row) + Math.abs(u.col - pos.col)
+          return dist <= radius
+        }) ?? []
+        for (const u of units) {
+          const dealt = u.takeDamage(damage)
+          if (dealt > 0) {
+            this.showUnitDamageNumber(dealt, u, damageType)
+          }
+        }
+      },
       onDamageDealt: (damage: number, enemy: EnemySprite, damageType: string) => {
         this.showDamageNumber(damage, enemy, damageType)
       },

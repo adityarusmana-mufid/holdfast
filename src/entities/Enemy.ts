@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { EnemyConfig, Position, StatusEffect, FlowDirection } from '../types/index'
+import { EnemyConfig, EnemyBehavior, Position, StatusEffect, FlowDirection } from '../types/index'
 import { Grid, TILE_SIZE } from '../entities/Grid'
 
 const AERIAL_ELEVATION = 40
@@ -16,6 +16,7 @@ export class EnemySprite {
   private hpBar: Phaser.GameObjects.Graphics
   private hpBg: Phaser.GameObjects.Graphics
   private dirIndicator: Phaser.GameObjects.Graphics
+  private shieldGraphic: Phaser.GameObjects.Graphics
   private shadow: Phaser.GameObjects.Graphics | null = null
   private shadowGlow: Phaser.GameObjects.Graphics | null = null
 
@@ -32,6 +33,11 @@ export class EnemySprite {
   visualOffsetY: number = 0
   statusEffects: StatusEffect[] = []
 
+  behavior: EnemyBehavior
+  currentShieldHp: number = 0
+  isDetected: boolean = false
+  bonusAtk: number = 0
+
   routingState: 'route' | 'reroute' = 'route'
   rerouteTargetWaypoint: number = -1
 
@@ -42,6 +48,10 @@ export class EnemySprite {
     this.scene = scene
     this.grid = grid
     this.config = config
+    this.behavior = config.behavior
+    if (config.behavior.type === 'shielded') {
+      this.currentShieldHp = config.behavior.shieldHp
+    }
     this.currentHp = config.hp
     this.path = path
     this.currentWaypoint = 0
@@ -67,19 +77,49 @@ export class EnemySprite {
       this.shadow.setDepth(8)
     }
 
+    this.shieldGraphic = scene.add.graphics()
+
     const glow = scene.add.graphics()
     glow.fillStyle(config.color, 0.1)
     glow.fillCircle(0, 0, size * 0.7)
 
     this.body = scene.add.graphics()
     this.body.fillStyle(config.color, 1)
-    this.body.fillCircle(0, 0, half)
     this.body.lineStyle(2, 0xd32f2f, 0.4)
-    this.body.strokeCircle(0, 0, half)
+
+    const shape = this.getShapeId()
+    switch (shape) {
+      case 'triangle':
+        this.body.fillTriangle(-half, half, half, half, 0, -half)
+        this.body.strokeTriangle(-half, half, half, half, 0, -half)
+        break
+      case 'diamond':
+        this.body.fillPoints([
+          new Phaser.Geom.Point(0, -half),
+          new Phaser.Geom.Point(half, 0),
+          new Phaser.Geom.Point(0, half),
+          new Phaser.Geom.Point(-half, 0),
+        ], true)
+        break
+      case 'hexagon':
+        this.drawHexagon(this.body, 0, 0, half)
+        break
+      case 'square':
+        this.body.fillRect(-half * 0.7, -half * 0.7, size * 0.7, size * 0.7)
+        this.body.strokeRect(-half * 0.7, -half * 0.7, size * 0.7, size * 0.7)
+        break
+      default:
+        this.body.fillCircle(0, 0, half)
+        this.body.strokeCircle(0, 0, half)
+    }
 
     this.dirIndicator = scene.add.graphics()
     this.dirIndicator.fillStyle(0xffffff, 0.7)
-    this.dirIndicator.fillTriangle(half * 0.5, 0, -half * 0.3, -half * 0.4, -half * 0.3, half * 0.4)
+    if (shape === 'circle') {
+      this.dirIndicator.fillTriangle(half * 0.5, 0, -half * 0.3, -half * 0.4, -half * 0.3, half * 0.4)
+    } else {
+      this.dirIndicator.fillCircle(0, -half * 0.8, 3)
+    }
 
     const initialAngle = path.length > 1
       ? Math.atan2(path[1].row - path[0].row, path[1].col - path[0].col)
@@ -93,8 +133,9 @@ export class EnemySprite {
     this.hpBar = scene.add.graphics()
     this.drawHp(size)
 
-    this.container = scene.add.container(this.x, this.y, [glow, this.body, this.dirIndicator, this.hpBg, this.hpBar])
+    this.container = scene.add.container(this.x, this.y, [glow, this.shieldGraphic, this.body, this.dirIndicator, this.hpBg, this.hpBar])
     this.container.setDepth(config.isAerial ? 15 : 9)
+    this.drawShield()
   }
 
   private drawHp(size: number): void {
@@ -104,6 +145,56 @@ export class EnemySprite {
     const hpColor = ratio > 0.5 ? 0xd32f2f : ratio > 0.25 ? 0xff6d00 : 0x9c27b0
     this.hpBar.fillStyle(hpColor, 1)
     this.hpBar.fillRect(-half, -half - 10, size * ratio, 3)
+  }
+
+  private getShapeId(): 'circle' | 'triangle' | 'diamond' | 'hexagon' | 'square' {
+    switch (this.config.id) {
+      case 'rusher': case 'rusher_elite': return 'triangle'
+      case 'marksman': case 'marksman_elite': return 'diamond'
+      case 'breacher': case 'breacher_elite': return 'hexagon'
+      case 'repair': case 'repair_elite': return 'square'
+      default: return 'circle'
+    }
+  }
+
+  private drawHexagon(g: Phaser.GameObjects.Graphics, cx: number, cy: number, r: number): void {
+    const pts: Phaser.Geom.Point[] = []
+    for (let i = 0; i < 6; i++) {
+      const a = (Math.PI / 3) * i - Math.PI / 6
+      pts.push(new Phaser.Geom.Point(cx + r * Math.cos(a), cy + r * Math.sin(a)))
+    }
+    g.fillPoints(pts, true)
+    g.strokePoints(pts, true)
+  }
+
+  private drawShield(): void {
+    this.shieldGraphic.clear()
+    if (this.behavior.type !== 'shielded' || this.currentShieldHp <= 0) return
+    const ratio = this.currentShieldHp / this.behavior.shieldHp
+    const size = TILE_SIZE * 0.6
+    const half = size / 2
+    this.shieldGraphic.lineStyle(3, Phaser.Display.Color.GetColor(
+      Math.floor(150 * (1 - ratio)),
+      Math.floor(150 * ratio),
+      255
+    ), 0.8)
+    this.shieldGraphic.strokeCircle(0, 0, half + 4)
+  }
+
+  updateDetection(units: { row: number; col: number }[]): void {
+    if (this.behavior.type !== 'stealth' || !this.alive) return
+    const tile = this.getCurrentTile()
+    if (!tile) return
+    let detected = false
+    for (const u of units) {
+      const dist = Math.abs(u.row - tile.row) + Math.abs(u.col - tile.col)
+      if (dist <= this.behavior.detectionRange) {
+        detected = true
+        break
+      }
+    }
+    this.isDetected = detected
+    this.container.setAlpha(detected ? 1 : 0.2)
   }
 
   applyVisualPosition(): void {
@@ -117,7 +208,18 @@ export class EnemySprite {
   }
 
   takeDamage(amount: number): number {
-    this.currentHp = Math.max(0, this.currentHp - amount)
+    let remaining = amount
+    if (this.behavior.type === 'shielded' && this.currentShieldHp > 0) {
+      if (remaining <= this.currentShieldHp) {
+        this.currentShieldHp -= remaining
+        remaining = 0
+      } else {
+        remaining -= this.currentShieldHp
+        this.currentShieldHp = 0
+      }
+      this.drawShield()
+    }
+    this.currentHp = Math.max(0, this.currentHp - remaining)
     this.drawHp(TILE_SIZE * 0.6)
     if (this.container.scene) {
       this.container.scene.tweens.add({
@@ -127,6 +229,9 @@ export class EnemySprite {
         yoyo: true,
         ease: 'Quad.easeOut',
       })
+    }
+    if (this.behavior.type === 'stealth') {
+      this.isDetected = true
     }
     if (this.currentHp <= 0) {
       this.alive = false

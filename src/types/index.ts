@@ -155,6 +155,15 @@ export interface UnitConfig {
   skills: SkillConfig[]
 }
 
+export type EnemyBehavior =
+  | { type: 'standard' }
+  | { type: 'exploder'; explosionDamage: number; explosionRadius: number; damageType: DamageType }
+  | { type: 'stealth'; detectionRange: number }
+  | { type: 'healer'; healAmount: number; healInterval: number; healRange: number }
+  | { type: 'buffer'; buffAtk: number; buffRange: number }
+  | { type: 'shielded'; shieldHp: number }
+  | { type: 'summoner'; spawnType: string; spawnInterval: number; spawnCount: number }
+
 export interface EnemyConfig {
   id: string
   name: string
@@ -170,6 +179,7 @@ export interface EnemyConfig {
   isAerial?: boolean
   attackRange?: number
   description?: string
+  behavior: EnemyBehavior
 }
 
 export type SpRecoveryType = 'auto' | 'offensive' | 'defensive'

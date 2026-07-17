@@ -1469,9 +1469,10 @@ export class GameScene extends Phaser.Scene {
     const isSelected = this.selectedSquadIndex === squadIndex
 
     const bg = this.add.graphics()
-    bg.fillStyle(0x1A1A3E, 1)
+    bg.fillStyle(0xFFFFFF, 1)
     bg.fillRect(0, 0, cardW, cardH)
-    bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x4488FF : 0x6B7280, 1)
+    bg.lineStyle(isSelected ? 3 : 1, 0x0040FF, isSelected ? 0.35 : 0.08)
+    bg.strokeRect(0, 0, cardW, cardH)
     bg.setAlpha(!canAfford && !onCooldown ? 0.45 : 1)
 
     const iconX = cardW / 2

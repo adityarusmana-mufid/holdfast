@@ -109,5 +109,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 15,
-  "guideText": ["When hostiles cluster together, area-of-effect attacks damage multiple at once.", "Deploy a unit with AoE abilities. Grouped enemies take full damage from blast attacks."]
+  "guideText": ["When hostiles cluster together, area-of-effect attacks damage multiple targets at once.", "Deploy the Splash Caster on a ranged tile. Its shells damage enemies around the primary target."]
 }

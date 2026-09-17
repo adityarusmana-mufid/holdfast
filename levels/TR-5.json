@@ -90,5 +90,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Armored tanks shrug off kinetic bullets. Standard physical damage barely scratches them.", "Casters deal thermal damage that burns through armor. Deploy a Caster on a ranged tile to handle heavy targets."]
+  "guideText": ["Armored tanks shrug off kinetic bullets. Standard kinetic damage barely scratches them.", "Casters deal thermal damage, which ignores armor but is reduced by Resistance. Deploy a Caster on a ranged tile to handle heavy targets."]
 }

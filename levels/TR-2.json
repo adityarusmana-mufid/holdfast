@@ -123,5 +123,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Units attack in the direction they face. Face them toward the route so they engage hostiles as they pass through.", "After deploying, click the tile center to choose facing. Face your units toward the incoming route."]
+  "guideText": ["Units attack in the direction they face. Aim them along the route so they engage hostiles as they pass.", "Select a unit card, choose a valid tile, then choose its facing direction before confirming deployment."]
 }

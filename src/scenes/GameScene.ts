@@ -2112,17 +2112,29 @@ export class GameScene extends Phaser.Scene {
     overlay.fillRect(0, 0, w, h)
     overlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains)
 
-    const pH = 130
+    const cx = 34
+    const isz = 20
+    const tx = cx + isz + 18
+    const tw = Math.max(180, w - tx - 20)
+    const guideTextObj = this.add.text(tx, 0, texts[0], {
+      fontSize: '17px',
+      color: '#0f172a',
+      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      align: 'left',
+      wordWrap: { width: tw },
+      lineSpacing: 4,
+    })
+    const pH = Math.max(130, guideTextObj.height + 64)
     const pY = h - pH
+    const cy = pY + pH / 2
 
     const panel = this.add.graphics()
     panel.setDepth(61)
-    panel.fillStyle(0x0D0D30, 1)
+    panel.fillStyle(0xf8fafc, 1)
     panel.fillRect(0, pY, w, pH)
+    panel.lineStyle(2, 0x4fc3f7, 1)
+    panel.lineBetween(0, pY, w, pY)
 
-    const cx = 34
-    const cy = pY + pH / 2
-    const isz = 20
     const icon = this.add.graphics()
     icon.setDepth(62)
     icon.fillStyle(0x4fc3f7, 1)
@@ -2133,22 +2145,13 @@ export class GameScene extends Phaser.Scene {
       new Phaser.Geom.Point(cx - isz, cy),
     ], true)
 
-    const tx = cx + isz + 18
-    const tw = w - tx - 20
-    const guideTextObj = this.add.text(tx, pY + 16, texts[0], {
-      fontSize: '17px',
-      color: '#333333',
-      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-      align: 'left',
-      wordWrap: { width: tw },
-      lineSpacing: 4,
-    })
+    guideTextObj.setPosition(tx, pY + 16)
     guideTextObj.setDepth(62)
 
     const isLastPage = texts.length === 1
-    const dismissText = this.add.text(w - 16, pY + pH - 16, isLastPage ? '[ tap to dismiss ]' : '[ tap to continue ]', {
+    const dismissText = this.add.text(w - 16, pY + pH - 14, isLastPage ? 'TAP ANYWHERE TO START' : 'TAP ANYWHERE TO CONTINUE', {
       fontSize: '15px',
-      color: '#5a6a7a',
+      color: '#334155',
       fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
     })
     dismissText.setOrigin(1, 1)

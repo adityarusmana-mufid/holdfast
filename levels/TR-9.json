@@ -57,7 +57,7 @@
   "deploymentLimit": 8,
   "lives": 15,
   "guideText": [
-    "The golden Stun Generator device is pre-placed on the map (col 4). Click it to activate — costs 10 DP, deals 1000 damage and stuns all enemies within 1 tile for 7 seconds, then it is consumed.",
-    "Wait for enemies to cluster near (1,4), then click the generator to stun the group. Use the stun window for your Caster to eliminate armored targets safely."
+    "The gold Stun Generator is pre-placed on the map. Tap it to activate: it costs 10 DP, deals 1000 damage, stuns nearby enemies for 7 seconds, then is consumed.",
+    "Wait for enemies to cluster beside the generator, then activate it. Use the stun window for your Caster to eliminate armored targets safely."
   ]
 }

@@ -2,6 +2,7 @@ import { UnitConfig } from '../../types/index'
 import { UNIT_CONFIGS } from '../../config/units'
 
 const TR_SQUADS: Record<string, string[]> = {
+  'TR-6': ['protector', 'splash_caster', 'sniper', 'medic_st'],
   'TR-8': ['roadblock', 'sniper'],
   'TR-9': ['protector', 'core_caster', 'medic_st'],
   'TR-10': ['decel_binder', 'sniper', 'protector', 'medic_st'],

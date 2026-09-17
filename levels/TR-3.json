@@ -107,5 +107,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Drones fly over ground units and cannot be blocked. Only ranged units on white tiles can attack them.", "Deploy a Sniper on a ranged tile near the route. They will automatically target aerial hostiles."]
+  "guideText": ["Drones fly over ground units and cannot be blocked. Use ranged coverage to destroy them before they reach the goal.", "Deploy a Sniper on a ranged tile near the route. Snipers prioritize aerial hostiles when they are in range."]
 }

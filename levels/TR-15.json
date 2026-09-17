@@ -249,7 +249,7 @@
   "deploymentLimit": 8,
   "lives": 15,
   "guideText": [
-    "Retreat a unit to recover half its DP cost. Use retreat to rotate damaged units or fund stronger replacements during battle.",
-    "Charger Vanguards refund their full DP cost on retreat. Deploy a Charger early, earn DP from kills, then retreat for a full refund to afford heavier units."
+    "Retreat a unit to recover half its DP cost. Select a deployed unit, then use RETREAT to rotate damaged units or fund stronger replacements.",
+    "Charger Vanguards refund their full DP cost on retreat. Deploy a Charger early, earn DP from kills, then retreat it to afford heavier units."
   ]
 }

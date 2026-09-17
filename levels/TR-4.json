@@ -83,5 +83,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Vanguards generate extra DP per second while deployed. Deploy them early to afford stronger units later.", "Place a Vanguard near the route. Watch your DP gauge fill faster while it holds the line."]
+  "guideText": ["Vanguards are low-cost early blockers. Pioneer earns DP with its Charge skill, while Charger earns extra DP from kills.", "Deploy a Vanguard early to hold the route and build enough DP for stronger units later."]
 }

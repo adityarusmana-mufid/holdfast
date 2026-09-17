@@ -127,5 +127,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 15,
-  "guideText": ["All unit types have a role. Blockers hold the line, damage dealers eliminate threats, medics keep everyone alive.", "Casters handle armor. Snipers handle drones. Vanguards fund the operation. Build a complete formation."]
+  "guideText": ["This is a capstone operation. Blockers hold the line, damage dealers eliminate threats, and Medics keep everyone repaired.", "Use Casters against armor, Snipers against drones, and Vanguards to establish your formation early."]
 }

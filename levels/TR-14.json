@@ -57,7 +57,7 @@
   "deploymentLimit": 8,
   "lives": 15,
   "guideText": [
-    "Deep holes in the terrain instantly destroy any enemy that falls in. Push Stroker and Hookmaster specialists can be deployed ANYWHERE — even on the route itself. Their Shockwave pushes enemies away; their Hook pulls them closer.",
-    "Deploy a Push Stroker near the route. Wait for enemies to pass the holes, then activate Shockwave to push them into the pit. Pull enemies with Hookmaster too. Use the environment to kill tough enemies instantly!"
+    "Deep holes instantly destroy enemies that enter them. Push Stroker and Hookmaster specialists can deploy on any valid tile, including the route.",
+    "Deploy a Push Stroker beside the route. Its Barrel Burst automatically pushes targets; use its facing to send enemies into a hole. Hookmaster pulls targets toward itself."
   ]
 }

@@ -249,7 +249,7 @@
   "deploymentLimit": 8,
   "lives": 15,
   "guideText": [
-    "Some hostiles slip past your frontline. Keep a Guard (Fighter) in reserve to intercept elite targets that break through.",
-    "Guards have high ATK and fast attacks. Deploy one behind your Defender to catch anything that gets past the main line."
+    "A blocker can hold only a limited number of enemies. When the route overflows, remaining hostiles move past the frontline.",
+    "Keep a Guard in reserve behind your Protector. Guards have high ATK and fast attacks, making them ideal for catching leaks."
   ]
 }

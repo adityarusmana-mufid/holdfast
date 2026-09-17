@@ -1,5 +1,5 @@
 {
-  "name": "Formation",
+  "name": "Thermal Defense",
   "cols": 10,
   "rows": 3,
   "tiles": [
@@ -249,7 +249,7 @@
   "deploymentLimit": 8,
   "lives": 15,
   "guideText": [
-    "Enemy Artillery Casters fire thermal shells that splash in a small area. Clustering your units lets them hit multiple targets at once.",
-    "Keep a gap between deployed units — at least one empty tile between them. Spread reduces splash damage and keeps your formation intact."
+    "Enemy Artillery Casters use thermal attacks. Thermal damage ignores DEF, so protect vulnerable units with a Medic and remove Casters quickly.",
+    "Deploy your Protector on the route and keep a Medic in range. Use your Sniper and Caster to eliminate artillery before it wears down the frontline."
   ]
 }

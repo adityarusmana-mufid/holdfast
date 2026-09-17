@@ -249,7 +249,7 @@
   "deploymentLimit": 8,
   "lives": 15,
   "guideText": [
-    "Armored units resist kinetic damage. Thermal (Caster) damage bypasses armor entirely. Deploy a Decel Binder to slow them, then place a Caster to burn through their hull.",
+    "Armored units resist kinetic damage. Thermal Caster damage ignores armor, though Resistance still reduces it. Deploy a Decel Binder to slow them, then place a Caster to burn through their hull.",
     "The Decel Binder keeps enemies in the Caster's range longer. This combo is your primary answer to armored columns throughout the campaign."
   ]
 }

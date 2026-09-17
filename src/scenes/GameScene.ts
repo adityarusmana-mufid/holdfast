@@ -14,6 +14,8 @@ import { makeNodeButton, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCast
 import { spawnProjectile, playSwing, showWindUp, flashDamage, spawnChainBolt, spawnSplashRing, spawnExpandRing, spawnBurstParticles, spawnBuffParticles, spawnSparkHit, spawnHealCross } from '../effects/CombatEffects'
 import { SkillSystem } from '../systems/SkillSystem'
 import { saveCompletion } from '../shared/SaveData'
+import { TutorialAction, TutorialSystem } from '../systems/TutorialSystem'
+import { TUTORIAL_OBJECTIVES } from '../config/tutorialObjectives'
 
 export class GameScene extends Phaser.Scene {
   private grid!: Grid
@@ -85,6 +87,9 @@ export class GameScene extends Phaser.Scene {
   private guidePageIndex: number = 0
   private selectionDiamond!: Phaser.GameObjects.Graphics
   private unitPreview!: Phaser.GameObjects.Graphics
+  private tutorialSystem: TutorialSystem | null = null
+  private tutorialObjectiveBg!: Phaser.GameObjects.Graphics
+  private tutorialObjectiveText!: Phaser.GameObjects.Text
 
   constructor() {
     super({ key: 'GameScene' })
@@ -121,6 +126,7 @@ export class GameScene extends Phaser.Scene {
     this.pendingFacing = 'up'
     this.decisionMode = false
     this.inspectingUnit = null
+    this.tutorialSystem = this.levelId ? new TutorialSystem(TUTORIAL_OBJECTIVES[this.levelId] ?? []) : null
 
     const cols = this.levelData?.cols ?? 12
     const rows = this.levelData?.rows ?? 3
@@ -511,6 +517,7 @@ export class GameScene extends Phaser.Scene {
     this.wavePreviewLine.setAlpha(0)
 
     this.buildPauseButton()
+    this.buildTutorialObjective()
 
     if (this.levelData?.guideText) {
       this.showGuide(this.levelData.guideText)
@@ -639,6 +646,7 @@ export class GameScene extends Phaser.Scene {
         this.depSystem.currentDP -= 10
         this.grid.setTile(pos.row, pos.col, TileType.Floor)
         this.grid.render()
+        this.recordTutorialAction('activate_generator')
         for (const enemy of this.enemyManager.getEnemies()) {
           if (!enemy.alive) continue
           const eTile = enemy.getCurrentTile()
@@ -962,6 +970,7 @@ export class GameScene extends Phaser.Scene {
       const deployPos = this.grid.tileToPixel(this.pendingTile.row, this.pendingTile.col)
       spawnExpandRing(this, deployPos.x, deployPos.y, selected.color, 28, 350)
       this.flashMessage(`DEPLOY // ${selected.name}  -${cost} DP`, selected.color)
+      this.recordTutorialAction('deploy', selected.id)
       this.selectedSquadIndex = null
       this.rebuildCardBar()
 
@@ -1058,6 +1067,7 @@ export class GameScene extends Phaser.Scene {
       this.removeUnitSprite(row, col)
       this.deployedIndices.delete(instanceId)
       this.flashMessage(`RETREAT // ${config.name}  +${refund} DP`, 0x00c853)
+      this.recordTutorialAction('retreat', config.id)
 
       if (config.id === 'roadblock' && this.enemyManager) {
         this.enemyManager.onRoadblockRemoved(row, col)
@@ -1804,6 +1814,47 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.statusText.setText('')
     }
+  }
+
+  private buildTutorialObjective(): void {
+    const w = 360
+    const x = Math.max(8, Math.floor((this.scale.width - w) / 2))
+    const y = 10
+    this.tutorialObjectiveBg = this.add.graphics().setDepth(20)
+    this.tutorialObjectiveText = this.add.text(x + 12, y + 10, '', {
+      fontSize: '15px', color: '#ffffff', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      wordWrap: { width: w - 24 },
+    }).setDepth(21)
+    this.tutorialObjectiveBg.setVisible(false)
+    this.tutorialObjectiveText.setVisible(false)
+    this.updateTutorialObjective()
+  }
+
+  private recordTutorialAction(action: TutorialAction, unitId?: string): void {
+    if (!this.tutorialSystem?.record(action, unitId)) return
+    this.flashMessage(this.tutorialSystem.complete ? 'OBJECTIVE COMPLETE' : 'OBJECTIVE UPDATED', 0x00c853)
+    this.updateTutorialObjective()
+  }
+
+  private updateTutorialObjective(): void {
+    const step = this.tutorialSystem?.current
+    if (!step || !this.tutorialObjectiveBg || !this.tutorialObjectiveText) {
+      this.tutorialObjectiveBg?.setVisible(false)
+      this.tutorialObjectiveText?.setVisible(false)
+      return
+    }
+    const x = this.tutorialObjectiveText.x - 12
+    const y = this.tutorialObjectiveText.y - 10
+    const w = 360
+    this.tutorialObjectiveText.setText(`OBJECTIVE // ${step.text}`)
+    const h = Math.max(44, this.tutorialObjectiveText.height + 20)
+    this.tutorialObjectiveBg.clear()
+    this.tutorialObjectiveBg.fillStyle(0x0040ff, 0.92)
+    this.tutorialObjectiveBg.fillRect(x, y, w, h)
+    this.tutorialObjectiveBg.lineStyle(2, 0xffffff, 0.85)
+    this.tutorialObjectiveBg.strokeRect(x, y, w, h)
+    this.tutorialObjectiveBg.setVisible(true)
+    this.tutorialObjectiveText.setVisible(true)
   }
 
   private checkBattleEnd(): void {

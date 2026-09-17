@@ -2,6 +2,9 @@ import { LevelData, TileType } from '../../types/index'
 import { ENEMY_CONFIGS } from '../../config/enemies'
 
 const VALID_TYPES = new Set(Object.values(TileType))
+// Shipped level JSON predates the internal TileType names. Grid migrates these
+// values at load time, so validation must accept the serialized representation.
+const SERIALIZED_TILE_TYPES = new Set(['deploy_ground', 'deploy_ranged', 'route'])
 
 export interface ValidationError {
   field: string
@@ -35,7 +38,7 @@ export function validateLevelData(data: LevelData): ValidationError[] {
         const tile = row[c]
         if (!tile || tile.row !== r || tile.col !== c)
           errors.push({ field: 'tiles', message: `(${r},${c}): row/col mismatch` })
-        if (!VALID_TYPES.has(tile.type))
+        if (!VALID_TYPES.has(tile.type) && !SERIALIZED_TILE_TYPES.has(tile.type))
           errors.push({ field: 'tiles', message: `(${r},${c}): invalid type ${tile.type}` })
         if (tile.type === 'spawn') spawnCount++
         if (tile.type === 'goal') goalCount++

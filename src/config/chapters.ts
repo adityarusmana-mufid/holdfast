@@ -87,6 +87,13 @@ export interface ChapterDef {
   nodePositions: { x: number; y: number }[]
 }
 
+/**
+ * Level JSON files that are intentionally kept out of the player campaign
+ * while they are being authored or balanced. The campaign-data test requires
+ * every other JSON level file to be registered in a chapter.
+ */
+export const DRAFT_LEVEL_IDS = ['3-8', '4-8', '4-9'] as const
+
 function makePositions(n: number): { x: number; y: number }[] {
   return Array.from({ length: n }, (_, i) => ({
     x: 40 + i * 160,

@@ -1,0 +1,24 @@
+1. make a skill that can map or work with frontend skills and design.md files, translating dom design instructions
+into a properly structured UI and game visual elements
+2. plan a complete redesign of unit and enemy icons, make a standaridzation of visual meanings, by color, pattern,
+geometric shape, indentations, accessories, while maintaining simple geometric designs, these visuals will mean
+stats and attribute approximations for the players so a proper design system needs to exist
+3. start to implement skills system in the game, for each subclass reference the top three skills that exists
+in arknights, and then asign them as the three skills for each subclass unit, during unit picker process players
+can pick one skill to set as the active skill to be used during gameplay, we need this decision to also be stored
+ in the local storage
+4. open the reference stie you have collected in the phone and then use design.md creation tools to use that as
+ visual language references, modern colors, modern shape but not cyberpunk
+5. start to plan a non-gacha economy to acquire units and upgrade it, economy and unit upgrade is two tied topics,
+try to reference arknights but remember to reference games like infinitode 2. think about adding an option to
+buy multiple copies of the units' subclass and that would be the gate to start adding multiple copies of a unit,
+but price increases incrementally for each copy, this will be the gate. this is not final we need to take a few
+days to design the economy
+6. if possible try to upgrade to phaser 4, but if it risks breaking changes then don't
+7. think about monetizing the web game using gemshell to ship it on windows and linux and steam integration
+8. remember to refactor the game to use modular codes and separate gameplay and views/rendering codes that
+can be reusable for other games, this is a big work, so we may need to make a new branch
+9. we need to make microdecisions matter to the game, we need to also ivest time on the color of the game, therefernces i have on my phone fits my visions
+10. give the agent the ability to analyze actual arknights range for each subclass, maybe we build a communciation
+interface to convey how range tiles are for actual subclasses or we ask opencode-vison to analyze the images
+of the subclass range with proper labeling, the plan requires agent review to discover better ways to do this

@@ -1,19 +1,22 @@
 import Phaser from 'phaser'
-import { EnemyConfig, Wave, Route, Position } from '../types/index'
+import { EnemyConfig, Wave, Route, Position, TileType } from '../types/index'
 import { Grid } from '../entities/Grid'
 import { EnemySprite } from '../entities/Enemy'
 import { DeploymentSystem } from './DeploymentSystem'
+import { PathSystem } from './PathSystem'
 import { ENEMY_CONFIGS } from '../config/enemies'
 
 export interface EnemyManagerEvents {
   onEnemyReachedObjective: (config: EnemyConfig) => void
-  onEnemyKilled: (config: EnemyConfig, pos: Position) => void
+   onEnemySpawned: (config: EnemyConfig, spawnRow: number, spawnCol: number) => void
+  onWavePrelude: (route: Route, wave: Wave) => void
 }
 
 export class EnemyManager {
   private scene: Phaser.Scene
   private grid: Grid
   private depSystem: DeploymentSystem
+  private pathSystem: PathSystem | null = null
   private events: EnemyManagerEvents
   private enemies: EnemySprite[] = []
   private routes: Route[] = []
@@ -28,6 +31,12 @@ export class EnemyManager {
   private allWavesComplete: boolean = false
   private battleStarted: boolean = false
   private lives: number = 3
+  private totalEnemyCount: number = 0
+  private enemiesDealtWith: number = 0
+  private preludeActive: boolean = false
+  private preludeTimer: number = 0
+  private healerTimers: Map<number, number> = new Map()
+  private summonerTimers: Map<number, number> = new Map()
 
   constructor(scene: Phaser.Scene, grid: Grid, depSystem: DeploymentSystem, events: EnemyManagerEvents) {
     this.scene = scene
@@ -43,10 +52,17 @@ export class EnemyManager {
     this.lives = lives
     this.allWavesComplete = false
     this.battleStarted = false
+    this.enemiesDealtWith = 0
+    this.totalEnemyCount = waves.reduce((sum, w) =>
+      sum + w.entries.reduce((s, e) => s + e.count, 0), 0)
+    this.healerTimers.clear()
+    this.summonerTimers.clear()
   }
 
   startBattle(): void {
     this.battleStarted = true
+    this.pathSystem = new PathSystem(this.grid, this.routes, this.grid.tiles, this.grid.rows, this.grid.cols)
+    this.grid.setPathSystem(this.pathSystem)
     this.startNextWave()
   }
 
@@ -65,10 +81,13 @@ export class EnemyManager {
       return
     }
     this.currentRoute = route
-    this.waveActive = true
+    this.preludeActive = true
+    this.preludeTimer = wave.preludeDuration ?? 0
+    this.waveActive = false
     this.waveEntryIndex = 0
     this.waveSpawnIndex = 0
     this.waveSpawnTimer = 0
+    this.events.onWavePrelude(route, wave)
   }
 
   private spawnEnemy(config: EnemyConfig): void {
@@ -78,12 +97,21 @@ export class EnemyManager {
     if (path.length < 2) return
     const enemy = new EnemySprite(this.scene, this.grid, config, path)
     this.enemies.push(enemy)
+    this.events.onEnemySpawned(config, route.spawn.row, route.spawn.col)
   }
 
   update(delta: number): void {
     if (!this.battleStarted) return
 
-    if (!this.allWavesComplete) {
+    if (this.preludeActive) {
+      this.preludeTimer -= delta
+      if (this.preludeTimer <= 0) {
+        this.preludeActive = false
+        this.waveActive = true
+      }
+    }
+
+    if (!this.allWavesComplete && !this.preludeActive) {
       this.updateWaveSpawn(delta)
     }
 
@@ -91,6 +119,7 @@ export class EnemyManager {
     this.updateBlocking()
     this.updateVisualStacking()
     this.updateObjectiveCheck()
+    this.updateBehaviors(delta)
     this.removeDead()
   }
 
@@ -133,12 +162,13 @@ export class EnemyManager {
   private updateBlocking(): void {
     for (const enemy of this.enemies) {
       if (!enemy.alive) continue
+      if (enemy.config.isAerial) continue
       const tile = enemy.getCurrentTile()
       if (!tile) continue
       const unit = this.depSystem.getUnitAt(tile.row, tile.col)
-      if (unit && unit.config.type === 'ground' && unit.config.blockCount > 0) {
+      if (unit && unit.config.type === 'ground' && (unit.effectiveBlockCount ?? unit.config.blockCount) > 0) {
         const isAlreadyBlocked = unit.blocking.includes(enemy.id)
-        if (!isAlreadyBlocked && unit.blocking.length < unit.config.blockCount) {
+        if (!isAlreadyBlocked && unit.blocking.length < (unit.effectiveBlockCount ?? unit.config.blockCount)) {
           unit.blocking.push(enemy.id)
           enemy.setBlocked(true, `${tile.row},${tile.col}`)
         }
@@ -161,7 +191,7 @@ export class EnemyManager {
             const nr = tile.row + dr
             const nc = tile.col + dc
             const adjUnit = this.depSystem.getUnitAt(nr, nc)
-            if (adjUnit && adjUnit.config.type === 'ground' && adjUnit.config.blockCount > 0 && adjUnit.blocking.length < adjUnit.config.blockCount) {
+            if (adjUnit && adjUnit.config.type === 'ground' && (adjUnit.effectiveBlockCount ?? adjUnit.config.blockCount) > 0 && adjUnit.blocking.length < (adjUnit.effectiveBlockCount ?? adjUnit.config.blockCount)) {
               adjUnit.blocking.push(enemy.id)
               enemy.setBlocked(true, `${nr},${nc}`)
               transferred = true
@@ -179,12 +209,24 @@ export class EnemyManager {
   private updateObjectiveCheck(): void {
     for (const enemy of this.enemies) {
       if (!enemy.alive) continue
+      const tile = enemy.getCurrentTile()
+      if (tile && this.grid.getTile(tile.row, tile.col)?.type === TileType.Hole) {
+        enemy.alive = false
+        this.enemiesDealtWith++
+        this.scene.events.emit('enemy-killed', { enemy })
+        continue
+      }
       if (enemy.isAtObjective()) {
         this.lives--
         enemy.alive = false
+        this.enemiesDealtWith++
         this.events.onEnemyReachedObjective(enemy.config)
       }
     }
+  }
+
+  markEnemyDealtWith(): void {
+    this.enemiesDealtWith++
   }
 
   private updateVisualStacking(): void {
@@ -193,7 +235,7 @@ export class EnemyManager {
       if (!enemy.alive) continue
       if (!enemy.blocked) {
         enemy.visualOffsetX = 0
-        enemy.visualOffsetY = 0
+        enemy.visualOffsetY = enemy.config.isAerial ? -40 : 0
         enemy.applyVisualPosition()
         continue
       }
@@ -243,6 +285,98 @@ export class EnemyManager {
     })
   }
 
+  updateBehaviors(delta: number): void {
+    const units = this.depSystem.getAllUnits().map(u => ({ row: u.row, col: u.col }))
+    for (const enemy of this.enemies) {
+      if (!enemy.alive) continue
+      enemy.updateDetection(units)
+
+      if (enemy.behavior.type === 'healer') {
+        const bh = enemy.behavior
+        const timer = this.healerTimers.get(enemy.id) ?? 0
+        const newTimer = timer + delta
+        if (newTimer >= bh.healInterval) {
+          this.healerTimers.set(enemy.id, newTimer - bh.healInterval)
+          this.handleHealerTick(enemy)
+        } else {
+          this.healerTimers.set(enemy.id, newTimer)
+        }
+      }
+
+      if (enemy.behavior.type === 'buffer') {
+        this.handleBufferTick(enemy)
+      }
+
+      if (enemy.behavior.type === 'summoner') {
+        const bh = enemy.behavior
+        const timer = this.summonerTimers.get(enemy.id) ?? 0
+        const newTimer = timer + delta
+        if (newTimer >= bh.spawnInterval) {
+          this.summonerTimers.set(enemy.id, newTimer - bh.spawnInterval)
+          this.handleSummonerTick(enemy)
+        } else {
+          this.summonerTimers.set(enemy.id, newTimer)
+        }
+      }
+    }
+  }
+
+  private handleHealerTick(enemy: EnemySprite): void {
+    if (enemy.behavior.type !== 'healer') return
+    const behavior = enemy.behavior
+    const tile = enemy.getCurrentTile()
+    if (!tile) return
+    let best: EnemySprite | null = null
+    let lowestPct = 1
+    for (const e of this.enemies) {
+      if (!e.alive || e === enemy) continue
+      const et = e.getCurrentTile()
+      if (!et) continue
+      const dist = Math.abs(et.row - tile.row) + Math.abs(et.col - tile.col)
+      if (dist <= behavior.healRange) {
+        const pct = e.currentHp / e.config.hp
+        if (pct < lowestPct) {
+          lowestPct = pct
+          best = e
+        }
+      }
+    }
+    if (best) {
+      best.currentHp = Math.min(best.currentHp + behavior.healAmount, best.config.hp)
+    }
+  }
+
+  private handleBufferTick(enemy: EnemySprite): void {
+    if (enemy.behavior.type !== 'buffer') return
+    const behavior = enemy.behavior
+    const tile = enemy.getCurrentTile()
+    if (!tile) return
+    for (const e of this.enemies) {
+      if (!e.alive || e === enemy) continue
+      const et = e.getCurrentTile()
+      if (!et) continue
+      const dist = Math.abs(et.row - tile.row) + Math.abs(et.col - tile.col)
+      if (dist <= behavior.buffRange) {
+        e.bonusAtk = behavior.buffAtk
+      }
+    }
+  }
+
+  private handleSummonerTick(enemy: EnemySprite): void {
+    if (enemy.behavior.type !== 'summoner') return
+    const behavior = enemy.behavior
+    const route = this.currentRoute
+    if (!route) return
+    const spawnConfig = ENEMY_CONFIGS.find(c => c.id === behavior.spawnType)
+    if (!spawnConfig) return
+    for (let i = 0; i < behavior.spawnCount; i++) {
+      const path: Position[] = [route.spawn, ...route.waypoints, route.goal]
+      if (path.length < 2) continue
+      const minion = new EnemySprite(this.scene, this.grid, spawnConfig, path)
+      this.enemies.push(minion)
+    }
+  }
+
   getEnemies(): EnemySprite[] {
     return this.enemies
   }
@@ -252,7 +386,7 @@ export class EnemyManager {
   }
 
   isAllWavesComplete(): boolean {
-    return this.allWavesComplete && this.enemies.length === 0
+    return this.allWavesComplete && (this.totalEnemyCount === 0 || this.enemiesDealtWith >= this.totalEnemyCount)
   }
 
   isBattleOver(): boolean {
@@ -263,9 +397,55 @@ export class EnemyManager {
     return this.isAllWavesComplete() && this.lives > 0
   }
 
+  getDealtWith(): number { return this.enemiesDealtWith }
+
+  getTotalEnemyCount(): number { return this.totalEnemyCount }
+
+  onRoadblockDeployed(row: number, col: number): void {
+    if (!this.pathSystem || !this.pathSystem.isDynamic()) return
+    this.pathSystem.addBlockedTile(row, col)
+    this.checkEnemiesForReroute(row, col)
+  }
+
+  onRoadblockRemoved(row: number, col: number): void {
+    if (!this.pathSystem || !this.pathSystem.isDynamic()) return
+    this.pathSystem.removeBlockedTile(row, col)
+    this.checkEnemiesForReroute(row, col)
+  }
+
+  private checkEnemiesForReroute(blockRow: number, blockCol: number): void {
+    const blockKey = `${blockRow},${blockCol}`
+    for (const enemy of this.enemies) {
+      if (!enemy.alive) continue
+      if (enemy.routingState === 'reroute') continue
+      if (enemy.config.isAerial) continue
+      const currentTile = enemy.getCurrentTile()
+      if (!currentTile) continue
+
+      const nextWaypointIdx = enemy.currentWaypoint + 1
+      if (nextWaypointIdx >= enemy.path.length) continue
+
+      const nextTile = enemy.path[nextWaypointIdx]
+      const nextKey = `${nextTile.row},${nextTile.col}`
+
+      if (nextKey === blockKey || this.pathSystem!.isBlocked(nextTile.row, nextTile.col)) {
+        enemy.enterRerouteMode()
+      }
+    }
+  }
+
+  onEnemyDisplaced(enemy: EnemySprite): void {
+    if (!this.pathSystem || !this.pathSystem.isDynamic()) return
+    if (enemy.routingState === 'route') {
+      enemy.enterRerouteMode()
+    }
+  }
+
   cleanup(): void {
     for (const e of this.enemies) e.destroy()
     this.enemies = []
+    this.healerTimers.clear()
+    this.summonerTimers.clear()
   }
 }
 

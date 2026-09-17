@@ -1,0 +1,257 @@
+import Phaser from 'phaser'
+import { LevelData, EnemyConfig } from '../types/index'
+import { Grid, TILE_SIZE } from '../entities/Grid'
+import { ENEMY_CONFIGS } from '../config/enemies'
+import { FONTS, FONT_SIZE } from '../ui/Constants'
+import { makeNodeButton } from '../ui/Components'
+
+const PHI = (1 + Math.sqrt(5)) / 2
+const FRAME_W = Math.floor(1280 / PHI)
+const FRAME_H = Math.floor(720 / PHI)
+const FRAME_PAD = Math.floor((1280 - FRAME_W) / 2)
+const FRAME_TOP = Math.floor((720 - FRAME_H) / 2)
+const FRAME_BOT = 720 - FRAME_TOP - FRAME_H
+
+export class LevelPreviewScene extends Phaser.Scene {
+  private levelId = ''
+  private chapterId = ''
+  private levelData: LevelData | null = null
+  private activeTab: 'map' | 'intel' = 'map'
+  private contentContainer!: Phaser.GameObjects.Container
+  private mapGrid: Grid | null = null
+
+  constructor() {
+    super({ key: 'LevelPreviewScene' })
+  }
+
+  init(data: { levelId: string; chapterId: string; levelData: LevelData }): void {
+    this.levelId = data.levelId
+    this.chapterId = data.chapterId
+    this.levelData = data.levelData
+    this.activeTab = 'map'
+  }
+
+  create(): void {
+    const W = 1280
+    const H = 720
+    const data = this.levelData
+    if (!data) { this.scene.stop(); return }
+
+    this.cameras.main.setBackgroundColor('rgba(0,0,0,0)')
+
+    const overlay = this.add.graphics()
+    overlay.fillStyle(0x500000, 0.55)
+    overlay.fillRect(0, 0, W, H)
+    overlay.setDepth(-90)
+
+    const frameX = FRAME_PAD
+    const frameY = FRAME_TOP
+    const frameW = FRAME_W
+    const frameH = FRAME_H
+
+    const frame = this.add.graphics()
+    frame.fillStyle(0x2d2d2d, 1)
+    frame.fillRect(frameX - 3, frameY - 3, frameW + 6, frameH + 6)
+    frame.setDepth(-80)
+
+    const innerGfx = this.add.graphics()
+    innerGfx.fillStyle(0xF4F7FA, 1)
+    innerGfx.fillRect(frameX, frameY, frameW, frameH)
+    innerGfx.setDepth(-70)
+
+    const tabY = frameY + 8
+    const tabs: { key: 'map' | 'intel'; x: number }[] = [
+      { key: 'map', x: W / 2 - 80 },
+      { key: 'intel', x: W / 2 + 80 },
+    ]
+    for (const tab of tabs) {
+      const label = tab.key === 'map' ? 'MAP' : 'ENEMY INTEL'
+      makeNodeButton(this, tab.x - 70, tabY, label, () => {
+        this.activeTab = tab.key
+        this.rebuildContent()
+      }, { w: 140, h: 30, textSize: FONT_SIZE.xs }).setDepth(-60)
+    }
+
+    this.contentContainer = this.add.container(0, 0)
+    this.contentContainer.setDepth(-50)
+    this.rebuildContent()
+
+    this.add.text(W / 2, 22, data.name, {
+      ...FONTS.h2, color: '#ffffff',
+    }).setOrigin(0.5, 0).setDepth(-40)
+
+    makeNodeButton(this, 16, 16, '< BACK', () => { this.scene.stop() },
+      { w: 72, h: 32, textSize: '11px' }).setDepth(-40)
+    makeNodeButton(this, 94, 16, 'HOME', () => { this.scene.start('ChapterSelectScene') },
+      { w: 72, h: 32, textSize: '11px' }).setDepth(-40)
+
+    const btnY = H - 50
+    makeNodeButton(this, W - 110, btnY - 17, 'ENTER', () => this.enterLevel(),
+      { w: 100, h: 40, role: 'primary' }).setDepth(-40)
+  }
+
+  private rebuildContent(): void {
+    this.contentContainer.removeAll(true)
+    if (this.mapGrid) { this.mapGrid.destroy(); this.mapGrid = null }
+
+    if (this.activeTab === 'map') {
+      this.buildMapTab()
+    } else {
+      this.buildIntelTab()
+    }
+  }
+
+  private buildMapTab(): void {
+    const data = this.levelData
+    if (!data) return
+
+    const frameX = FRAME_PAD
+    const frameY = FRAME_TOP
+    const frameW = FRAME_W
+    const frameH = FRAME_H
+
+    const gridW = data.cols * TILE_SIZE
+    const gridH = data.rows * TILE_SIZE
+
+    const scale = gridW >= gridH
+      ? (frameW * 0.8) / gridW
+      : (frameH * 0.8) / gridH
+
+    const scaledW = gridW * scale
+    const scaledH = gridH * scale
+    const offsetX = frameX + (frameW - scaledW) / 2
+    const offsetY = frameY + (frameH - scaledH) / 2
+
+    this.mapGrid = new Grid(this, data.cols, data.rows, offsetX, offsetY)
+    this.mapGrid.fromLevelData(data)
+    this.mapGrid.render()
+
+    const gridContainer = this.add.container(0, 0)
+    const tg = (this.mapGrid as any).tileGraphics as Phaser.GameObjects.Graphics
+    const gl = (this.mapGrid as any).gridLines as Phaser.GameObjects.Graphics
+    gridContainer.add(tg)
+    gridContainer.add(gl)
+    gridContainer.setScale(scale)
+    this.contentContainer.add(gridContainer)
+
+    const stats = [
+      `Waves: ${data.waves.length}`,
+      `Deploy: ${data.deploymentLimit}`,
+      `Start DP: ${data.startingDP}`,
+      `DP Regen: ${data.dpRegenRate}/s`,
+      `Lives: ${data.lives}`,
+    ]
+    const totalEnemies = data.waves.reduce((s, w) => s + w.entries.reduce((a, e) => a + e.count, 0), 0)
+    stats.push(`Total hostile: ${totalEnemies}`)
+
+    const sx = frameX + frameW - 160
+    let sy = frameY + frameH - 8
+    for (let i = stats.length - 1; i >= 0; i--) {
+      const t = this.add.text(sx, sy, stats[i], {
+        ...FONTS.small, color: '#4B5563',
+      }).setOrigin(0, 1)
+      this.contentContainer.add(t)
+      sy -= 18
+    }
+  }
+
+  private buildIntelTab(): void {
+    const data = this.levelData
+    if (!data) return
+
+    const W = 1280
+    const frameX = FRAME_PAD
+    const frameY = FRAME_TOP
+    const frameW = FRAME_W
+
+    let px = frameX + 20
+    let py = frameY + 48
+
+    const seen = new Map<string, { config: EnemyConfig; total: number }>()
+    for (const wave of data.waves) {
+      for (const entry of wave.entries) {
+        const config = ENEMY_CONFIGS.find(e => e.id === entry.enemyType)
+        if (!config) continue
+        const existing = seen.get(entry.enemyType)
+        if (existing) {
+          existing.total += entry.count
+        } else {
+          seen.set(entry.enemyType, { config, total: entry.count })
+        }
+      }
+    }
+
+    const entries = Array.from(seen.values())
+    if (entries.length === 0) {
+      const t = this.add.text(W / 2, py, 'No enemy data available', {
+        ...FONTS.body, color: '#4B5563',
+      }).setOrigin(0.5, 0)
+      this.contentContainer.add(t)
+      return
+    }
+
+    for (const { config, total } of entries) {
+      const cardW = Math.min(340, frameW / entries.length - 24)
+      px += cardW / 2
+
+      const bg = this.add.graphics()
+      bg.fillStyle(0xffffff, 0.8)
+      bg.fillRect(px - cardW / 2, py, cardW, 180)
+      bg.lineStyle(1, 0x0040FF, 0.08)
+      bg.strokeRect(px - cardW / 2, py, cardW, 180)
+      this.contentContainer.add(bg)
+
+      const icon = this.add.graphics()
+      icon.fillStyle(config.color, 1)
+      icon.fillCircle(px - cardW / 2 + 20, py + 20, 12)
+      icon.fillStyle(0xffffff, 0.3)
+      icon.fillCircle(px - cardW / 2 + 20, py + 20, 6)
+      this.contentContainer.add(icon)
+
+      const name = this.add.text(px - cardW / 2 + 38, py + 6, config.name, {
+        ...FONTS.bodyBold, color: '#0A0A0C',
+      })
+      this.contentContainer.add(name)
+
+      const countT = this.add.text(px + cardW / 2 - 10, py + 6, `x${total}`, {
+        ...FONTS.small, color: '#4B5563',
+      }).setOrigin(1, 0)
+      this.contentContainer.add(countT)
+
+      const desc = config.description ?? ''
+      const descT = this.add.text(px - cardW / 2 + 10, py + 30, desc, {
+        ...FONTS.small, color: '#888888', wordWrap: { width: cardW - 20 },
+      })
+      this.contentContainer.add(descT)
+
+      const dmIcon = config.damageType === 'thermal' ? '~' : config.damageType === 'true' ? '!!' : '>'
+      const stats = [
+        `HP:${config.hp}  ATK:${dmIcon}${config.atk}  DEF:${config.armor}  RES:${config.res}`,
+        `Speed:${config.speed}  Interval:${config.attackInterval.toFixed(1)}s  DP:${config.dpOnKill}`,
+        config.isAerial ? 'AERIAL — requires ranged units' : 'Ground unit',
+      ]
+      let sy = py + 60
+      for (const line of stats) {
+        const t = this.add.text(px - cardW / 2 + 10, sy, line, {
+          fontSize: FONT_SIZE.xs, color: '#888888', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        })
+        this.contentContainer.add(t)
+        sy += 16
+      }
+
+      px += cardW / 2 + 16
+      if (px > W - 80) {
+        px = frameX + 20
+        py += 200
+      }
+    }
+  }
+
+  private enterLevel(): void {
+    const data = this.levelData
+    if (!data) return
+    this.scene.start('SquadScene', {
+      levelId: this.levelId, chapterId: this.chapterId, levelData: data,
+    })
+  }
+}

@@ -4,8 +4,8 @@ import { Grid, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../entities/Grid'
 import { tileColor, ROUTE_COLORS, validateRoutePath } from '../shared/utils/GridMath'
 import { exportLevelToFile, importLevelFromFile } from '../editor/LevelSerializer'
 import { ENEMY_CONFIGS } from '../config/enemies'
-import { COLORS, FONTS } from '../ui/Constants'
-import { makeButton, makeLabel } from '../ui/Components'
+import { COLORS, FONTS, FONT_SIZE } from '../ui/Constants'
+import { makeNodeButton, makeLabel } from '../ui/Components'
 import { TEST_LEVEL } from '../levels/testLevel'
 
 injectEditorStyles()
@@ -17,6 +17,10 @@ const PALETTE_ITEMS: { type: TileType; label: string; color: number }[] = [
   { type: TileType.Wall, label: 'Wall', color: 0x1a1a1a },
   { type: TileType.Spawn, label: 'Spawn', color: 0x4a1a1a },
   { type: TileType.Goal, label: 'Goal', color: 0x1a1a4a },
+  { type: TileType.RepairNode, label: 'Repair Node', color: 0x2a4a3a },
+  { type: TileType.ArmorGrid, label: 'Armor Grid', color: 0x2a3a4a },
+  { type: TileType.StnGen, label: 'Stn Generator', color: 0x4a4a00 },
+  { type: TileType.Hole, label: 'Hole', color: 0x1a0030 },
 ]
 
 const PANEL_W = 200
@@ -29,7 +33,7 @@ export class EditorScene extends Phaser.Scene {
   private waypointMode: boolean = false
   private paletteButtons: Phaser.GameObjects.Container[] = []
   private statusText!: Phaser.GameObjects.Text
-  private addEraseBtn!: Phaser.GameObjects.Text
+  private addEraseBtn!: Phaser.GameObjects.Container
 
   private configPanel!: ConfigPanel
   private wavePanel!: WavePanel
@@ -46,14 +50,24 @@ export class EditorScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.fadeIn(200, 0, 0, 0)
+    this.cameras.main.fadeIn(200, 245, 245, 245)
     drawBgGradient(this)
 
-    this.add.text(GRID_OFFSET_X, 6, 'HOLDFAST // LEVEL EDITOR', {
+    const paletteRightEdge = 10 + 140 + 10
+    const gap = PANEL_X - paletteRightEdge - 12 * TILE_SIZE
+    const editorOffsetX = paletteRightEdge + Math.floor(gap / 2)
+    this.grid = new Grid(this, 12, 8, editorOffsetX, 100)
+
+    makeNodeButton(this, 16, 16, '< BACK', () => {
+      this.scene.start('HomeBridgeScene')
+    }, { w: 72, h: 32, textSize: '11px' })
+    makeNodeButton(this, 94, 16, 'HOME', () => {
+      this.scene.start('HomeBridgeScene')
+    }, { w: 72, h: 32, textSize: '11px' })
+
+    this.add.text(this.grid.offsetX, 6, 'HOLDFAST // LEVEL EDITOR', {
       ...FONTS.small, color: COLORS.text.accent,
     })
-
-    this.grid = new Grid(this, 12, 8)
     this.grid.render()
 
     this.routes = []
@@ -80,8 +94,9 @@ export class EditorScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-E', () => {
       this.editMode = this.editMode === EditMode.Erase ? EditMode.Paint : EditMode.Erase
       this.setStatus(this.editMode === EditMode.Erase ? 'Erase mode' : 'Paint mode')
-      this.addEraseBtn.setText(this.editMode === EditMode.Erase ? '[■ Erase]' : '[ Erase ]')
-      this.addEraseBtn.setColor(this.editMode === EditMode.Erase ? COLORS.text.success : COLORS.text.danger)
+      const txt = this.addEraseBtn.getAt(2) as Phaser.GameObjects.Text
+      txt.setText(this.editMode === EditMode.Erase ? '[■ Erase]' : '[ Erase ]')
+      txt.setColor(this.editMode === EditMode.Erase ? COLORS.text.success : COLORS.text.danger)
     })
     this.input.keyboard?.on('keydown-S', () => {
       this.exportLevel()
@@ -92,9 +107,12 @@ export class EditorScene extends Phaser.Scene {
       this.setStatus(this.waypointMode ? 'Waypoint mode: click to add/remove' : 'Paint mode')
     })
     PALETTE_ITEMS.forEach((_, i) => {
-      this.input.keyboard?.on(`keydown-${['One','Two','Three','Four','Five','Six','Seven'][i]}`, () => {
-        this.selectTileType(PALETTE_ITEMS[i].type)
-      })
+      const keys = ['One','Two','Three','Four','Five','Six','Seven','Eight']
+      if (i < keys.length) {
+        this.input.keyboard?.on(`keydown-${keys[i]}`, () => {
+          this.selectTileType(PALETTE_ITEMS[i].type)
+        })
+      }
     })
   }
 
@@ -113,7 +131,7 @@ export class EditorScene extends Phaser.Scene {
       bg.on('pointerdown', () => this.selectTileType(item.type))
 
       const label = this.add.text(px + 8, y + btnH / 2, item.label, {
-        fontSize: '14px', color: '#cccccc', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        fontSize: FONT_SIZE.sm, color: '#cccccc', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
       }).setOrigin(0, 0.5)
 
       const container = this.add.container(0, 0, [bg, label])
@@ -129,54 +147,53 @@ export class EditorScene extends Phaser.Scene {
 
     makeLabel(this, px, y, 'GRID', COLORS.text.secondary, '12px')
     y += 18
-    makeButton(this, px, y, 'Clear Grid', () => { this.grid.resize(this.grid.cols, this.grid.rows); this.setStatus('Grid cleared'); this.isDirty = true }, { w: btnW, h: 24 })
-    y += 28
-    makeButton(this, px, y, 'Export JSON', () => { this.exportLevel() }, { w: btnW, h: 24 })
-    y += 28
-    makeButton(this, px, y, 'Import JSON', () => { this.importLevel() }, { w: btnW, h: 24 })
+    makeNodeButton(this, px, y, 'Clear Grid', () => { this.grid.resize(this.grid.cols, this.grid.rows); this.setStatus('Grid cleared'); this.isDirty = true }, { w: btnW, h: 26, textSize: '12px' })
+    y += 26
+    makeNodeButton(this, px, y, 'Export JSON', () => { this.exportLevel() }, { w: btnW, h: 26, textSize: '12px' })
+    y += 26
+    makeNodeButton(this, px, y, 'Import JSON', () => { this.importLevel() }, { w: btnW, h: 26, textSize: '12px' })
 
     makeLabel(this, px, y + 8, 'ROUTES', COLORS.text.secondary, '12px')
     y += 26
 
-    makeButton(this, px, y, 'Waypoints', () => {
+    const waypointsBtn = makeNodeButton(this, px, y, 'Waypoints', () => {
       if (this.selectedRouteIndex < 0) {
         this.setStatus('Select a route first')
         return
       }
       this.waypointMode = !this.waypointMode
       this.setStatus(this.waypointMode ? 'Waypoint mode: click to add/remove' : 'Paint mode')
-    }, { w: btnW, h: 24, textColor: this.waypointMode ? COLORS.text.success : COLORS.text.accent })
-    y += 28
+      const txt = waypointsBtn.getAt(2) as Phaser.GameObjects.Text
+      txt.setColor(this.waypointMode ? COLORS.text.success : COLORS.text.accent)
+    }, { w: btnW, h: 24, textSize: '12px' })
+    y += 26
 
-    makeButton(this, px, y, 'Clear Waypoints', () => {
+    makeNodeButton(this, px, y, 'Clear Waypoints', () => {
       const route = this.routes[this.selectedRouteIndex]
       if (!route) { this.setStatus('Select a route first'); return }
       route.waypoints = []
       this.renderRouteList()
       this.drawRoutePreview()
       this.setStatus('Waypoints cleared')
-    }, { w: btnW, h: 24, textColor: COLORS.text.danger })
-    y += 28
+    }, { w: btnW, h: 24, textSize: '12px', role: 'danger' })
+    y += 26
 
     makeLabel(this, px, y + 8, 'TOOLS', COLORS.text.secondary, '12px')
     y += 26
-    this.addEraseBtn = this.add.text(px + 8, y + 4, '[ Erase ]', {
-      ...FONTS.small, color: COLORS.text.danger,
-    })
-    this.addEraseBtn.setInteractive({ cursor: 'pointer' })
-    this.addEraseBtn.on('pointerdown', () => {
+    this.addEraseBtn = makeNodeButton(this, px, y, '[ Erase ]', () => {
       this.editMode = this.editMode === EditMode.Erase ? EditMode.Paint : EditMode.Erase
       this.setStatus(this.editMode === EditMode.Erase ? 'Erase mode' : 'Paint mode')
-      this.addEraseBtn.setText(this.editMode === EditMode.Erase ? '[■ Erase]' : '[ Erase ]')
-      this.addEraseBtn.setColor(this.editMode === EditMode.Erase ? COLORS.text.success : COLORS.text.danger)
-    })
-    y += 28
+      const txt = this.addEraseBtn.getAt(2) as Phaser.GameObjects.Text
+      txt.setText(this.editMode === EditMode.Erase ? '[■ Erase]' : '[ Erase ]')
+      txt.setColor(this.editMode === EditMode.Erase ? COLORS.text.success : COLORS.text.danger)
+    }, { w: btnW, h: 24, textSize: '12px', role: 'danger' })
+    y += 26
 
     makeLabel(this, px, y + 8, 'PLAY', COLORS.text.secondary, '12px')
     y += 26
-    makeButton(this, px, y, '▶ Play', () => { this.playLevel() }, { w: btnW, h: 24, textColor: COLORS.text.success })
-    y += 28
-    makeButton(this, px, y, 'Test Combat', () => { this.playTestLevel() }, { w: btnW, h: 24, textColor: COLORS.text.warning })
+    makeNodeButton(this, px, y, '▶ Play', () => { this.playLevel() }, { w: btnW, h: 26, textSize: '12px', role: 'primary' })
+    y += 26
+    makeNodeButton(this, px, y, 'Test Combat', () => { this.playTestLevel() }, { w: btnW, h: 26, textSize: '12px', role: 'danger' })
 
     y += 8
     makeLabel(this, px, y, 'SIZE', COLORS.text.secondary, '12px')
@@ -189,8 +206,8 @@ export class EditorScene extends Phaser.Scene {
       { label: '16×10', cols: 16, rows: 10 },
     ]
     sizes.forEach((s) => {
-      makeButton(this, px, y, s.label, () => { this.grid.resize(s.cols, s.rows); this.isDirty = true }, { w: 68, h: 24, textSize: '11px', textColor: COLORS.text.secondary })
-      y += 28
+      makeNodeButton(this, px, y, s.label, () => { this.grid.resize(s.cols, s.rows); this.isDirty = true }, { w: 68, h: 26, textSize: '11px' })
+      y += 26
     })
   }
 
@@ -290,10 +307,12 @@ export class EditorScene extends Phaser.Scene {
     for (let i = 1; i < path.length; i++) {
       const prev = path[i - 1]
       const curr = path[i]
-      const x0 = prev.col * TILE_SIZE + TILE_SIZE / 2 + GRID_OFFSET_X
-      const y0 = prev.row * TILE_SIZE + TILE_SIZE / 2 + GRID_OFFSET_Y
-      const x1 = curr.col * TILE_SIZE + TILE_SIZE / 2 + GRID_OFFSET_X
-      const y1 = curr.row * TILE_SIZE + TILE_SIZE / 2 + GRID_OFFSET_Y
+      const ox = this.grid.offsetX
+      const oy = this.grid.offsetY
+      const x0 = prev.col * TILE_SIZE + TILE_SIZE / 2 + ox
+      const y0 = prev.row * TILE_SIZE + TILE_SIZE / 2 + oy
+      const x1 = curr.col * TILE_SIZE + TILE_SIZE / 2 + ox
+      const y1 = curr.row * TILE_SIZE + TILE_SIZE / 2 + oy
 
       this.routePreviewGraphics.lineStyle(3, route.color, 0.7)
       this.routePreviewGraphics.beginPath()
@@ -326,15 +345,16 @@ export class EditorScene extends Phaser.Scene {
   }
 
   private buildStatusBar(): void {
-    this.statusText = makeLabel(this, GRID_OFFSET_X, this.scale.height - 20, 'Ready  •  E=erase  S=export  W=waypoint 1-6=palette', COLORS.text.dim)
+    this.statusText = makeLabel(this, this.grid.offsetX, this.scale.height - 20, 'Ready  •  E=erase  S=export  W=waypoint  1-8=palette', COLORS.text.dim)
   }
 
   private selectTileType(type: TileType): void {
     this.selectedType = type
     this.editMode = EditMode.Paint
     if (this.addEraseBtn) {
-      this.addEraseBtn.setText('[ Erase ]')
-      this.addEraseBtn.setColor(COLORS.text.danger)
+      const txt = this.addEraseBtn.getAt(2) as Phaser.GameObjects.Text
+      txt.setText('[ Erase ]')
+      txt.setColor(COLORS.text.danger)
     }
     this.paletteButtons.forEach((btn, i) => {
       const bg = btn.getAt(0) as Phaser.GameObjects.Rectangle
@@ -555,14 +575,8 @@ enum EditMode { Paint, Erase }
 function drawBgGradient(scene: Phaser.Scene): void {
   const g = scene.add.graphics()
   const { width: w, height: h } = scene.scale
-  for (let y = 0; y < h; y++) {
-    const t = y / h
-    const r = Phaser.Math.Interpolation.Linear([0x1a, 0x1a], t)
-    const gv = Phaser.Math.Interpolation.Linear([0x1a, 0x1a], t)
-    const b = Phaser.Math.Interpolation.Linear([0x2e, 0x2e], t)
-    g.fillStyle(Phaser.Display.Color.GetColor(r, gv, b), 1)
-    g.fillRect(0, y, w, 1)
-  }
+  g.fillGradientStyle(0xF5F5F5, 0xF5F5F5, 0xF0F0F0, 0xE8E8E8)
+  g.fillRect(0, 0, w, h)
   g.setDepth(-100)
 }
 
@@ -582,24 +596,24 @@ function injectEditorStyles(): void {
   const s = document.createElement('style')
   s.textContent = `
 .editor-panel {
-  background: #1a1a2e;
-  border: 1px solid #2a2a4e;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
   border-radius: 6px;
   padding: 10px;
   font-family: "Share Tech Mono", "Roboto Mono", monospace;
   font-size: 13px;
-  color: #cccccc;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  color: #1a1a1a;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 .editor-panel .ep-title {
-  color: #00a2ff;
+  color: #1877F2;
   font-weight: bold;
   font-size: 12px;
   margin: 0 0 8px 0;
   cursor: pointer;
   user-select: none;
 }
-.editor-panel .ep-title:hover { color: #0091e0; }
+.editor-panel .ep-title:hover { color: #1468D4; }
 .ef-row {
   display: flex;
   justify-content: space-between;
@@ -608,44 +622,44 @@ function injectEditorStyles(): void {
   cursor: pointer;
   padding: 0 2px;
 }
-.ef-row:hover { background: #2a2a4e; border-radius: 3px; }
-.ef-label { color: #8888aa; }
-.ef-value { 
-  color: #cccccc; font-weight: bold; cursor: pointer;
+.ef-row:hover { background: #f5f5f5; border-radius: 3px; }
+.ef-label { color: #4B5563; }
+.ef-value {
+  color: #1a1a1a; font-weight: bold; cursor: pointer;
   padding: 1px 4px; border-radius: 3px;
 }
-.ef-value:hover { background: #2a3a5e; color: #00a2ff; }
+.ef-value:hover { background: #e8f0fe; color: #1877F2; }
 .ef-input {
   width: 60px; text-align: right;
   font-family: "Share Tech Mono", "Roboto Mono", monospace;
   font-size: 12px; font-weight: bold;
-  border: 1px solid #2a2a4e; border-radius: 3px; padding: 1px 4px;
-  background: #1a1a2e; color: #cccccc;
+  border: 1px solid #d0d0d0; border-radius: 3px; padding: 1px 4px;
+  background: #ffffff; color: #1a1a1a;
 }
-.ef-input:focus { outline: 1px solid #00a2ff; border-color: #00a2ff; }
+.ef-input:focus { outline: 1px solid #1877F2; border-color: #1877F2; }
 .ef-del { color: #d32f2f; cursor: pointer; padding: 0 2px; }
-.ef-del:hover { background: #3a1a1a; border-radius: 3px; }
-.ef-add { color: #00c853; cursor: pointer; margin-top: 4px; display: inline-block; }
-.ef-add:hover { background: #1a3a2a; border-radius: 3px; padding: 0 2px; }
+.ef-del:hover { background: #fde8e8; border-radius: 3px; }
+.ef-add { color: #1877F2; cursor: pointer; margin-top: 4px; display: inline-block; }
+.ef-add:hover { background: #e8f0fe; border-radius: 3px; padding: 0 2px; }
 .ef-cycle { cursor: pointer; font-weight: bold; }
-.ef-cycle:hover { color: #00a2ff; }
+.ef-cycle:hover { color: #1877F2; }
 .ef-header {
   display: flex; justify-content: space-between; align-items: center;
   cursor: pointer; user-select: none;
-  color: #00a2ff; font-weight: bold; font-size: 12px;
+  color: #1877F2; font-weight: bold; font-size: 12px;
   margin: 0 0 4px 0;
 }
-.ef-header:hover { color: #0091e0; }
+.ef-header:hover { color: #1468D4; }
 .ef-wave {
-  margin: 4px 0; padding: 4px; border: 1px solid #2a2a4e; border-radius: 4px;
-  background: #16162a;
+  margin: 4px 0; padding: 4px; border: 1px solid #e0e0e0; border-radius: 4px;
+  background: #f9f9f9;
 }
 .ef-entry { margin: 2px 0 2px 8px; font-size: 12px; }
 .route-item {
   display: flex; align-items: center; padding: 4px; cursor: pointer; border-radius: 3px;
 }
-.route-item:hover { background: #2a2a4e; }
-.route-item.selected { background: #2a3a5e; }
+.route-item:hover { background: #f0f4f8; }
+.route-item.selected { background: #e8f0fe; }
 .route-swatch { width: 16px; height: 16px; border-radius: 3px; margin-right: 8px; display: inline-block; }
 .ef-scroll { overflow-y: auto; max-height: 320px; }
 `

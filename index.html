@@ -7,9 +7,21 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #111; }
+    #fs-btn {
+      position: fixed; bottom: 14px; right: 14px; z-index: 100;
+      width: 40px; height: 40px; border-radius: 8px;
+      background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.2);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      opacity: 0.55; transition: opacity .15s; padding: 0;
+    }
+    #fs-btn:hover { opacity: 1; }
+    #fs-btn svg { fill: #fff; width: 20px; height: 20px; }
   </style>
 </head>
 <body>
+  <button id="fs-btn" aria-label="Toggle fullscreen">
+    <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+  </button>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

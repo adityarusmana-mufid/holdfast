@@ -7,9 +7,8 @@ export class DeploymentSystem {
   dpCap: number
   deploymentLimit: number
   activeUnits: Map<string, DeployedUnit>
-  deployedUnitIds: Set<string>
-  redeployTimers: Map<string, number>
-  deployCostMultiplier: Map<string, number>
+  redeployTimers: Map<number, number>
+  deployCostMultiplier: Map<number, number>
   private grid: Grid
   private dpAccumulator: number = 0
 
@@ -20,30 +19,25 @@ export class DeploymentSystem {
     this.dpCap = dpCap
     this.deploymentLimit = deploymentLimit
     this.activeUnits = new Map()
-    this.deployedUnitIds = new Set()
     this.redeployTimers = new Map()
     this.deployCostMultiplier = new Map()
   }
 
-  getCurrentCost(unit: UnitConfig): number {
+  getCurrentCost(instanceId: number, unit: UnitConfig): number {
     const base = unit.dpCost
-    const mult = this.deployCostMultiplier.get(unit.id) ?? 1.0
+    const mult = this.deployCostMultiplier.get(instanceId) ?? 1.0
     return Math.floor(base * mult)
   }
 
-  isDeployed(unitId: string): boolean {
-    return this.deployedUnitIds.has(unitId)
+  isOnCooldown(instanceId: number): boolean {
+    return (this.redeployTimers.get(instanceId) ?? 0) > 0
   }
 
-  isOnCooldown(unitId: string): boolean {
-    return (this.redeployTimers.get(unitId) ?? 0) > 0
+  getCooldownRemaining(instanceId: number): number {
+    return this.redeployTimers.get(instanceId) ?? 0
   }
 
-  getCooldownRemaining(unitId: string): number {
-    return this.redeployTimers.get(unitId) ?? 0
-  }
-
-  canDeploy(unit: UnitConfig, row: number, col: number): { ok: boolean; reason?: string } {
+  canDeploy(unit: UnitConfig, row: number, col: number, instanceId: number): { ok: boolean; reason?: string } {
     const tile = this.grid.getTile(row, col)
     if (!tile) return { ok: false, reason: 'Out of bounds' }
 
@@ -51,11 +45,16 @@ export class DeploymentSystem {
 
     if (this.activeUnits.size >= this.deploymentLimit) return { ok: false, reason: 'Deployment limit reached' }
 
-    const cost = this.getCurrentCost(unit)
+    if (this.isOnCooldown(instanceId)) return { ok: false, reason: 'Unit on redeploy cooldown' }
+
+    const cost = this.getCurrentCost(instanceId, unit)
     if (this.currentDP < cost) return { ok: false, reason: `Need ${cost} DP, have ${this.currentDP}` }
 
-    if (unit.type === 'ground') {
-      if (tile.type !== TileType.Ground) {
+    const isSpecialist = unit.traits?.some(t => t.traitId === UnitTrait.DeployAnywhere)
+    if (isSpecialist) {
+      // can deploy on any walkable/deployable tile
+    } else if (unit.type === 'ground') {
+      if (tile.type !== TileType.Ground && tile.type !== TileType.RepairNode && tile.type !== TileType.ArmorGrid) {
         return { ok: false, reason: 'Ground units need ground tiles' }
       }
     } else {
@@ -67,14 +66,15 @@ export class DeploymentSystem {
     return { ok: true }
   }
 
-  deployUnit(unit: UnitConfig, row: number, col: number, facing: Direction = 'up'): DeployedUnit | null {
-    const check = this.canDeploy(unit, row, col)
+  deployUnit(unit: UnitConfig, row: number, col: number, facing: Direction = 'up', instanceId: number): DeployedUnit | null {
+    const check = this.canDeploy(unit, row, col, instanceId)
     if (!check.ok) return null
 
-    const cost = this.getCurrentCost(unit)
+    const cost = this.getCurrentCost(instanceId, unit)
     this.currentDP -= cost
     const deployed: DeployedUnit = {
       config: unit,
+      instanceId,
       row,
       col,
       currentHp: unit.hp,
@@ -84,7 +84,7 @@ export class DeploymentSystem {
       facing,
     }
     this.activeUnits.set(`${row},${col}`, deployed)
-    this.deployedUnitIds.add(unit.id)
+    this.redeployTimers.delete(instanceId)
     return deployed
   }
 
@@ -97,32 +97,43 @@ export class DeploymentSystem {
     const refund = isFullRefund ? unit.dpCostPaid : Math.floor(unit.dpCostPaid / 2)
     this.currentDP = Math.min(this.currentDP + refund, this.dpCap)
 
-    const unitId = unit.config.id
-    this.activeUnits.delete(key)
-    this.deployedUnitIds.delete(unitId)
+    this.removeUnit(row, col)
+    return refund
+  }
 
-    const currentMult = this.deployCostMultiplier.get(unitId) ?? 1.0
+  removeUnit(row: number, col: number): number | undefined {
+    const key = `${row},${col}`
+    const unit = this.activeUnits.get(key)
+    if (!unit) return
+
+    const instId = unit.instanceId
+    this.activeUnits.delete(key)
+
+    const currentMult = this.deployCostMultiplier.get(instId) ?? 1.0
     let nextMult: number
     if (currentMult < 1.5) {
       nextMult = 1.5
     } else {
       nextMult = Math.min(2.0, currentMult * 2)
     }
-    this.deployCostMultiplier.set(unitId, nextMult)
-    this.redeployTimers.set(unitId, unit.config.redeployTime)
-
-    return refund
+    this.deployCostMultiplier.set(instId, nextMult)
+    this.redeployTimers.set(instId, unit.config.redeployTime)
+    return instId
   }
 
   updateTimers(dt: number): void {
-    for (const [unitId, remaining] of this.redeployTimers) {
+    for (const [instId, remaining] of this.redeployTimers) {
       const newTime = remaining - dt
       if (newTime <= 0) {
-        this.redeployTimers.delete(unitId)
+        this.redeployTimers.delete(instId)
       } else {
-        this.redeployTimers.set(unitId, newTime)
+        this.redeployTimers.set(instId, newTime)
       }
     }
+  }
+
+  getDPProgress(): number {
+    return this.dpAccumulator
   }
 
   getUnitAt(row: number, col: number): DeployedUnit | undefined {
@@ -153,7 +164,6 @@ export class DeploymentSystem {
     this.dpCap = dpCap
     this.deploymentLimit = deploymentLimit
     this.activeUnits.clear()
-    this.deployedUnitIds.clear()
     this.redeployTimers.clear()
     this.deployCostMultiplier.clear()
     this.dpAccumulator = 0

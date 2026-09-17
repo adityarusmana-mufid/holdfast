@@ -1,72 +1,64 @@
 import Phaser from 'phaser'
-import { UnitConfig, UnitTrait } from '../types/index'
+import { UnitConfig, LevelData } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
-import { COLORS, FONTS, FONT_SIZE, SPACING, hex } from '../ui/Constants'
-import { makeButton } from '../ui/Components'
-import { TEST_LEVEL } from '../levels/testLevel'
+import { COLORS, FONTS, FONT_SIZE, CORNER_BRACKET_SIZE, TOP_BAR } from '../ui/Constants'
+import { makeNodeButton, drawCornerBrackets, drawUnitCard, drawEmptyUnitCard, UNIT_CARD_W, UNIT_CARD_H } from '../ui/Components'
+import { loadPreset, loadPresetSkills, savePreset, savePresetSkills, getActivePreset, setActivePreset, getPresetName, setPresetName } from '../shared/SaveData'
 
-const SLOT_SIZE = 100
+const SLOT_W = UNIT_CARD_W
+const SLOT_H = UNIT_CARD_H
 const SLOT_GAP = 12
-const COLS = 4
-const ROWS = 3
-
-const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
-  [UnitTrait.BlocksTwo]: 'Blocks up to 2 enemies',
-  [UnitTrait.BlocksThree]: 'Blocks up to 3 enemies',
-  [UnitTrait.DPOnKill]: 'Gains DP per kill',
-  [UnitTrait.FullRefundRetreat]: 'Full DP refund on retreat',
-  [UnitTrait.RangedAttack80]: '80% ATK when attacking at range',
-  [UnitTrait.AoESplash]: 'AoE splash damage around target',
-  [UnitTrait.ArtsDamage]: 'Deals thermal damage',
-  [UnitTrait.FastAttack]: 'Fast attack speed',
-  [UnitTrait.DoubleHit]: 'Attacks twice per cycle',
-  [UnitTrait.HealOnAttack]: 'Heals self on attack',
-  [UnitTrait.HealPerHitCapped]: 'Heals on kill',
-  [UnitTrait.CannotBeHealed]: 'Cannot be healed by allies',
-  [UnitTrait.SlowOnHit]: 'Slows enemies on hit',
-  [UnitTrait.ChainJump]: 'Attack chains to nearby enemies',
-  [UnitTrait.LinearAoE]: 'Hits all enemies in a line',
-  [UnitTrait.TargetingLowestDef]: 'Prioritizes lowest DEF target',
-  [UnitTrait.RangedWhenNotBlocking]: 'Uses ranged attack when not blocking',
-  [UnitTrait.RangedAoEWhenNotBlocking]: 'Ranged AoE when not blocking',
-  [UnitTrait.AttackHealsAlly]: 'Attack also heals an ally',
-  [UnitTrait.HealAlly]: 'Heals a wounded ally',
-  [UnitTrait.AoEHoT]: 'Area health over time',
-  [UnitTrait.LongRangeAttack]: 'Extended attack range',
-  [UnitTrait.PassiveDPRegen]: 'Passive DP generation',
-}
+const COLS = 6
+const ROWS = 2
 
 export class SquadScene extends Phaser.Scene {
-  private slots: (UnitConfig | null)[] = new Array(12).fill(null)
+  private slots: (UnitConfig | null)[] = []
+  private pickedSkills: Record<number, string> = {}
   private slotContainers: Phaser.GameObjects.Container[] = []
-  private squadLabel!: Phaser.GameObjects.Text
-  private pickerContainer!: Phaser.GameObjects.Container
-  private pickerActive: boolean = false
-  private selectedSlotIndex: number = -1
-  private pickedUnit: UnitConfig | null = null
-  private confirmBtn: Phaser.GameObjects.Graphics | undefined
-  private confirmFixedX: number = 0
-  private confirmFixedY: number = 0
-  private infoContainer!: Phaser.GameObjects.Container
-  private cardScrollY: number = 0
-  private cardScrollMax: number = 0
+  private activePresetIndex: number = 0
+  private presetBarElements: Phaser.GameObjects.GameObject[] = []
+
+  private levelId: string = ''
+  private chapterId: string = ''
+  private levelData: LevelData | null = null
 
   constructor() {
     super({ key: 'SquadScene' })
+  }
+
+  init(data: { levelId?: string; chapterId?: string; levelData?: LevelData }): void {
+    this.levelId = data.levelId ?? 'menu'
+    this.chapterId = data.chapterId ?? ''
+    this.levelData = data.levelData ?? null
+    this.slots = new Array(12).fill(null)
+    this.presetBarElements = []
+
+    this.activePresetIndex = getActivePreset()
+    const savedIds = loadPreset(this.activePresetIndex)
+    for (let i = 0; i < 12; i++) {
+      const id = savedIds[i]
+      if (id) this.slots[i] = UNIT_CONFIGS.find(u => u.id === id) ?? null
+    }
+    this.pickedSkills = { ...loadPresetSkills(this.activePresetIndex) }
+
+    if (this.slots.every(s => s === null)) {
+      const defaultIds = ['pioneer', 'charger', 'protector', 'fighter', 'sniper', 'core_caster', 'medic_st']
+      for (let i = 0; i < defaultIds.length; i++) {
+        const unit = UNIT_CONFIGS.find(u => u.id === defaultIds[i])
+        if (unit) (this.slots as (UnitConfig | null)[])[i] = unit
+      }
+    }
   }
 
   create(): void {
     const W = 1280
     const H = 720
 
-    this.add.text(W / 2, 20, 'SQUAD SELECTION', {
-      ...FONTS.h2, color: COLORS.text.primary,
-    }).setOrigin(0.5, 0)
+    makeNodeButton(this, W - 150, 18, 'Auto Fill', () => this.autoFill(), { w: 110, h: 34, textSize: '12px' })
+    makeNodeButton(this, W - 268, 18, '\u2716 Clear', () => this.clearSquad(), { w: 108, h: 34, textSize: '12px', role: 'danger' })
 
-    makeButton(this, W - 150, 20, 'Auto Fill', () => this.autoFill(), { w: 110, h: 26, textSize: '11px' })
-
-    const gridW = COLS * SLOT_SIZE + (COLS - 1) * SLOT_GAP
-    const gridH = ROWS * SLOT_SIZE + (ROWS - 1) * SLOT_GAP
+    const gridW = COLS * SLOT_W + (COLS - 1) * SLOT_GAP
+    const gridH = ROWS * SLOT_H + (ROWS - 1) * SLOT_GAP
     const startX = (W - gridW) / 2
     const startY = 60
 
@@ -74,13 +66,14 @@ export class SquadScene extends Phaser.Scene {
     for (let i = 0; i < 12; i++) {
       const col = i % COLS
       const row = Math.floor(i / COLS)
-      const x = startX + col * (SLOT_SIZE + SLOT_GAP) + SLOT_SIZE / 2
-      const y = startY + row * (SLOT_SIZE + SLOT_GAP) + SLOT_SIZE / 2
+      const x = startX + col * (SLOT_W + SLOT_GAP) + SLOT_W / 2
+      const y = startY + row * (SLOT_H + SLOT_GAP) + SLOT_H / 2
 
       const c = this.add.container(x, y)
-      this.drawSlot(c, null)
-      c.setSize(SLOT_SIZE, SLOT_SIZE)
-      c.setInteractive(new Phaser.Geom.Rectangle(-SLOT_SIZE / 2, -SLOT_SIZE / 2, SLOT_SIZE, SLOT_SIZE), Phaser.Geom.Rectangle.Contains)
+      const unit = this.slots[i]
+      this.drawSlot(c, unit)
+      c.setSize(SLOT_W, SLOT_H)
+      c.setInteractive(new Phaser.Geom.Rectangle(-SLOT_W / 2, -SLOT_H / 2, SLOT_W, SLOT_H), Phaser.Geom.Rectangle.Contains)
       if (c.input) c.input.cursor = 'pointer'
 
       const idx = i
@@ -89,333 +82,241 @@ export class SquadScene extends Phaser.Scene {
       this.slotContainers.push(c)
     }
 
-    this.squadLabel = this.add.text(W / 2, startY + gridH + 14, 'Squad: 0/12 selected', {
-      ...FONTS.body, color: COLORS.text.secondary,
-    }).setOrigin(0.5, 0)
+    this.buildPresetBar()
 
-    this.pickerContainer = this.add.container(0, 0)
-    this.pickerContainer.setVisible(false)
-    this.pickerContainer.setDepth(20)
+    if (this.levelId === 'menu') {
+      makeNodeButton(this, 16, 16, '< BACK', () => {
+        this.scene.start('HomeBridgeScene')
+      }, { w: 72, h: 32, textSize: '11px' })
+    } else {
+      makeNodeButton(this, 16, 16, '< BACK', () => {
+        this.scene.start('LevelSelectScene', { chapterId: this.chapterId })
+      }, { w: 72, h: 32, textSize: '11px' })
+      makeNodeButton(this, 94, 16, 'HOME', () => {
+        this.scene.start('HomeBridgeScene')
+      }, { w: 72, h: 32, textSize: '11px' })
 
-    this.infoContainer = this.add.container(0, 0)
-    this.infoContainer.setDepth(25)
-    this.infoContainer.setVisible(false)
-
-    makeButton(this, 20, H - 48, 'Editor', () => {
-      this.scene.start('EditorScene')
-    }, { w: 100, h: 30 })
-
-    makeButton(this, W - 160, H - 48, 'Start Mission', () => {
-      const squad = this.slots.filter((s): s is UnitConfig => s !== null)
-      if (squad.length === 0) return
-      this.scene.start('GameScene', { level: TEST_LEVEL, squad })
-    }, { w: 140, h: 30 })
+      makeNodeButton(this, W - 160, H - 48, 'Start Mission', () => {
+        const squad = this.slots.filter((s): s is UnitConfig => s !== null)
+        if (squad.length === 0) return
+        if (!this.levelData) return
+        this.scene.start('GameScene', {
+          level: this.levelData,
+          squad,
+          pickedSkills: this.pickedSkills,
+          chapterId: this.chapterId,
+          levelId: this.levelId,
+          autoStart: true,
+        })
+      }, { w: 140, h: 38, role: 'primary' })
+    }
   }
 
   private drawSlot(c: Phaser.GameObjects.Container, unit: UnitConfig | null): void {
     c.removeAll(true)
-    const bg = this.add.graphics()
-
+    const ox = -SLOT_W / 2
+    const oy = -SLOT_H / 2
     if (unit) {
-      bg.fillStyle(unit.color, 0.15)
-      bg.fillRoundedRect(-SLOT_SIZE / 2, -SLOT_SIZE / 2, SLOT_SIZE, SLOT_SIZE, 6)
-      bg.lineStyle(2, unit.color, 0.6)
-      bg.strokeRoundedRect(-SLOT_SIZE / 2, -SLOT_SIZE / 2, SLOT_SIZE, SLOT_SIZE, 6)
-
-      const label = this.add.text(0, -8, unit.subtypeLabel, {
-        ...FONTS.bodyBold, color: COLORS.text.primary, align: 'center',
-      }).setOrigin(0.5)
-
-      const sub = this.add.text(0, 14, unit.archetype.toUpperCase(), {
-        fontSize: '10px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
-      }).setOrigin(0.5)
-
-      const dpText = this.add.text(-SLOT_SIZE / 2 + 6, -SLOT_SIZE / 2 + 4, `${unit.dpCost} DP`, {
-        fontSize: '9px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-      })
-
-      c.add([bg, label, sub, dpText])
+      drawUnitCard(this, c, unit, ox, oy)
     } else {
-      bg.fillStyle(0xe8ecf0, 0.5)
-      bg.fillRoundedRect(-SLOT_SIZE / 2, -SLOT_SIZE / 2, SLOT_SIZE, SLOT_SIZE, 6)
-      bg.lineStyle(1, 0xccd0d6, 0.8)
-      bg.strokeRoundedRect(-SLOT_SIZE / 2, -SLOT_SIZE / 2, SLOT_SIZE, SLOT_SIZE, 6)
-
-      const empty = this.add.text(0, 0, '+', {
-        fontSize: '28px', color: '#ccd0d6', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-      }).setOrigin(0.5)
-
-      c.add([bg, empty])
+      drawEmptyUnitCard(this, c, ox, oy)
     }
+  }
+
+  private redrawAllSlots(): void {
+    this.slotContainers.forEach((c, i) => {
+      const unit = this.slots[i]
+      this.drawSlot(c, unit)
+    })
+  }
+
+  private persistSquad(): void {
+    savePreset(this.activePresetIndex, this.slots.map(s => s?.id ?? null))
+    savePresetSkills(this.activePresetIndex, this.pickedSkills)
   }
 
   private onSlotClick(index: number): void {
-    if (this.pickerActive) return
-    this.selectedSlotIndex = index
-
-    if (this.slots[index] !== null) {
-      this.slots[index] = null
-      this.drawSlot(this.slotContainers[index], null)
-      this.updateSquadLabel()
-      return
-    }
-
-    this.showPicker()
+    this.scene.launch('PickerScene', {
+      slotIndex: index,
+      currentUnit: this.slots[index],
+      currentSkillId: this.pickedSkills[index],
+    })
   }
 
-  private showPicker(): void {
-    this.pickerActive = true
-    this.pickedUnit = null
-    this.cardScrollY = 0
-    if (this.confirmBtn) { this.confirmBtn.destroy(); this.confirmBtn = undefined }
-    this.pickerContainer.removeAll(true)
-    this.pickerContainer.setVisible(true)
-    this.infoContainer.removeAll(true)
-    this.infoContainer.setVisible(false)
-
-    const overlay = this.add.graphics()
-    overlay.fillStyle(0x000000, 0.4)
-    overlay.fillRect(0, 0, 1280, 720)
-    overlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, 1280, 720), Phaser.Geom.Rectangle.Contains)
-    overlay.on('pointerdown', () => {
-      if (!this.pickedUnit) this.hidePicker()
-    })
-    this.pickerContainer.add(overlay)
-
-    const panelX = Math.round((1280 - 790) / 2)
-    const panelY = 280
-    const panelW = 790
-    const panelH = 400
-    const titleH = 28
-    const confirmH = 36
-    const cardAreaTop = panelY + titleH + SPACING.sm
-    const cardAreaBottom = panelY + panelH - confirmH - SPACING.sm
-    const cardAreaH = cardAreaBottom - cardAreaTop
-
-    const panel = this.add.graphics()
-    panel.fillStyle(COLORS.panel.bg, 1)
-    panel.fillRoundedRect(panelX, panelY, panelW, panelH, 8)
-    panel.lineStyle(1, COLORS.panel.border, 0.6)
-    panel.strokeRoundedRect(panelX, panelY, panelW, panelH, 8)
-    this.pickerContainer.add(panel)
-
-    const title = this.add.text(panelX + SPACING.xl, panelY + SPACING.sm, 'Select Unit (click a card)', {
-      ...FONTS.body, color: COLORS.text.secondary,
-    })
-    this.pickerContainer.add(title)
-
-    const available = UNIT_CONFIGS.filter(u => !this.slots.some(s => s?.id === u.id))
-    const cardW = 120
-    const cardH = 88
-    const cardGap = 6
-    const startX2 = panelX + SPACING.xl
-    const cols = 6
-
-    const cardContainers: { bg: Phaser.GameObjects.Graphics; elements: Phaser.GameObjects.GameObject[]; unit: UnitConfig; localCx: number; localCy: number }[] = []
-
-    const cardScrollContainer = this.add.container(0, 0)
-    this.pickerContainer.add(cardScrollContainer)
-
-    const rows = Math.ceil(available.length / cols)
-    const totalCardH = rows * (cardH + cardGap) - cardGap
-    this.cardScrollMax = Math.max(0, totalCardH - cardAreaH)
-
-    available.forEach((unit, i) => {
-      const col = i % cols
-      const row = Math.floor(i / cols)
-      const lx = col * (cardW + cardGap)
-      const ly = row * (cardH + cardGap)
-
-      const bg = this.add.graphics()
-      bg.fillStyle(0xffffff, 1)
-      bg.fillRoundedRect(lx, ly, cardW, cardH, 4)
-      bg.lineStyle(1, unit.color, 0.5)
-      bg.strokeRoundedRect(lx, ly, cardW, cardH, 4)
-      bg.setInteractive(new Phaser.Geom.Rectangle(lx, ly, cardW, cardH), Phaser.Geom.Rectangle.Contains)
-      if (bg.input) bg.input.cursor = 'pointer'
-      cardScrollContainer.add(bg)
-
-      const label = this.add.text(lx + cardW / 2, ly + 12, unit.subtypeLabel, {
-        ...FONTS.bodyBold, color: COLORS.text.primary, align: 'center',
-      }).setOrigin(0.5, 0)
-      cardScrollContainer.add(label)
-
-      const arch = this.add.text(lx + cardW / 2, ly + 28, unit.archetype.toUpperCase(), {
-        fontSize: '9px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
-      }).setOrigin(0.5, 0)
-      cardScrollContainer.add(arch)
-
-      const stats = this.add.text(lx + cardW / 2, ly + 44, `${unit.hp}HP ${unit.atk}ATK`, {
-        fontSize: '9px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
-      }).setOrigin(0.5, 0)
-      cardScrollContainer.add(stats)
-
-      const dpLine = this.add.text(lx + cardW / 2, ly + 58, `${unit.dpCost}DP`, {
-        fontSize: '9px', color: COLORS.text.accent, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', align: 'center',
-      }).setOrigin(0.5, 0)
-      cardScrollContainer.add(dpLine)
-
-      const el: Phaser.GameObjects.GameObject[] = [bg, label, arch, stats, dpLine]
-      cardContainers.push({ bg, elements: el, unit, localCx: lx, localCy: ly })
-
-      bg.on('pointerdown', () => {
-        this.selectPickedUnit(unit, cardContainers, cardW, cardH)
-      })
-    })
-
-    cardScrollContainer.setPosition(startX2 + cardW / 2, cardAreaTop)
-
-    const maskShape = this.make.graphics()
-    maskShape.setPosition(startX2, cardAreaTop)
-    maskShape.fillStyle(0xffffff)
-    maskShape.fillRect(0, 0, panelW - SPACING.xl * 2, cardAreaH)
-    const mask = maskShape.createGeometryMask()
-    cardScrollContainer.setMask(mask)
-    this.pickerContainer.add(maskShape)
-    maskShape.setVisible(false)
-
-    this.input.on('wheel', (pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
-      if (!this.pickerActive) return
-      if (pointer.x < panelX || pointer.x > panelX + panelW || pointer.y < cardAreaTop || pointer.y > cardAreaBottom) return
-      this.cardScrollY = Phaser.Math.Clamp(this.cardScrollY - dy * 0.5, -this.cardScrollMax, 0)
-      cardScrollContainer.y = cardAreaTop + this.cardScrollY
-    })
-
-    this.confirmFixedX = panelX + panelW / 2
-    this.confirmFixedY = panelY + panelH - 26
-  }
-
-  private selectPickedUnit(
-    unit: UnitConfig,
-    cardContainers: { bg: Phaser.GameObjects.Graphics; localCx: number; localCy: number; unit: UnitConfig }[],
-    cardW: number, cardH: number,
-  ): void {
-    this.pickedUnit = unit
-
-    for (const cc of cardContainers) {
-      cc.bg.clear()
-      const isSelected = cc.unit.id === unit.id
-      cc.bg.fillStyle(0xffffff, 1)
-      cc.bg.fillRoundedRect(cc.localCx, cc.localCy, cardW, cardH, 4)
-      cc.bg.lineStyle(isSelected ? 3 : 1, isSelected ? 0x00a2ff : cc.unit.color, isSelected ? 1 : 0.5)
-      cc.bg.strokeRoundedRect(cc.localCx, cc.localCy, cardW, cardH, 4)
-    }
-
-    if (this.confirmBtn) { this.confirmBtn.destroy(); this.confirmBtn = undefined }
-    this.confirmBtn = this.add.graphics()
-    this.confirmBtn.setPosition(this.confirmFixedX - 65, this.confirmFixedY - 11)
-    this.confirmBtn.fillStyle(0x00c853, 0.15)
-    this.confirmBtn.fillRoundedRect(0, 0, 130, 22, 4)
-    this.confirmBtn.lineStyle(1, 0x00c853, 0.6)
-    this.confirmBtn.strokeRoundedRect(0, 0, 130, 22, 4)
-    this.confirmBtn.setInteractive(new Phaser.Geom.Rectangle(0, 0, 130, 22), Phaser.Geom.Rectangle.Contains)
-    if (this.confirmBtn.input) this.confirmBtn.input.cursor = 'pointer'
-    this.confirmBtn.setDepth(30)
-    this.confirmBtn.on('pointerup', () => this.confirmPick())
-
-    this.showUnitInfo(unit)
-  }
-
-  private showUnitInfo(unit: UnitConfig): void {
-    this.infoContainer.removeAll(true)
-    this.infoContainer.setVisible(true)
-
-    const px = 14
-    const py = 56
-
-    const bg = this.add.graphics()
-    bg.fillStyle(0xffffff, 0.9)
-    bg.fillRoundedRect(px - 4, py - 4, 200, 320, 6)
-    bg.lineStyle(1, unit.color, 0.5)
-    bg.strokeRoundedRect(px - 4, py - 4, 200, 320, 6)
-    this.infoContainer.add(bg)
-
-    const name = this.add.text(px, py, unit.subtypeLabel, {
-      ...FONTS.h3, color: COLORS.text.primary,
-    })
-    this.infoContainer.add(name)
-
-    const arch = this.add.text(px, py + 22, `${unit.archetype.toUpperCase()} — ${unit.type === 'ground' ? 'GND' : 'RNG'}`, {
-      ...FONTS.small, color: COLORS.text.dim,
-    })
-    this.infoContainer.add(arch)
-
-    const dmIcon = unit.damageType === 'thermal' ? '~' : unit.damageType === 'true' ? '!!' : '>'
-    const statsLines = [
-      `HP: ${unit.hp}`,
-      `ATK: ${dmIcon}${unit.atk}`,
-      `DEF: ${unit.def}  |  INS: ${unit.insulation}`,
-      `BLK: ${unit.blockCount}  |  DP: ${unit.dpCost}`,
-      `Interval: ${unit.attackInterval.toFixed(2)}s`,
-      unit.canBeHealed === false ? 'Cannot be healed' : 'Can be healed',
-    ]
-
-    let ly = py + 44
-    for (const line of statsLines) {
-      const t = this.add.text(px, ly, line, {
-        fontSize: '11px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-      })
-      this.infoContainer.add(t)
-      ly += 16
-    }
-
-    ly += 4
-    const tHeader = this.add.text(px, ly, 'TRAITS', {
-      fontSize: '10px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-    })
-    this.infoContainer.add(tHeader)
-    ly += 16
-
-    if (unit.traits.length === 0) {
-      const none = this.add.text(px + 4, ly, '—', {
-        fontSize: '10px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-      })
-      this.infoContainer.add(none)
+  receivePickedUnit(unit: UnitConfig | null, slotIndex: number, skillId?: string): void {
+    if (slotIndex < 0 || slotIndex >= this.slots.length) return
+    this.slots[slotIndex] = unit
+    if (unit && skillId) {
+      this.pickedSkills[slotIndex] = skillId
     } else {
-      for (const t of unit.traits) {
-        const desc = TRAIT_DESCRIPTIONS[t.traitId] ?? t.traitId
-        const extra = t.value !== undefined ? ` (${t.value})` : t.duration !== undefined ? ` (${t.duration}s)` : ''
-        const line = this.add.text(px + 4, ly, `• ${desc}${extra}`, {
-          fontSize: '10px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', wordWrap: { width: 190 },
-        })
-        this.infoContainer.add(line)
-        ly += 14
-      }
+      delete this.pickedSkills[slotIndex]
     }
-  }
-
-  private confirmPick(): void {
-    if (!this.pickedUnit || this.selectedSlotIndex < 0) return
-    this.slots[this.selectedSlotIndex] = this.pickedUnit
-    this.drawSlot(this.slotContainers[this.selectedSlotIndex], this.pickedUnit)
-    this.updateSquadLabel()
-    this.hidePicker()
-  }
-
-  private hidePicker(): void {
-    this.pickerActive = false
-    this.pickedUnit = null
-    this.pickerContainer.removeAll(true)
-    this.pickerContainer.setVisible(false)
-    this.infoContainer.removeAll(true)
-    this.infoContainer.setVisible(false)
-    if (this.confirmBtn) { this.confirmBtn.destroy(); this.confirmBtn = undefined }
-    this.cardScrollY = 0
-    this.cardScrollMax = 0
+    this.drawSlot(this.slotContainers[slotIndex], unit)
+    this.persistSquad()
   }
 
   private autoFill(): void {
-    const available = [...UNIT_CONFIGS]
-    const count = Math.min(12, available.length)
-    for (let i = 0; i < count; i++) {
-      this.slots[i] = available[i]
-      this.drawSlot(this.slotContainers[i], available[i])
+    const picks = [
+      'pioneer',
+      'charger',
+      'protector',
+      'fighter',
+      'swordmaster',
+      'medic_st',
+      'incantation_medic',
+      'core_caster',
+      'sniper',
+      'deadeye',
+      'decel_binder',
+      'bard_supporter',
+      'pusher',
+      'puller',
+      'executor',
+      'ambusher',
+    ]
+    for (let i = 0; i < 12; i++) {
+      const unit = UNIT_CONFIGS.find(u => u.id === picks[i]) ?? null
+      this.slots[i] = unit
+      if (unit?.skills?.[0]) this.pickedSkills[i] = unit.skills[0].id
+      this.drawSlot(this.slotContainers[i], unit)
     }
-    this.updateSquadLabel()
+    this.persistSquad()
   }
 
-  private updateSquadLabel(): void {
-    const count = this.slots.filter(s => s !== null).length
-    this.squadLabel.setText(`Squad: ${count}/12 selected`)
+  private clearSquad(): void {
+    for (let i = 0; i < 12; i++) {
+      this.slots[i] = null
+      delete this.pickedSkills[i]
+      this.drawSlot(this.slotContainers[i], null)
+    }
+    this.persistSquad()
+  }
+
+  private loadActivePreset(): void {
+    const savedIds = loadPreset(this.activePresetIndex)
+    for (let i = 0; i < 12; i++) {
+      const id = savedIds[i]
+      this.slots[i] = id ? UNIT_CONFIGS.find(u => u.id === id) ?? null : null
+    }
+    this.pickedSkills = { ...loadPresetSkills(this.activePresetIndex) }
+    if (this.slots.every(s => s === null)) {
+      const defaultIds = ['pioneer', 'charger', 'protector', 'fighter', 'sniper', 'core_caster', 'medic_st']
+      for (let i = 0; i < defaultIds.length; i++) {
+        const unit = UNIT_CONFIGS.find(u => u.id === defaultIds[i])
+        if (unit) (this.slots as (UnitConfig | null)[])[i] = unit
+      }
+    }
+    this.redrawAllSlots()
+  }
+
+  private buildPresetBar(): void {
+    const W = 1280
+    const H = 720
+    const barY = H - 94
+    const barH = 36
+    const barW = W - 40
+    const barX = 20
+
+    const bg = this.add.graphics()
+    bg.fillStyle(0xffffff, 0.95)
+    bg.fillRoundedRect(barX, barY, barW, barH, 4)
+    bg.lineStyle(1, 0xe0e0e0, 1)
+    bg.strokeRoundedRect(barX, barY, barW, barH, 4)
+    bg.setDepth(50)
+    this.presetBarElements.push(bg)
+
+    const btnW = 110
+    const gap = 8
+    const startX = barX + 12
+    const nameY = barY + barH / 2
+
+    for (let i = 0; i < 4; i++) {
+      const x = startX + i * (btnW + gap)
+      const name = getPresetName(i)
+      const isActive = i === this.activePresetIndex
+
+      const btnBg = this.add.graphics()
+      btnBg.setDepth(51)
+      if (isActive) {
+        btnBg.fillStyle(0x1877F2, 1)
+        btnBg.fillRoundedRect(x, barY + 3, btnW, barH - 6, 3)
+      } else {
+        btnBg.lineStyle(1, 0xcccccc, 1)
+        btnBg.strokeRoundedRect(x, barY + 3, btnW, barH - 6, 3)
+      }
+      this.presetBarElements.push(btnBg)
+
+      const txt = this.add.text(x + btnW / 2, nameY, name, {
+        fontSize: '12px',
+        fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+        fontStyle: 'bold',
+        color: isActive ? '#ffffff' : '#4B5563',
+      }).setOrigin(0.5, 0.5).setDepth(52)
+      this.presetBarElements.push(txt)
+
+      const hitArea = this.add.zone(x, barY + 3, btnW, barH - 6).setInteractive({ useHandCursor: true })
+      hitArea.setDepth(53)
+      this.presetBarElements.push(hitArea)
+
+      const idx = i
+      hitArea.on('pointerdown', () => {
+        if (idx === this.activePresetIndex) return
+        this.activePresetIndex = idx
+        setActivePreset(idx)
+        this.loadActivePreset()
+        this.rebuildPresetBar()
+      })
+    }
+
+    const pencilX = startX + 4 * (btnW + gap) + 16
+    const pencil = this.add.text(pencilX, nameY, '\u270E', {
+      fontSize: '16px',
+      color: '#4B5563',
+    }).setOrigin(0.5, 0.5).setDepth(52).setInteractive({ useHandCursor: true })
+    this.presetBarElements.push(pencil)
+
+    pencil.on('pointerdown', () => this.renameCurrentPreset())
+  }
+
+  private rebuildPresetBar(): void {
+    this.presetBarElements.forEach(e => e.destroy())
+    this.presetBarElements = []
+    this.buildPresetBar()
+  }
+
+  private renameCurrentPreset(): void {
+    const currentName = getPresetName(this.activePresetIndex)
+    const W = 1280
+    const barY = 720 - 94
+    const barH = 36
+    const btnW = 110
+    const gap = 8
+    const startX = 32
+
+    const input = document.createElement('input')
+    input.type = 'text'
+    input.value = currentName
+    input.style.cssText = `
+      font-family: "Share Tech Mono", "Roboto Mono", monospace;
+      font-size: 12px; font-weight: bold; color: #ffffff;
+      background: #1877F2; border: none; border-radius: 3px;
+      padding: 2px 6px; width: 96px; text-align: center;
+      outline: none;
+    `
+
+    const domEl = this.add.dom(0, 0, input).setDepth(60)
+    this.presetBarElements.push(domEl)
+    const x = startX + this.activePresetIndex * (btnW + gap) + btnW / 2
+    domEl.setPosition(x, barY + barH / 2)
+
+    const finish = () => {
+      const val = input.value.trim()
+      if (val) setPresetName(this.activePresetIndex, val)
+      domEl.destroy()
+      this.rebuildPresetBar()
+    }
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur() })
+    input.addEventListener('blur', finish)
+    setTimeout(() => { input.focus(); input.select() }, 50)
   }
 }

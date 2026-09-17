@@ -1,13 +1,33 @@
 import { Grid } from '../entities/Grid'
 import { EnemySprite } from '../entities/Enemy'
 import { UnitSprite } from '../entities/Unit'
-import { Position, UnitTrait } from '../types/index'
+import { Position, UnitTrait, TileType, DamageType, DeployedUnit } from '../types/index'
 import { positionsInRange } from '../shared/utils/GridMath'
 
 export interface CombatEvents {
   onEnemyKilled: (enemy: EnemySprite, killer: UnitSprite | null) => void
   onDamageDealt: (damage: number, enemy: EnemySprite, damageType: string) => void
   onHealApplied?: (target: UnitSprite, amount: number, source: UnitSprite) => void
+  onUnitDamageDealt?: (damage: number, unit: UnitSprite, damageType: string) => void
+  onUnitDeath?: (unit: UnitSprite, killer: EnemySprite) => void
+  onUnitAttackInitiated?: (unit: UnitSprite, target: EnemySprite, damageType: string) => void
+  onEnemyWindUp?: (enemy: EnemySprite, target: UnitSprite, attackId: number) => void
+  onEnemyAttackLanded?: (enemy: EnemySprite, target: UnitSprite, damage: number) => void
+  onEnemyAttackCancelled?: (attackId: number) => void
+  onChainJump?: (unit: UnitSprite, from: EnemySprite, to: EnemySprite) => void
+  onSplashAoE?: (unit: UnitSprite, center: EnemySprite, radius: number) => void
+  onExplosion?: (position: { row: number; col: number }, damage: number, radius: number, damageType: DamageType) => void
+  effectiveUnitAttack?: (unit: UnitSprite) => { atk: number; damageType: DamageType; hitCount: number } | null
+  effectiveUnitDef?: (unit: UnitSprite) => number | null
+}
+
+interface PendingAttack {
+  attackId: number
+  enemy: EnemySprite
+  target: UnitSprite
+  damage: number
+  elapsed: number
+  duration: number
 }
 
 interface AttackParams {
@@ -16,9 +36,16 @@ interface AttackParams {
   useAoE: boolean
 }
 
+const ENEMY_WIND_UP_DURATION = 0.4
+
 export class CombatSystem {
   private grid: Grid
   private events: CombatEvents
+  private enemyAttackTimers: Map<number, number> = new Map()
+  private pendingAttacks: PendingAttack[] = []
+  private nextAttackId = 0
+  private enemiesInWindUp: Set<number> = new Set()
+  private droneRampState: Map<UnitSprite, { lastEnemyId: string | null; ramp: number }> = new Map()
 
   constructor(grid: Grid, events: CombatEvents) {
     this.grid = grid
@@ -26,10 +53,11 @@ export class CombatSystem {
   }
 
   update(delta: number, units: UnitSprite[], enemies: EnemySprite[]): void {
+    const dt = delta / 1000
+
     for (const unit of units) {
       if (!unit.isAlive()) continue
 
-      const dt = delta / 1000
       unit.lastAttackTime += dt
 
       if (unit.lastAttackTime < unit.config.attackInterval) continue
@@ -41,13 +69,32 @@ export class CombatSystem {
         this.executeAoEAttack(unit, enemies, params)
       } else if (this.hasTrait(unit, UnitTrait.LinearAoE)) {
         this.executeLinearAoEAttack(unit, enemies)
+      } else if (this.hasTrait(unit, UnitTrait.AoEMelee)) {
+        const hitCount = this.executeAoEMeleeAttack(unit, enemies, params)
+        if (this.hasTrait(unit, UnitTrait.HealOnAttack)) {
+          const traitConfig = unit.config.traits.find(t => t.traitId === UnitTrait.HealOnAttack)
+          const healAmount = (traitConfig?.value ?? 50)
+          const cappedHits = Math.min(hitCount, unit.config.blockCount)
+          const totalHeal = healAmount * Math.max(1, cappedHits)
+          const healed = unit.heal(totalHeal)
+          if (healed > 0 && this.events.onHealApplied) {
+            this.events.onHealApplied(unit, healed, unit)
+          }
+        }
+      } else if (this.hasTrait(unit, UnitTrait.AoEMeleeBlockCapped)) {
+        this.executeBlockCappedAttack(unit, enemies, params)
       } else {
         const target = this.findTarget(unit, enemies, params.rangePattern)
         if (!target || !target.alive) continue
 
-        const hitCount = this.hasTrait(unit, UnitTrait.DoubleHit) ? 2 : 1
+        let hitCount = this.hasTrait(unit, UnitTrait.DoubleHit) ? 2 : 1
+        if (this.events.effectiveUnitAttack) {
+          const eff = this.events.effectiveUnitAttack(unit)
+          if (eff) hitCount = eff.hitCount
+        }
         for (let i = 0; i < hitCount; i++) {
           if (!target.alive) break
+          this.events.onUnitAttackInitiated?.(unit, target, unit.config.damageType)
           this.applyDamage(unit, target, params.atk)
         }
 
@@ -73,6 +120,68 @@ export class CombatSystem {
         }
       }
     }
+
+    for (const enemy of enemies) {
+      if (!enemy.alive) continue
+      if (this.enemiesInWindUp.has(enemy.id)) continue
+
+      const acc = this.enemyAttackTimers.get(enemy.id) ?? 0
+      const newAcc = acc + dt
+      if (newAcc < enemy.config.attackInterval) {
+        this.enemyAttackTimers.set(enemy.id, newAcc)
+        continue
+      }
+      this.enemyAttackTimers.set(enemy.id, newAcc - enemy.config.attackInterval)
+
+      let target: UnitSprite | null = null
+      if (enemy.config.attackRange && enemy.config.attackRange > 0) {
+        target = this.findNearestUnit(enemy, units, enemy.config.attackRange)
+      } else if (enemy.blocked && enemy.blockerUnitKey) {
+        const [r, c] = enemy.blockerUnitKey.split(',').map(Number)
+        target = units.find(u => u.row === r && u.col === c && u.isAlive()) ?? null
+      }
+
+      if (!target) continue
+
+      const def = this.getUnitEffectiveDef(target)
+      const effectiveAtk = enemy.config.atk + (enemy.bonusAtk ?? 0)
+      const damage = this.calcDamage(effectiveAtk, def, target.config.res, enemy.config.damageType)
+      const attackId = this.nextAttackId++
+      this.enemiesInWindUp.add(enemy.id)
+      this.pendingAttacks.push({ attackId, enemy, target, damage, elapsed: 0, duration: ENEMY_WIND_UP_DURATION })
+      this.events.onEnemyWindUp?.(enemy, target, attackId)
+    }
+
+    this.processPendingAttacks(dt)
+  }
+
+  private getUnitEffectiveDef(unit: UnitSprite): number {
+    let def = unit.config.def
+    const tile = this.grid.getTile(unit.row, unit.col)
+    if (tile && tile.type === TileType.ArmorGrid) {
+      def += 100
+    }
+    if (this.events.effectiveUnitDef) {
+      const eff = this.events.effectiveUnitDef(unit)
+      if (eff !== null) def = eff
+    }
+    return def
+  }
+
+  private findNearestUnit(enemy: EnemySprite, units: UnitSprite[], range: number): UnitSprite | null {
+    let best: UnitSprite | null = null
+    let bestDist = Infinity
+    const eTile = enemy.getCurrentTile()
+    if (!eTile) return null
+    for (const u of units) {
+      if (!u.isAlive()) continue
+      const dist = Math.abs(u.row - eTile.row) + Math.abs(u.col - eTile.col)
+      if (dist <= range && dist < bestDist) {
+        bestDist = dist
+        best = u
+      }
+    }
+    return best
   }
 
   private isBlocking(unit: UnitSprite, enemies: EnemySprite[]): boolean {
@@ -84,22 +193,44 @@ export class CombatSystem {
     })
   }
 
+  private getSkillRangePattern(unit: UnitSprite): number[][] | null {
+    const du = unit.deployedUnit
+    if (!du?.skillState?.isActive) return null
+    const skillConfig = du.skillState.config
+    return skillConfig.skillRangePattern ?? null
+  }
+
   private getAttackParams(unit: UnitSprite, enemies: EnemySprite[]): AttackParams {
     const isBlocking = this.isBlocking(unit, enemies)
     const hasRangedMode = this.hasTrait(unit, UnitTrait.RangedWhenNotBlocking) ||
-      this.hasTrait(unit, UnitTrait.RangedAoEWhenNotBlocking)
-
-    if (!hasRangedMode || isBlocking) {
-      return { rangePattern: unit.config.rangePattern, atk: unit.config.atk, useAoE: false }
-    }
+      this.hasTrait(unit, UnitTrait.RangedAoEWhenNotBlocking) ||
+      this.hasTrait(unit, UnitTrait.SpreadAttack)
 
     let atk = unit.config.atk
+
+    if (this.events.effectiveUnitAttack) {
+      const eff = this.events.effectiveUnitAttack(unit)
+      if (eff) {
+        atk = eff.atk
+      }
+    }
+
+    const skillRange = this.getSkillRangePattern(unit)
+
+    if (!hasRangedMode || isBlocking) {
+      return { rangePattern: skillRange ?? unit.config.rangePattern, atk, useAoE: false }
+    }
+
     if (this.hasTrait(unit, UnitTrait.RangedAttack80)) {
       atk = Math.floor(atk * 0.8)
     }
 
-    const rangePattern = unit.config.altRangePattern ?? unit.config.rangePattern
-    const useAoE = this.hasTrait(unit, UnitTrait.RangedAoEWhenNotBlocking)
+    if (this.hasTrait(unit, UnitTrait.RangedAttack120)) {
+      atk = Math.floor(atk * 1.2)
+    }
+
+    const rangePattern = skillRange ?? unit.config.altRangePattern ?? unit.config.rangePattern
+    const useAoE = this.hasTrait(unit, UnitTrait.RangedAoEWhenNotBlocking) || this.hasTrait(unit, UnitTrait.SpreadAttack)
 
     return { rangePattern, atk, useAoE }
   }
@@ -108,6 +239,7 @@ export class CombatSystem {
     const targets = this.getEnemiesInRange(unit, enemies, params.rangePattern)
     for (const target of targets) {
       if (!target.alive) continue
+      this.events.onUnitAttackInitiated?.(unit, target, unit.config.damageType)
       this.applyDamage(unit, target, params.atk)
     }
   }
@@ -116,7 +248,32 @@ export class CombatSystem {
     const targets = this.getEnemiesInRange(unit, enemies)
     for (const target of targets) {
       if (!target.alive) continue
+      this.events.onUnitAttackInitiated?.(unit, target, unit.config.damageType)
       this.applyDamage(unit, target)
+    }
+  }
+
+  private executeAoEMeleeAttack(unit: UnitSprite, enemies: EnemySprite[], params: AttackParams): number {
+    const targets = this.getEnemiesInRange(unit, enemies, params.rangePattern)
+    let hitCount = 0
+    for (const target of targets) {
+      if (!target.alive) continue
+      this.events.onUnitAttackInitiated?.(unit, target, unit.config.damageType)
+      this.applyDamage(unit, target, params.atk)
+      hitCount++
+    }
+    return hitCount
+  }
+
+  private executeBlockCappedAttack(unit: UnitSprite, enemies: EnemySprite[], params: AttackParams): void {
+    const targets = this.getEnemiesInRange(unit, enemies, params.rangePattern)
+    const maxTargets = unit.config.blockCount
+    let count = 0
+    for (const target of targets) {
+      if (!target.alive || count >= maxTargets) continue
+      this.events.onUnitAttackInitiated?.(unit, target, unit.config.damageType)
+      this.applyDamage(unit, target, params.atk)
+      count++
     }
   }
 
@@ -126,6 +283,11 @@ export class CombatSystem {
     if (!tile) return
 
     const splashTargets = this.getEnemiesInRadius(tile, splashConfig.radius, enemies, primary)
+
+    if (splashTargets.length > 0 && this.events.onSplashAoE) {
+      this.events.onSplashAoE(unit, primary, splashConfig.radius)
+    }
+
     for (const target of splashTargets) {
       if (!target.alive) continue
       const baseDamage = this.calculateDamage(unit, target, atkOverride)
@@ -135,6 +297,7 @@ export class CombatSystem {
         this.events.onDamageDealt(splashDmg, target, splashConfig.damageType ?? unit.config.damageType)
       }
       if (!target.alive) {
+        this.checkExploderKill(target)
         this.events.onEnemyKilled(target, unit)
       }
       this.applySlow(unit, target)
@@ -167,13 +330,18 @@ export class CombatSystem {
       chain.push(next)
       hitEnemies.add(next)
 
+      if (this.events.onChainJump) {
+        this.events.onChainJump(unit, last, next)
+      }
+
       const baseDmg = this.calculateDamage(unit, next, atkOverride)
-      const chainDmg = Math.max(1, Math.floor(baseDmg * Math.max(0.05, 1 - falloff * (jump + 1))))
+      const chainDmg = Math.max(1, Math.floor(baseDmg * Math.pow(falloff, jump + 1)))
       next.takeDamage(chainDmg)
       if (chainDmg > 0) {
         this.events.onDamageDealt(chainDmg, next, unit.config.damageType)
       }
       if (!next.alive) {
+        this.checkExploderKill(next)
         this.events.onEnemyKilled(next, unit)
       }
     }
@@ -190,6 +358,11 @@ export class CombatSystem {
 
     if (this.hasTrait(unit, UnitTrait.TargetingLowestDef)) {
       return this.findLowestDef(inRange)
+    }
+
+    if (this.hasTrait(unit, UnitTrait.TargetingAerial)) {
+      const aerial = inRange.filter(e => e.config.isAerial)
+      if (aerial.length > 0) return this.findClosestToGoal(aerial)
     }
 
     return this.findClosestToGoal(inRange)
@@ -209,11 +382,13 @@ export class CombatSystem {
   }
 
   private getEnemiesInRadius(pos: Position, radius: number, enemies: EnemySprite[], exclude?: EnemySprite): EnemySprite[] {
+    const center = this.grid.tileToPixel(pos.row, pos.col)
+    const radiusPx = radius * 64
     return enemies.filter(e => {
       if (!e.alive || e === exclude) return false
-      const tile = e.getCurrentTile()
-      if (!tile) return false
-      return Math.abs(tile.row - pos.row) <= radius && Math.abs(tile.col - pos.col) <= radius
+      const dx = e.x - center.x
+      const dy = e.y - center.y
+      return dx * dx + dy * dy <= radiusPx * radiusPx
     })
   }
 
@@ -261,12 +436,15 @@ export class CombatSystem {
 
   private applyDamage(unit: UnitSprite, target: EnemySprite, atkOverride?: number): void {
     const damage = this.calculateDamage(unit, target, atkOverride)
-    target.takeDamage(damage)
+    const droneBonus = this.getDroneRampDamage(unit, target)
+    const total = damage + droneBonus
+    target.takeDamage(total)
 
-    if (damage > 0) {
-      this.events.onDamageDealt(damage, target, unit.config.damageType)
+    if (total > 0) {
+      this.events.onDamageDealt(total, target, unit.config.damageType)
     }
     if (!target.alive) {
+      this.checkExploderKill(target)
       this.events.onEnemyKilled(target, unit)
     } else {
       this.applySlow(unit, target)
@@ -316,13 +494,78 @@ export class CombatSystem {
   private calculateDamage(unit: UnitSprite, target: EnemySprite, atkOverride?: number): number {
     const atk = atkOverride ?? unit.config.atk
     if (unit.config.damageType === 'true') return atk
-    let def: number
     if (unit.config.damageType === 'kinetic') {
-      def = target.config.armor
-    } else {
-      def = target.config.insulation
+      return Math.max(Math.floor(atk * 0.05), atk - target.config.armor)
     }
-    return Math.max(Math.floor(atk * 0.05), atk - def)
+    return Math.max(Math.floor(atk * 0.05), Math.floor(atk * (1 - target.config.res / 100)))
+  }
+
+  private getDroneRampDamage(unit: UnitSprite, target: EnemySprite): number {
+    if (!this.hasTrait(unit, UnitTrait.DroneRamp)) return 0
+    const traitConfig = unit.config.traits.find(t => t.traitId === UnitTrait.DroneRamp)
+    if (!traitConfig) return 0
+
+    let state = this.droneRampState.get(unit)
+    if (!state) {
+      state = { lastEnemyId: null, ramp: 0 }
+      this.droneRampState.set(unit, state)
+    }
+
+    const targetTile = target.getCurrentTile()
+    if (!targetTile) return 0
+    const targetId = `${targetTile.row},${targetTile.col}`
+    if (state.lastEnemyId !== targetId) {
+      state.lastEnemyId = targetId
+      state.ramp = 0
+    }
+
+    const base = traitConfig.rampBasePercent ?? 0.2
+    const increment = traitConfig.rampIncrement ?? 0.15
+    const maxPercent = traitConfig.rampMaxPercent ?? 1.1
+    const currentPercent = Math.min(base + state.ramp * increment, maxPercent)
+    state.ramp++
+
+    return Math.floor(unit.config.atk * currentPercent)
+  }
+
+  private calcDamage(atk: number, def: number, res: number, type: DamageType): number {
+    if (type === 'true') return atk
+    if (type === 'kinetic') return Math.max(Math.floor(atk * 0.05), atk - def)
+    return Math.max(Math.floor(atk * 0.05), Math.floor(atk * (1 - res / 100)))
+  }
+
+  private checkExploderKill(enemy: EnemySprite): void {
+    if (!enemy.alive && enemy.behavior.type === 'exploder') {
+      const tile = enemy.getCurrentTile()
+      if (tile && this.events.onExplosion) {
+        this.events.onExplosion(tile, enemy.behavior.explosionDamage, enemy.behavior.explosionRadius, enemy.behavior.damageType)
+      }
+    }
+  }
+
+  private processPendingAttacks(dt: number): void {
+    const remaining: PendingAttack[] = []
+    for (const pa of this.pendingAttacks) {
+      pa.elapsed += dt
+      if (pa.elapsed >= pa.duration) {
+        this.enemiesInWindUp.delete(pa.enemy.id)
+        if (pa.target.isAlive()) {
+          pa.target.takeDamage(pa.damage)
+          if (pa.damage > 0 && this.events.onUnitDamageDealt) {
+            this.events.onUnitDamageDealt(pa.damage, pa.target, pa.enemy.config.damageType)
+          }
+          this.events.onEnemyAttackLanded?.(pa.enemy, pa.target, pa.damage)
+          if (!pa.target.isAlive() && this.events.onUnitDeath) {
+            this.events.onUnitDeath(pa.target, pa.enemy)
+          }
+        } else {
+          this.events.onEnemyAttackCancelled?.(pa.attackId)
+        }
+      } else {
+        remaining.push(pa)
+      }
+    }
+    this.pendingAttacks = remaining
   }
 
   private hasTrait(unit: UnitSprite, traitId: UnitTrait): boolean {

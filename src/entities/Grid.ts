@@ -1,10 +1,12 @@
 import Phaser from 'phaser'
-import { Tile, TileType, LevelData, Route, Position } from '../types/index'
+import { Tile, TileType, LevelData, Route, Position, FlowDirection } from '../types/index'
 import { tileColor, tileBorderColor, tileLabel, tileTextColor, ROUTE_COLORS } from '../shared/utils/GridMath'
+import { PathSystem } from '../systems/PathSystem'
 
 export const TILE_SIZE = 64
 export const GRID_OFFSET_X = 148
 export const GRID_OFFSET_Y = 128
+const ROW_INSET = 6
 
 function migrateTileTypeStatic(type: string): TileType {
   switch (type) {
@@ -22,17 +24,22 @@ export class Grid {
   private tileGraphics: Phaser.GameObjects.Graphics
   private labelTexts: Phaser.GameObjects.Text[]
   private gridLines: Phaser.GameObjects.Graphics
+  offsetX: number
+  offsetY: number
 
   cols: number
   rows: number
   tiles: Tile[][]
+  private pathSystem: PathSystem | null = null
 
-  constructor(scene: Phaser.Scene, cols: number = 12, rows: number = 8) {
+  constructor(scene: Phaser.Scene, cols: number = 12, rows: number = 8, offsetX: number = GRID_OFFSET_X, offsetY: number = GRID_OFFSET_Y) {
     this.scene = scene
     this.cols = cols
     this.rows = rows
     this.tiles = []
     this.labelTexts = []
+    this.offsetX = offsetX
+    this.offsetY = offsetY
 
     this.tileGraphics = scene.add.graphics()
     this.gridLines = scene.add.graphics()
@@ -66,17 +73,56 @@ export class Grid {
     if (tile) tile.type = type
   }
 
-  tileToPixel(row: number, col: number): { x: number; y: number } {
+  private rowLeftX(row: number): number {
+    return this.offsetX + ROW_INSET * (this.rows - row)
+  }
+
+  private rowRightX(row: number): number {
+    return this.offsetX + this.cols * TILE_SIZE - ROW_INSET * (this.rows - row)
+  }
+
+  private tileLeftX(row: number, col: number): number {
+    const left = this.rowLeftX(row)
+    const right = this.rowRightX(row)
+    return Phaser.Math.Linear(left, right, col / this.cols)
+  }
+
+  private tileRightX(row: number, col: number): number {
+    return this.tileLeftX(row, col + 1)
+  }
+
+  getTileCenter(row: number, col: number): { x: number; y: number } {
+    const topX = Phaser.Math.Linear(this.tileLeftX(row, col), this.tileRightX(row, col), 0.5)
+    const bottomX = Phaser.Math.Linear(this.tileLeftX(row + 1, col), this.tileRightX(row + 1, col), 0.5)
     return {
-      x: GRID_OFFSET_X + col * TILE_SIZE + TILE_SIZE / 2,
-      y: GRID_OFFSET_Y + row * TILE_SIZE + TILE_SIZE / 2,
+      x: Phaser.Math.Linear(topX, bottomX, 0.5),
+      y: this.offsetY + row * TILE_SIZE + TILE_SIZE / 2,
     }
   }
 
+  getTileCorners(row: number, col: number): { tL: { x: number; y: number }; tR: { x: number; y: number }; bR: { x: number; y: number }; bL: { x: number; y: number } } {
+    const y0 = this.offsetY + row * TILE_SIZE
+    const y1 = this.offsetY + (row + 1) * TILE_SIZE
+    return {
+      tL: { x: this.tileLeftX(row, col) + 1, y: y0 + 1 },
+      tR: { x: this.tileRightX(row, col) - 1, y: y0 + 1 },
+      bR: { x: this.tileRightX(row + 1, col) - 1, y: y1 - 1 },
+      bL: { x: this.tileLeftX(row + 1, col) + 1, y: y1 - 1 },
+    }
+  }
+
+  tileToPixel(row: number, col: number): { x: number; y: number } {
+    return this.getTileCenter(row, col)
+  }
+
   pixelToTile(x: number, y: number): Position | null {
-    const col = Math.floor((x - GRID_OFFSET_X) / TILE_SIZE)
-    const row = Math.floor((y - GRID_OFFSET_Y) / TILE_SIZE)
-    if (row < 0 || row >= this.rows || col < 0 || col >= this.cols) return null
+    const row = Math.floor((y - this.offsetY) / TILE_SIZE)
+    if (row < 0 || row >= this.rows) return null
+    const left = this.rowLeftX(row)
+    const right = this.rowRightX(row)
+    const colWidth = (right - left) / this.cols
+    const col = Math.floor((x - left) / colWidth)
+    if (col < 0 || col >= this.cols) return null
     return { row, col }
   }
 
@@ -165,38 +211,156 @@ export class Grid {
     for (let r = 0; r < this.rows; r++) {
       for (let c = 0; c < this.cols; c++) {
         const tile = this.tiles[r][c]
-        const x = GRID_OFFSET_X + c * TILE_SIZE
-        const y = GRID_OFFSET_Y + r * TILE_SIZE
+        const y0 = this.offsetY + r * TILE_SIZE
+        const y1 = this.offsetY + (r + 1) * TILE_SIZE
 
-        this.tileGraphics.fillStyle(tileColor(tile.type), 1)
-        this.tileGraphics.fillRect(x + 1, y + 1, TILE_SIZE - 2, TILE_SIZE - 2)
+        // Perspective-adjusted tile corners
+        const tL = { x: this.tileLeftX(r, c) + 1, y: y0 + 1 }
+        const tR = { x: this.tileRightX(r, c) - 1, y: y0 + 1 }
+        const bR = { x: this.tileRightX(r + 1, c) - 1, y: y1 - 1 }
+        const bL = { x: this.tileLeftX(r + 1, c) + 1, y: y1 - 1 }
 
-        this.tileGraphics.lineStyle(1, tileBorderColor(tile.type), 0.6)
-        this.tileGraphics.strokeRect(x, y, TILE_SIZE, TILE_SIZE)
+        // Tile body fill — elevated tiles adopt color of tile below for platform continuity
+        const isElevated = tile.type === TileType.Ranged || tile.type === TileType.Wall
+        let tileFillColor = tileColor(tile.type)
+        if (isElevated) {
+          const below = r + 1 < this.rows ? this.tiles[r + 1]?.[c] : null
+          const belowElevated = below && (below.type === TileType.Ranged || below.type === TileType.Wall)
+          if (belowElevated) {
+            tileFillColor = tileColor(below.type)
+          }
+        }
+        this.tileGraphics.fillStyle(tileFillColor, 1)
+        this.tileGraphics.fillPoints([tL, tR, bR, bL], true)
 
-        const label = tileLabel(tile.type)
-        if (label) {
-          const text = this.scene.add.text(x + TILE_SIZE / 2, y + TILE_SIZE / 2, label, {
-            fontSize: '18px',
-            color: tileTextColor(tile.type),
-            fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-            fontStyle: 'bold',
-          })
-          text.setOrigin(0.5)
-          text.setAlpha(0.5)
-          this.labelTexts.push(text)
+        // Shadow strip on elevated tiles — only if nothing elevated below
+        if (isElevated) {
+          const below = r + 1 < this.rows ? this.tiles[r + 1]?.[c] : null
+          const belowElevated = below && (below.type === TileType.Ranged || below.type === TileType.Wall)
+          if (!belowElevated) {
+            const shadowColor = tile.type === TileType.Ranged ? 0x8a8e92 : 0x0a0a0a
+            this.tileGraphics.fillStyle(shadowColor, 1)
+            const sL = this.tileLeftX(r + 1, c)
+            const sR = this.tileRightX(r + 1, c)
+            this.tileGraphics.fillRect(sL + 1, y1 - 10, sR - sL - 2, 9)
+          }
+        }
+
+        // Border — follows trapezoid outline
+        const borderWidth = tile.type === TileType.Ranged ? 2 : 1
+        const borderAlpha = tile.type === TileType.Ranged ? 0.9 : 0.6
+        this.tileGraphics.lineStyle(borderWidth, tileBorderColor(tile.type), borderAlpha)
+        this.tileGraphics.beginPath()
+        this.tileGraphics.moveTo(this.tileLeftX(r, c), y0)
+        this.tileGraphics.lineTo(this.tileRightX(r, c), y0)
+        this.tileGraphics.lineTo(this.tileRightX(r + 1, c), y1)
+        this.tileGraphics.lineTo(this.tileLeftX(r + 1, c), y1)
+        this.tileGraphics.closePath()
+        this.tileGraphics.strokePath()
+
+        // 3D wireframe cube for spawn/goal
+        if (tile.type === TileType.Spawn || tile.type === TileType.Goal) {
+          const cubeColor = tile.type === TileType.Spawn ? 0xff8888 : 0x8888ff
+          const cubeFill = tile.type === TileType.Spawn ? 0xff6666 : 0x6666ff
+          const cubeH = 18
+          const inset = 6
+          const ctL = { x: tL.x + inset, y: tL.y - cubeH }
+          const ctR = { x: tR.x - inset, y: tR.y - cubeH }
+          const cbR = { x: bR.x - inset, y: bR.y - cubeH }
+          const cbL = { x: bL.x + inset, y: bL.y - cubeH }
+
+          // Diagonal X across the tile face
+          this.tileGraphics.lineStyle(1, cubeColor, 0.3)
+          this.tileGraphics.lineBetween(tL.x, tL.y, bR.x, bR.y)
+          this.tileGraphics.lineBetween(tR.x, tR.y, bL.x, bL.y)
+
+          // Vertical edges
+          this.tileGraphics.lineStyle(1, cubeColor, 0.4)
+          this.tileGraphics.lineBetween(tL.x, tL.y, ctL.x, ctL.y)
+          this.tileGraphics.lineBetween(tR.x, tR.y, ctR.x, ctR.y)
+          this.tileGraphics.lineBetween(bR.x, bR.y, cbR.x, cbR.y)
+          this.tileGraphics.lineBetween(bL.x, bL.y, cbL.x, cbL.y)
+
+          // Top face fill
+          this.tileGraphics.fillStyle(cubeFill, 0.15)
+          this.tileGraphics.fillPoints([ctL, ctR, cbR, cbL], true)
+
+          // Top face outline
+          this.tileGraphics.lineStyle(2, cubeColor, 0.6)
+          this.tileGraphics.beginPath()
+          this.tileGraphics.moveTo(ctL.x, ctL.y)
+          this.tileGraphics.lineTo(ctR.x, ctR.y)
+          this.tileGraphics.lineTo(cbR.x, cbR.y)
+          this.tileGraphics.lineTo(cbL.x, cbL.y)
+          this.tileGraphics.closePath()
+          this.tileGraphics.strokePath()
+
+          // Exclamation triangle on the top face
+          const cTopX = Phaser.Math.Linear(ctL.x, ctR.x, 0.5)
+          const cBotX = Phaser.Math.Linear(cbL.x, cbR.x, 0.5)
+          const cY = Phaser.Math.Linear(ctL.y, cbL.y, 0.5)
+          const exclamColor = tile.type === TileType.Spawn ? 0xff8888 : 0x8888ff
+          this.tileGraphics.fillStyle(exclamColor, 0.9)
+          this.tileGraphics.fillTriangle(cTopX, cY - 8, cTopX - 7, cY + 7, cTopX + 7, cY + 7)
+          this.tileGraphics.fillStyle(0xffffff, 1)
+          this.tileGraphics.fillRect(cTopX - 2, cY - 3, 4, 7)
+          this.tileGraphics.fillRect(cTopX - 2, cY + 4, 4, 3)
+        }
+
+        // Repair Node / Armor Grid icons
+        if (tile.type === TileType.RepairNode) {
+          const cx = Phaser.Math.Linear(tL.x, tR.x, 0.5)
+          const cy = (y0 + y1) / 2
+          this.tileGraphics.lineStyle(3, 0x44cc55, 0.8)
+          this.tileGraphics.lineBetween(cx - 8, cy, cx + 8, cy)
+          this.tileGraphics.lineBetween(cx, cy - 8, cx, cy + 8)
+        }
+
+        if (tile.type === TileType.ArmorGrid) {
+          const cx = Phaser.Math.Linear(tL.x, tR.x, 0.5)
+          const cy = (y0 + y1) / 2
+          this.tileGraphics.fillStyle(0x4488cc, 0.8)
+          this.tileGraphics.fillTriangle(cx, cy - 10, cx - 10, cy + 4, cx + 10, cy + 4)
+          this.tileGraphics.lineStyle(2, 0x4488cc, 0.8)
+          this.tileGraphics.strokeTriangle(cx, cy - 10, cx - 10, cy + 4, cx + 10, cy + 4)
+        }
+
+        // Stun Generator — golden device with lightning bolt
+        if (tile.type === TileType.StnGen) {
+          const cx = Phaser.Math.Linear(tL.x, tR.x, 0.5)
+          const cy = (y0 + y1) / 2
+          this.tileGraphics.fillStyle(0xffd700, 0.9)
+          this.tileGraphics.fillCircle(cx, cy, 10)
+          this.tileGraphics.lineStyle(2, 0xff8f00, 1)
+          this.tileGraphics.strokeCircle(cx, cy, 10)
+          this.tileGraphics.lineStyle(2, 0xffffff, 0.9)
+          this.tileGraphics.lineBetween(cx - 3, cy - 6, cx + 2, cy - 1)
+          this.tileGraphics.lineBetween(cx + 2, cy - 1, cx - 2, cy + 1)
+          this.tileGraphics.lineBetween(cx - 2, cy + 1, cx + 3, cy + 6)
+        }
+
+        // Hole — dark pit
+        if (tile.type === TileType.Hole) {
+          const cx = Phaser.Math.Linear(tL.x, tR.x, 0.5)
+          const cy = (y0 + y1) / 2
+          this.tileGraphics.fillStyle(0x0a0020, 1)
+          this.tileGraphics.fillCircle(cx, cy, 8)
+          this.tileGraphics.lineStyle(1, 0x000000, 1)
+          this.tileGraphics.strokeCircle(cx, cy, 8)
         }
       }
     }
 
+    // Grid lines — perspective-aware
     this.gridLines.lineStyle(1, 0x333333, 0.3)
     for (let r = 0; r <= this.rows; r++) {
-      const y = GRID_OFFSET_Y + r * TILE_SIZE
-      this.gridLines.lineBetween(GRID_OFFSET_X, y, GRID_OFFSET_X + this.cols * TILE_SIZE, y)
+      const y = this.offsetY + r * TILE_SIZE
+      this.gridLines.lineBetween(this.rowLeftX(r), y, this.rowRightX(r), y)
     }
     for (let c = 0; c <= this.cols; c++) {
-      const x = GRID_OFFSET_X + c * TILE_SIZE
-      this.gridLines.lineBetween(x, GRID_OFFSET_Y, x, GRID_OFFSET_Y + this.rows * TILE_SIZE)
+      const x0 = this.tileLeftX(0, c)
+      const x1 = this.tileLeftX(this.rows, c)
+      this.gridLines.lineBetween(x0, this.offsetY, x1, this.offsetY + this.rows * TILE_SIZE)
     }
   }
 
@@ -211,5 +375,16 @@ export class Grid {
     this.tileGraphics.destroy()
     this.gridLines.destroy()
     this.labelTexts.forEach(t => t.destroy())
+  }
+
+  setPathSystem(pathSystem: PathSystem): void {
+    this.pathSystem = pathSystem
+  }
+
+  getFlowDirection(pos: Position): FlowDirection {
+    if (this.pathSystem) {
+      return this.pathSystem.getFlowDirection(pos)
+    }
+    return null
   }
 }

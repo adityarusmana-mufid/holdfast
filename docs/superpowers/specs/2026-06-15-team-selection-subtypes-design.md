@@ -12,13 +12,38 @@ Arknights' strategic depth comes from **team composition** — picking the right
 
 ---
 
-## 2. Constraints
+## 2. Design Simplification: One Unit Per Sub-Class
+
+### Full Design (for future reference)
+
+In the full system (closer to Arknights), units have a two-tier hierarchy:
+- **Class (archetype):** Broad role — Vanguard, Guard, Defender, Sniper, Caster, Medic, Supporter, Specialist
+- **Sub-class (subtype):** Specific playstyle within a class — e.g., the Guard class includes Fighter, Arts Fighter, Swordmaster, Lord, etc.
+
+Multiple distinct units can share the same sub-class. For example, you could have two different Swordmasters in your squad — they'd have the same sub-class mechanics but different stats/colors/names.
+
+### v1 Simplification (current)
+
+**Holdfast v1 has exactly one unit per sub-class.** This means:
+- There are 26 sub-classes implemented, each with one unit
+- Your squad picks 12 from these 26
+- It *looks* like you can only bring one unit of each sub-class — but that's only because there's only one option per sub-class
+- There are no duplicate units of the same sub-class to choose from
+
+This is a **conscious development simplification** — building a roster of distinct units (one per sub-class) is easier and faster than building multiple variants within each sub-class. It still gives players meaningful composition choices (12 from 26) without requiring the full unit variety system.
+
+### When to Expand
+When Holdfast 2 (or a future content update) adds more units, we'd add additional entries per sub-class — e.g., a second Fighter with different ATK/HP balance, a second Marksman with a different innate. The team selection screen would then show multiple options under each sub-class.
+
+---
+
+## 3. Constraints
 
 | Constraint | Detail |
 |---|---|
 | No persistence | All progress is session-only or save-file |
 | No skills/traits/talents | Deferred to future; subtype identity comes from stats/range/block/innate mechanics |
-| No duplicate subtypes | Team can't have 2 of the same subtype |
+| No duplicate subtypes | Team can't have 2 of the same subtype (trivially true — one per subtype exists) |
 | Deployment limit | Cap on active units during battle (6-8 default, configurable per level) |
 | Retreat | Half DP refund, frees a deploy slot |
 | One unit per tile | Deployment collision enforcement |
@@ -26,7 +51,7 @@ Arknights' strategic depth comes from **team composition** — picking the right
 
 ---
 
-## 3. Team Selection Screen
+## 4. Team Selection Screen
 
 ### Layout (Arknights-inspired)
 
@@ -67,9 +92,9 @@ Arknights' strategic depth comes from **team composition** — picking the right
 
 ---
 
-## 4. The 12 Subtypes (v1 Roster)
+## 5. The 12 Subtypes (v1 Roster)
 
-Each subtype is **one unique unit** in the roster. No duplicates. All 12 belong to the 4 archetypes (Vanguard/Guard/Defender = ground, Sniper/Caster/Supporter/Medic = ranged).
+Each subtype is **one unique unit** in the roster. No duplicates. All subtypes belong to the 7 classes (Vanguard, Guard, Defender = ground; Sniper, Caster, Supporter, Medic = ranged).
 
 ### Ground Units (route-deployable)
 
@@ -101,7 +126,7 @@ Each subtype is **one unique unit** in the roster. No duplicates. All 12 belong 
 
 ---
 
-## 5. Deferred Features (Documented for Future)
+## 6. Deferred Features (Documented for Future)
 
 ### Skills
 
@@ -141,7 +166,7 @@ Each operator in Arknights has 1-3 skills. For future v2, these would add tactic
 
 ---
 
-## 6. Implementation Priority
+## 7. Implementation Priority
 
 ### P0 — Must have for v1 launch
 - [ ] 12-subtype unit configs (update `src/config/units.ts`)
@@ -163,7 +188,7 @@ Each operator in Arknights has 1-3 skills. For future v2, these would add tactic
 
 ---
 
-## 7. Data Flow
+## 8. Data Flow
 
 ```
 TeamSelectScene                     GameScene
@@ -194,7 +219,7 @@ TeamSelectScene                     GameScene
 
 ---
 
-## 8. Impact on Existing Systems
+## 9. Impact on Existing Systems
 
 ### `src/config/units.ts`
 - Expand from 6 to 12 UnitConfig entries
@@ -217,7 +242,7 @@ TeamSelectScene                     GameScene
 
 ---
 
-## 9. Deferred Scope (Explicitly Not in v1)
+## 10. Deferred Scope (Explicitly Not in v1)
 
 | Feature | Why deferred |
 |---|---|

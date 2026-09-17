@@ -13,6 +13,10 @@
 - Testing: Vitest (planned)
 - Deployment: Static web/itch.io
 
+## Design Philosophy
+
+Holdfast is a **premium, mission-based tactical tower defense** inspired by Arknights' combat — not a live-service game with gacha progression. All units are available from the start; no rarity, no pulls, no banners, no grinding. Satisfaction comes from mastering mechanics, not accumulating numeric upgrades. Full spec: `docs/superpowers/specs/2026-06-30-design-philosophy.md`
+
 ## Key Design Decisions
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
@@ -87,6 +91,10 @@ Holdfast 1 is self-contained — no accounts, no collection, no base. Just 3 cha
 - **itch.io AI disclosure** — code is AI-written, must tag "Code" on publish. Art is procedural, not AI-generated.
 - **No persistent/account storage** in Holdfast 1 — all progress is session-only or save-file.
 
+## Skills (project-specific)
+- `designing-holdfast-levels` — Use when creating or editing level JSONs. Covers Arknights-inspired structure, tile placement, enemy escalation, wave pacing, validation. Saved in `.opencode/skills/designing-holdfast-levels/`.
+- `phaser-patterns` — Use when creating, editing, or reviewing ANY Phaser scene or component. Its primary function is structured scene layout: detecting overlapping/squished elements, verifying visual hierarchy, enforcing minimum gaps and touch targets. Always invoke before writing new scene code or reviewing existing scenes.
+
 ## Reference Sources
 Arknights game mechanic references documented in `.opencode/explore/2026-06-12-design-decisions.md`:
 - Primary: `https://arknights.wiki.gg/` (official fansite wiki)
@@ -94,3 +102,27 @@ Arknights game mechanic references documented in `.opencode/explore/2026-06-12-d
 
 ## Coverage Threshold
 - Minimum 80% line coverage enforced in CI
+
+## Vision / Screenshot Analysis
+
+| Approach | Model | Cost | Use Case |
+|----------|-------|------|----------|
+| `@vision` subagent | combo-ngirit (budget) | 9router tokens (1×) | One-off pixel analysis |
+| `@vision` override | combo-qwen | 9router tokens (2-3×) | Needs more detail |
+| `vision_describe` MCP | Gemini API | **Free** (1500/day) | Frequent analysis |
+
+**Screenshot capture:** `scripts/screenshot.mjs` (Playwright, captures game at localhost:3000)
+
+Full guide: `.opencode/vision-setup.md`
+
+### Token Economy
+- The subagent auto-reports estimated output tokens: `~{N} output tokens used`
+- Default to **MCP** (free) over `@vision` when possible
+- Override model with: `@vision (use combo-qwen) Read ...`
+
+### Quick Workflow
+```bash
+node scripts/screenshot.mjs                    # capture
+@vision Read /tmp/opencode/game-screenshot.png # analyze (budget)
+vision_describe("/tmp/opencode/game-screenshot.png")  # analyze (free)
+```

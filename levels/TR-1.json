@@ -82,5 +82,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Scout cars deal light damage but it adds up. Deploy a Defender on the route to block them.", "Your Defender cannot heal itself. Place a Mechanic on a nearby white ranged tile to keep it repaired."]
+  "guideText": ["Scout cars deal light damage, but it adds up. Deploy a Protector on the route to block them.", "Your Protector cannot repair itself. Place a Medic on a nearby white ranged tile to keep it repaired."]
 }

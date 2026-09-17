@@ -244,7 +244,7 @@
   "deploymentLimit": 8,
   "lives": 15,
   "guideText": [
-    "Some units apply debuffs to slow hostiles. Decel Binders reduce enemy speed on hit, buying your damage dealers more time. Place one on a ranged tile facing the route.",
+    "Some units slow hostiles. Decel Binders reduce enemy speed on hit, buying your damage dealers more time. Place one on a ranged tile facing the route.",
     "Slowed enemies take longer to reach the goal, giving your Snipers and Casters more shots. Combine a Decel Binder with a high-DPS unit for maximum effect."
   ]
 }

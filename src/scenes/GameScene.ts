@@ -17,6 +17,9 @@ import { saveCompletion } from '../shared/SaveData'
 import { TutorialAction, TutorialSystem } from '../systems/TutorialSystem'
 import { TUTORIAL_OBJECTIVES } from '../config/tutorialObjectives'
 
+const INSPECT_CONTENT_TOP = 54
+const INSPECT_CONTENT_BOTTOM = 12
+
 export class GameScene extends Phaser.Scene {
   private grid!: Grid
   private depSystem!: DeploymentSystem
@@ -57,7 +60,13 @@ export class GameScene extends Phaser.Scene {
   private decisionMode: boolean = false
   private inspectingUnit: DeployedUnit | null = null
   private inspectPanel!: Phaser.GameObjects.Container
+  private inspectContent!: Phaser.GameObjects.Container
   private inspectPanelTexts!: Phaser.GameObjects.Text[]
+  private inspectMask!: Phaser.Display.Masks.GeometryMask
+  private inspectScrollY = 0
+  private inspectScrollMax = 0
+  private inspectDragAnchor = 0
+  private inspectLayoutSignature = ''
   private inspectActionSkill!: Phaser.GameObjects.Container
   private inspectActionRetreat!: Phaser.GameObjects.Container
   private facingCancelBtn!: Phaser.GameObjects.Container
@@ -1166,6 +1175,7 @@ export class GameScene extends Phaser.Scene {
     bg.fillRect(0, 0, PANEL_W, H)
     bg.lineStyle(1, 0x343a46, 0.6)
     bg.strokeRect(0, 0, PANEL_W, H)
+    bg.setInteractive(new Phaser.Geom.Rectangle(0, 0, PANEL_W, H), Phaser.Geom.Rectangle.Contains)
     this.inspectPanel.add(bg)
 
     const closeBtn = this.add.text(PANEL_W - 10, 6, '\u2715', {
@@ -1181,27 +1191,38 @@ export class GameScene extends Phaser.Scene {
     const ff = '"Share Tech Mono", "Roboto Mono", monospace'
     const wrapW = PANEL_W - 16
 
+    this.inspectContent = this.add.container(0, INSPECT_CONTENT_TOP)
+    this.inspectPanel.add(this.inspectContent)
+
+    const maskShape = this.make.graphics()
+    maskShape.fillStyle(0xffffff)
+    maskShape.fillRect(0, INSPECT_CONTENT_TOP, PANEL_W, H - INSPECT_CONTENT_TOP - INSPECT_CONTENT_BOTTOM)
+    maskShape.setVisible(false)
+    this.inspectMask = maskShape.createGeometryMask()
+    this.inspectContent.setMask(this.inspectMask)
+
     const lines: Phaser.GameObjects.Text[] = []
-    const baseY = 66
-    const lineH = 22
     for (let i = 0; i < 10; i++) {
-      const t = this.add.text(8, baseY + i * lineH, '', {
+      const t = this.add.text(8, 0, '', {
         fontSize: fs, fontFamily: ff, color: '#9aa4b8',
         wordWrap: { width: wrapW },
       })
-      this.inspectPanel.add(t)
+      this.inspectContent.add(t)
       lines.push(t)
     }
     this.inspectPanelTexts = lines
+    this.bindInspectScroll()
   }
 
   private showInspectPanel(unit: DeployedUnit): void {
     this.ensurePanelVisible()
+    this.setInspectScroll(0)
     this.populateInspectPanel(unit)
   }
 
   private showCardPanel(unit: UnitConfig, squadIndex: number): void {
     this.ensurePanelVisible()
+    this.setInspectScroll(0)
     const lines = this.inspectPanelTexts
     const cWhite = '#f0f2f5'
     const cDim = '#9aa4b8'
@@ -1248,6 +1269,7 @@ export class GameScene extends Phaser.Scene {
       lines[7].setText('')
       lines[8].setText('')
     }
+    this.layoutInspectPanel()
   }
 
   private ensurePanelVisible(): void {
@@ -1267,7 +1289,7 @@ export class GameScene extends Phaser.Scene {
     this.tweens.killTweensOf(this.inspectPanel)
     this.tweens.add({
       targets: this.inspectPanel,
-      x: -210,
+      x: -PANEL_W,
       duration: 120,
       ease: 'Sine.easeIn',
     })
@@ -1380,6 +1402,60 @@ export class GameScene extends Phaser.Scene {
       lines[8].setText('')
       lines[9].setText('')
     }
+    this.layoutInspectPanel()
+  }
+
+  private layoutInspectPanel(): void {
+    const signature = this.inspectPanelTexts.map(line => `${line.text.length}:${line.height}`).join('|')
+    if (signature === this.inspectLayoutSignature) return
+    this.inspectLayoutSignature = signature
+
+    let y = 0
+    for (let i = 0; i < this.inspectPanelTexts.length; i++) {
+      const line = this.inspectPanelTexts[i]
+      const hasText = line.text.length > 0
+      line.setVisible(hasText)
+      if (!hasText) continue
+      line.setPosition(8, y)
+      const gap = i === 0 || i === 5 ? 12 : i === 6 ? 4 : 6
+      y += line.height + gap
+    }
+    const viewportH = this.getInspectViewportHeight()
+    this.inspectScrollMax = Math.max(0, y - viewportH)
+    this.setInspectScroll(this.inspectScrollY)
+  }
+
+  private getInspectViewportHeight(): number {
+    return this.scale.height - INSPECT_CONTENT_TOP - INSPECT_CONTENT_BOTTOM
+  }
+
+  private setInspectScroll(scrollY: number): void {
+    this.inspectScrollY = Phaser.Math.Clamp(scrollY, 0, this.inspectScrollMax)
+    this.inspectContent?.setY(INSPECT_CONTENT_TOP - this.inspectScrollY)
+  }
+
+  private bindInspectScroll(): void {
+    this.input.on('wheel', (pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
+      if (!this.isInspectContentPointer(pointer)) return
+      this.setInspectScroll(this.inspectScrollY + dy * 0.8)
+    })
+
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!this.isInspectContentPointer(pointer)) return
+      this.inspectDragAnchor = this.inspectScrollY
+    })
+
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (!pointer.isDown || pointer.downX >= PANEL_W || this.inspectPanel.x < -PANEL_W / 2) return
+      this.setInspectScroll(this.inspectDragAnchor - (pointer.y - pointer.downY))
+    })
+  }
+
+  private isInspectContentPointer(pointer: Phaser.Input.Pointer): boolean {
+    return this.inspectPanel.x >= -PANEL_W / 2 &&
+      pointer.x < PANEL_W &&
+      pointer.y >= INSPECT_CONTENT_TOP &&
+      pointer.y <= this.scale.height - INSPECT_CONTENT_BOTTOM
   }
 
   private buildInspectActionIcons(): void {

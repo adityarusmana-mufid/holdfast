@@ -1,10 +1,11 @@
 # Holdfast — Agent Documentation
 
 ## Development Commands
-- Lint: TBA
-- Typecheck: TBA
-- Test: TBA
-- Build: TBA
+- Dev server: `npm run dev`
+- Typecheck: `npx tsc --noEmit`
+- Test: `npm test`
+- Build: `npm run build`
+- Lint: not configured
 
 ## Tech Stack
 - Frontend: TypeScript
@@ -48,10 +49,11 @@ Types: `feat`, `fix`, `refactor`, `docs`, `chore`, `test`
 Keep descriptions under 72 chars, imperative mood.
 
 ### Workflow
-- Topic branches from `main`, merge via PR
-- Always work on topic branch, never `main`
-- After every phase: run verification gate (lint → typecheck → test → build)
-- Delete branches after merge
+- `main` is the stable, release-ready branch. Do not develop or commit on it.
+- `dev` is the only active development branch. Start and continue all work there.
+- Commit each coherent change immediately after its focused check; do not combine unrelated fixes.
+- Before promoting `dev` to `main`, run typecheck, tests, and build, then review the diff.
+- Promote only verified, intentional milestones from `dev` to `main`; keep both branches long-lived.
 
 ## Documentation
 Design specs in `docs/superpowers/specs/`.

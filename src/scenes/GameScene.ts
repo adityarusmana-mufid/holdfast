@@ -1171,21 +1171,22 @@ export class GameScene extends Phaser.Scene {
     this.inspectPanel.setX(-PANEL_W)
 
     const bg = this.add.graphics()
-    bg.fillStyle(0x1a1d23, 0.95)
+    bg.fillStyle(0xe8ecf0, 0.98)
     bg.fillRect(0, 0, PANEL_W, H)
-    bg.lineStyle(1, 0x343a46, 0.6)
+    bg.lineStyle(1, 0x0040ff, 0.18)
     bg.strokeRect(0, 0, PANEL_W, H)
     bg.setInteractive(new Phaser.Geom.Rectangle(0, 0, PANEL_W, H), Phaser.Geom.Rectangle.Contains)
     this.inspectPanel.add(bg)
 
-    const closeBtn = this.add.text(PANEL_W - 10, 6, '\u2715', {
-      fontSize: '14px', color: '#9aa4b8',
-      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-    }).setOrigin(1, 0)
-    closeBtn.setInteractive(new Phaser.Geom.Rectangle(-20, -6, 40, 30), Phaser.Geom.Rectangle.Contains)
-    if (closeBtn.input) closeBtn.input.cursor = 'pointer'
-    closeBtn.on('pointerdown', () => this.exitDecisionMode())
+    const closeBtn = makeNodeButton(this, PANEL_W - 78, 12, 'CLOSE', () => this.exitDecisionMode(), {
+      w: 64, h: 26, textSize: '10px',
+    })
     this.inspectPanel.add(closeBtn)
+
+    const headerLine = this.add.graphics()
+    headerLine.fillStyle(0x0040ff, 0.12)
+    headerLine.fillRect(8, 48, PANEL_W - 16, 1)
+    this.inspectPanel.add(headerLine)
 
     const fs = '13px'
     const ff = '"Share Tech Mono", "Roboto Mono", monospace'
@@ -1224,8 +1225,8 @@ export class GameScene extends Phaser.Scene {
     this.ensurePanelVisible()
     this.setInspectScroll(0)
     const lines = this.inspectPanelTexts
-    const cWhite = '#f0f2f5'
-    const cDim = '#9aa4b8'
+    const cWhite = COLORS.text.primary
+    const cDim = COLORS.text.secondary
 
     const dmIcon = unit.damageType === 'thermal' ? '~' : unit.damageType === 'true' ? '!!' : '>'
     const typeLabel = unit.type === 'ground' ? 'GND' : 'RNG'
@@ -1326,9 +1327,9 @@ export class GameScene extends Phaser.Scene {
     const cfg = unit.config
     const effStats = this.getEffectiveStats(unit)
     const lines = this.inspectPanelTexts
-    const cWhite = '#f0f2f5'
-    const cDim = '#9aa4b8'
-    const cHP = Math.round(unit.currentHp / unit.config.hp * 100) > 50 ? '#4caf50' : '#ff9100'
+    const cWhite = COLORS.text.primary
+    const cDim = COLORS.text.secondary
+    const cHP = Math.round(unit.currentHp / unit.config.hp * 100) > 50 ? COLORS.text.success : COLORS.text.warning
 
     const dmIcon = cfg.damageType === 'thermal' ? '~' : cfg.damageType === 'true' ? '!!' : '>'
     const typeLabel = cfg.type === 'ground' ? 'GND' : 'RNG'

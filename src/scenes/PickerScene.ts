@@ -1,37 +1,9 @@
 import Phaser from 'phaser'
-import { UnitConfig, UnitTrait } from '../types/index'
+import { UnitConfig } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
+import { TRAIT_DESCRIPTIONS } from '../config/traits'
 import { COLORS, FONTS, FONT_SIZE, BORDER_STYLE, CORNER_BRACKET_SIZE, TOP_BAR, SIDEBAR_W } from '../ui/Constants'
 import { makeNodeButton, drawGridBg, drawCornerBrackets, drawUnitCard, drawRangeMiniGrid, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, drawInstructorGuardIcon, drawFighterIcon, drawSwordmasterIcon, drawSolobladeIcon, drawReaperIcon, drawEarthshakerIcon, drawCrusherIcon, drawMedicIcon, drawMultiMedicIcon, drawIncantationMedicIcon, drawChainMedicIcon, drawMarksmanIcon, drawArtillerymanIcon, drawDeadeyeIcon, drawHeavyshooterIcon, drawSpreadshooterIcon, drawBesiegerIcon, drawFlingerIcon, drawPusherIcon, drawPullerIcon, drawExecutorIcon, drawAmbusherIcon, UNIT_CARD_W, UNIT_CARD_H } from '../ui/Components'
-
-const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
-  [UnitTrait.BlocksTwo]: 'Blocks up to 2 enemies',
-  [UnitTrait.BlocksThree]: 'Blocks up to 3 enemies',
-  [UnitTrait.DPOnKill]: 'Gains DP per kill',
-  [UnitTrait.FullRefundRetreat]: 'Full DP refund on retreat',
-  [UnitTrait.RangedAttack80]: '80% ATK when attacking at range',
-  [UnitTrait.RangedAttack120]: '120% ATK when attacking at range',
-  [UnitTrait.AoESplash]: 'AoE splash damage around target',
-  [UnitTrait.ArtsDamage]: 'Deals thermal damage',
-  [UnitTrait.FastAttack]: 'Fast attack speed',
-  [UnitTrait.DoubleHit]: 'Attacks twice per cycle',
-  [UnitTrait.HealOnAttack]: 'Heals self on attack',
-  [UnitTrait.HealPerHitCapped]: 'Heals on kill',
-  [UnitTrait.CannotBeHealed]: 'Cannot be healed by allies',
-  [UnitTrait.SlowOnHit]: 'Slows enemies on hit',
-  [UnitTrait.ChainJump]: 'Attack chains to nearby enemies',
-  [UnitTrait.DroneRamp]: 'Drone ramps up damage on the same target',
-  [UnitTrait.LinearAoE]: 'Hits all enemies in a line',
-  [UnitTrait.TargetingLowestDef]: 'Prioritizes lowest DEF target',
-  [UnitTrait.RangedWhenNotBlocking]: 'Uses ranged attack when not blocking',
-  [UnitTrait.RangedAoEWhenNotBlocking]: 'Ranged AoE when not blocking',
-  [UnitTrait.SpreadAttack]: 'Attacks all enemies in range',
-  [UnitTrait.AttackHealsAlly]: 'Attack also heals an ally',
-  [UnitTrait.HealAlly]: 'Heals a wounded ally',
-  [UnitTrait.AoEHoT]: 'Area health over time',
-  [UnitTrait.LongRangeAttack]: 'Extended attack range',
-  [UnitTrait.PassiveDPRegen]: 'Passive DP generation',
-}
 
 const FILTER_W = 52
 const CARD_W = UNIT_CARD_W

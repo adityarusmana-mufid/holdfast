@@ -9,8 +9,9 @@ import { EnemyManager } from '../systems/EnemyManager'
 import { CombatSystem } from '../systems/CombatSystem'
 import { HealingSystem } from '../systems/HealingSystem'
 import { UNIT_CONFIGS } from '../config/units'
+import { TRAIT_DESCRIPTIONS } from '../config/traits'
 import { COLORS, FONT_SIZE, SIDEBAR_W as PANEL_W } from '../ui/Constants'
-import { makeNodeButton, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, drawInstructorGuardIcon, drawFighterIcon, drawSwordmasterIcon, drawSolobladeIcon, drawReaperIcon, drawEarthshakerIcon, drawCrusherIcon, drawMedicIcon, drawMultiMedicIcon, drawIncantationMedicIcon, drawChainMedicIcon, drawMarksmanIcon, drawArtillerymanIcon, drawDeadeyeIcon, drawHeavyshooterIcon, drawSpreadshooterIcon, drawBesiegerIcon, drawFlingerIcon, drawPusherIcon, drawPullerIcon, drawExecutorIcon, drawAmbusherIcon } from '../ui/Components'
+import { makeNodeButton, drawRangeMiniGrid, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, drawInstructorGuardIcon, drawFighterIcon, drawSwordmasterIcon, drawSolobladeIcon, drawReaperIcon, drawEarthshakerIcon, drawCrusherIcon, drawMedicIcon, drawMultiMedicIcon, drawIncantationMedicIcon, drawChainMedicIcon, drawMarksmanIcon, drawArtillerymanIcon, drawDeadeyeIcon, drawHeavyshooterIcon, drawSpreadshooterIcon, drawBesiegerIcon, drawFlingerIcon, drawPusherIcon, drawPullerIcon, drawExecutorIcon, drawAmbusherIcon } from '../ui/Components'
 import { spawnProjectile, playSwing, showWindUp, flashDamage, spawnChainBolt, spawnSplashRing, spawnExpandRing, spawnBurstParticles, spawnBuffParticles, spawnSparkHit, spawnHealCross } from '../effects/CombatEffects'
 import { SkillSystem } from '../systems/SkillSystem'
 import { saveCompletion } from '../shared/SaveData'
@@ -61,12 +62,15 @@ export class GameScene extends Phaser.Scene {
   private inspectingUnit: DeployedUnit | null = null
   private inspectPanel!: Phaser.GameObjects.Container
   private inspectContent!: Phaser.GameObjects.Container
+  private inspectStaticContent!: Phaser.GameObjects.Container
   private inspectPanelTexts!: Phaser.GameObjects.Text[]
   private inspectMask!: Phaser.Display.Masks.GeometryMask
   private inspectScrollY = 0
   private inspectScrollMax = 0
   private inspectDragAnchor = 0
   private inspectLayoutSignature = ''
+  private inspectStaticHeight = 0
+  private inspectStaticUnitId = ''
   private inspectActionSkill!: Phaser.GameObjects.Container
   private inspectActionRetreat!: Phaser.GameObjects.Container
   private facingCancelBtn!: Phaser.GameObjects.Container
@@ -1165,6 +1169,9 @@ export class GameScene extends Phaser.Scene {
 
   private buildInspectPanel(): void {
     const H = this.scale.height
+    this.inspectStaticUnitId = ''
+    this.inspectStaticHeight = 0
+    this.inspectLayoutSignature = ''
 
     this.inspectPanel = this.add.container(0, 0)
     this.inspectPanel.setDepth(20)
@@ -1195,6 +1202,9 @@ export class GameScene extends Phaser.Scene {
     this.inspectContent = this.add.container(0, INSPECT_CONTENT_TOP)
     this.inspectPanel.add(this.inspectContent)
 
+    this.inspectStaticContent = this.add.container(0, 0)
+    this.inspectContent.add(this.inspectStaticContent)
+
     const maskShape = this.make.graphics()
     maskShape.fillStyle(0xffffff)
     maskShape.fillRect(0, INSPECT_CONTENT_TOP, PANEL_W, H - INSPECT_CONTENT_TOP - INSPECT_CONTENT_BOTTOM)
@@ -1218,12 +1228,14 @@ export class GameScene extends Phaser.Scene {
   private showInspectPanel(unit: DeployedUnit): void {
     this.ensurePanelVisible()
     this.setInspectScroll(0)
+    this.buildInspectStaticContent(unit.config)
     this.populateInspectPanel(unit)
   }
 
   private showCardPanel(unit: UnitConfig, squadIndex: number): void {
     this.ensurePanelVisible()
     this.setInspectScroll(0)
+    this.buildInspectStaticContent(unit)
     const lines = this.inspectPanelTexts
     const cWhite = COLORS.text.primary
     const cDim = COLORS.text.secondary
@@ -1265,10 +1277,12 @@ export class GameScene extends Phaser.Scene {
       lines[7].setFontStyle('bold')
       lines[8].setText(skill.description)
       lines[8].setColor(cDim)
+      lines[9].setText('')
     } else {
       lines[6].setText('')
       lines[7].setText('')
       lines[8].setText('')
+      lines[9].setText('')
     }
     this.layoutInspectPanel()
   }
@@ -1407,7 +1421,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private layoutInspectPanel(): void {
-    const signature = this.inspectPanelTexts.map(line => `${line.text.length}:${line.height}`).join('|')
+    const signature = `${this.inspectStaticUnitId}:${this.inspectStaticHeight}|${this.inspectPanelTexts.map(line => `${line.text.length}:${line.height}`).join('|')}`
     if (signature === this.inspectLayoutSignature) return
     this.inspectLayoutSignature = signature
 
@@ -1421,9 +1435,83 @@ export class GameScene extends Phaser.Scene {
       const gap = i === 0 || i === 5 ? 12 : i === 6 ? 4 : 6
       y += line.height + gap
     }
+    this.inspectStaticContent.setPosition(0, y)
+    y += this.inspectStaticHeight
     const viewportH = this.getInspectViewportHeight()
     this.inspectScrollMax = Math.max(0, y - viewportH)
     this.setInspectScroll(this.inspectScrollY)
+  }
+
+  private buildInspectStaticContent(unit: UnitConfig): void {
+    if (unit.id === this.inspectStaticUnitId) return
+
+    this.inspectStaticContent.removeAll(true)
+    this.inspectStaticUnitId = unit.id
+    let y = 0
+
+    const rangeHeader = this.add.text(8, y, 'RANGE', {
+      fontSize: '13px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    })
+    this.inspectStaticContent.add(rangeHeader)
+    y += 18
+
+    const rangeW = PANEL_W - 16
+    const rangeH = 112
+    const rangeBg = this.add.graphics()
+    rangeBg.fillStyle(0x4b5563, 1)
+    rangeBg.fillRect(8, y, rangeW, rangeH)
+    this.inspectStaticContent.add(rangeBg)
+
+    const rangeLabel = this.add.text(16, y + 4, 'ATTACK RANGE', {
+      fontSize: '10px', color: '#e8edf2', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    })
+    this.inspectStaticContent.add(rangeLabel)
+
+    const pattern = unit.altRangePattern ?? unit.rangePattern
+    let minRow = 0, maxRow = 0, minCol = 0, maxCol = 0
+    for (const [row, col] of pattern) {
+      minRow = Math.min(minRow, row)
+      maxRow = Math.max(maxRow, row)
+      minCol = Math.min(minCol, col)
+      maxCol = Math.max(maxCol, col)
+    }
+    const cols = maxCol - minCol + 1
+    const rows = maxRow - minRow + 1
+    const cellSize = 12
+    const gridX = 8 + Math.floor((rangeW - cols * cellSize) / 2)
+    const gridY = y + 20 + Math.floor((rangeH - 24 - rows * cellSize) / 2)
+    drawRangeMiniGrid(this, this.inspectStaticContent, pattern, gridX, gridY, {
+      facing: 'right', cellSize, theme: 'dark',
+    })
+    y += rangeH + 10
+
+    const traitsHeader = this.add.text(8, y, 'TRAITS', {
+      fontSize: '13px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    })
+    this.inspectStaticContent.add(traitsHeader)
+    y += 18
+
+    if (unit.traits.length === 0) {
+      const empty = this.add.text(12, y, '—', {
+        fontSize: '13px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      })
+      this.inspectStaticContent.add(empty)
+      y += empty.height + 6
+    } else {
+      for (const trait of unit.traits) {
+        const description = TRAIT_DESCRIPTIONS[trait.traitId] ?? trait.traitId
+        const extra = trait.value !== undefined ? ` (${trait.value})` : trait.duration !== undefined ? ` (${trait.duration}s)` : ''
+        const text = this.add.text(12, y, `• ${description}${extra}`, {
+          fontSize: '13px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+          wordWrap: { width: PANEL_W - 24 },
+        })
+        this.inspectStaticContent.add(text)
+        y += text.height + 6
+      }
+    }
+
+    this.inspectStaticHeight = y
+    this.inspectLayoutSignature = ''
   }
 
   private getInspectViewportHeight(): number {

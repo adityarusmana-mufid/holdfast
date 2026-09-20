@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
 import { COLORS, FONTS, FONT_SIZE, TOP_BAR } from '../ui/Constants'
-import { drawGridBg } from '../ui/Components'
+import { drawGridBg, drawCornerBrackets, makeNodeButton } from '../ui/Components'
 import { getLevelDef } from '../config/chapters'
 
 export class ResultScene extends Phaser.Scene {
@@ -42,6 +42,17 @@ export class ResultScene extends Phaser.Scene {
 
     this.cameras.main.flash(isVictory ? 300 : 600, isVictory ? 0 : 200, isVictory ? 200 : 0, isVictory ? 83 : 50)
 
+    const panelW = 520
+    const panelH = isVictory ? 310 : 260
+    const panelX = (W - panelW) / 2
+    const panelY = 72
+    const panel = this.add.graphics()
+    panel.fillStyle(0xf4f7fa, 0.96)
+    panel.fillRect(panelX, panelY, panelW, panelH)
+    panel.lineStyle(1, 0x0040ff, 0.18)
+    panel.strokeRect(panelX, panelY, panelW, panelH)
+    drawCornerBrackets(panel, panelX, panelY, panelW, panelH, 18, 0x0040ff, 0.42, 2)
+
     this.add.text(W / 2, TOP_BAR + 36, isVictory ? 'SYNC COMPLETE' : 'SYNC FAILED', {
       ...FONTS.h1,
       color: isVictory ? '#00c853' : '#d32f2f',
@@ -70,16 +81,8 @@ export class ResultScene extends Phaser.Scene {
       }).setOrigin(0.5, 0)
     })
 
-    this.add.text(W / 2, H - 60, 'Tap anywhere to return', {
-      ...FONTS.small, color: COLORS.text.dim,
-    }).setOrigin(0.5, 0)
-
-    const overlay = this.add.graphics()
-    overlay.fillStyle(0x000000, 0)
-    overlay.fillRect(0, 0, W, H)
-    overlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, W, H), Phaser.Geom.Rectangle.Contains)
-    overlay.on('pointerdown', () => {
+    makeNodeButton(this, W / 2 - 110, H - 100, 'RETURN TO LEVELS', () => {
       this.scene.start('LevelSelectScene', { chapterId: this.chapterId })
-    })
+    }, { w: 220, h: 44, textSize: FONT_SIZE.sm, role: 'primary' })
   }
 }

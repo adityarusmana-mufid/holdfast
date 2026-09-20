@@ -279,7 +279,7 @@ export class LevelSelectScene extends Phaser.Scene {
 
     const W = this.W
     const H = this.H
-    this.infoPanelW = Math.floor(W / 6)
+    this.infoPanelW = Math.min(360, Math.floor(W * 0.4))
     this.infoPanelPx = W - this.infoPanelW
     const pad = 14
 
@@ -365,19 +365,21 @@ export class LevelSelectScene extends Phaser.Scene {
 
     const btnW = this.infoPanelW - pad * 2
     const btnH = 40
+    const btnGap = 16
+    const halfBtnW = (btnW - btnGap) / 2
     const btnY = H - 60 - btnH
     const intelBtnX = pad
-    const enterBtnX = pad + btnW / 2 + 4
+    const enterBtnX = pad + halfBtnW + btnGap
 
     const intelBtn = makeNodeButton(this, intelBtnX, btnY, 'INTEL', () => {
       this.scene.launch('LevelPreviewScene', {
         levelId, chapterId: this.chapterId, levelData: data,
       })
-    }, { w: btnW / 2 - 4, h: btnH, textSize: FONT_SIZE.xs })
+    }, { w: halfBtnW, h: btnH, textSize: FONT_SIZE.xs })
     this.infoPanel.add(intelBtn)
 
     const enterBtn = makeNodeButton(this, enterBtnX, btnY, 'ENTER', () => this.enterLevel(levelId, data), {
-      w: btnW / 2 - 4, h: btnH, role: 'primary', textSize: FONT_SIZE.sm,
+      w: halfBtnW, h: btnH, role: 'primary', textSize: FONT_SIZE.sm,
     })
     this.infoPanel.add(enterBtn)
 

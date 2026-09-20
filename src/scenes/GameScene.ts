@@ -9,13 +9,17 @@ import { EnemyManager } from '../systems/EnemyManager'
 import { CombatSystem } from '../systems/CombatSystem'
 import { HealingSystem } from '../systems/HealingSystem'
 import { UNIT_CONFIGS } from '../config/units'
+import { TRAIT_DESCRIPTIONS } from '../config/traits'
 import { COLORS, FONT_SIZE, SIDEBAR_W as PANEL_W } from '../ui/Constants'
-import { makeNodeButton, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, drawInstructorGuardIcon, drawFighterIcon, drawSwordmasterIcon, drawSolobladeIcon, drawReaperIcon, drawEarthshakerIcon, drawCrusherIcon, drawMedicIcon, drawMultiMedicIcon, drawIncantationMedicIcon, drawChainMedicIcon, drawMarksmanIcon, drawArtillerymanIcon, drawDeadeyeIcon, drawHeavyshooterIcon, drawSpreadshooterIcon, drawBesiegerIcon, drawFlingerIcon, drawPusherIcon, drawPullerIcon, drawExecutorIcon, drawAmbusherIcon } from '../ui/Components'
+import { makeNodeButton, drawRangeMiniGrid, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, drawInstructorGuardIcon, drawFighterIcon, drawSwordmasterIcon, drawSolobladeIcon, drawReaperIcon, drawEarthshakerIcon, drawCrusherIcon, drawMedicIcon, drawMultiMedicIcon, drawIncantationMedicIcon, drawChainMedicIcon, drawMarksmanIcon, drawArtillerymanIcon, drawDeadeyeIcon, drawHeavyshooterIcon, drawSpreadshooterIcon, drawBesiegerIcon, drawFlingerIcon, drawPusherIcon, drawPullerIcon, drawExecutorIcon, drawAmbusherIcon } from '../ui/Components'
 import { spawnProjectile, playSwing, showWindUp, flashDamage, spawnChainBolt, spawnSplashRing, spawnExpandRing, spawnBurstParticles, spawnBuffParticles, spawnSparkHit, spawnHealCross } from '../effects/CombatEffects'
 import { SkillSystem } from '../systems/SkillSystem'
 import { saveCompletion } from '../shared/SaveData'
 import { TutorialAction, TutorialSystem } from '../systems/TutorialSystem'
 import { TUTORIAL_OBJECTIVES } from '../config/tutorialObjectives'
+
+const INSPECT_CONTENT_TOP = 54
+const INSPECT_CONTENT_BOTTOM = 12
 
 export class GameScene extends Phaser.Scene {
   private grid!: Grid
@@ -57,7 +61,16 @@ export class GameScene extends Phaser.Scene {
   private decisionMode: boolean = false
   private inspectingUnit: DeployedUnit | null = null
   private inspectPanel!: Phaser.GameObjects.Container
+  private inspectContent!: Phaser.GameObjects.Container
+  private inspectStaticContent!: Phaser.GameObjects.Container
   private inspectPanelTexts!: Phaser.GameObjects.Text[]
+  private inspectMask!: Phaser.Display.Masks.GeometryMask
+  private inspectScrollY = 0
+  private inspectScrollMax = 0
+  private inspectDragAnchor = 0
+  private inspectLayoutSignature = ''
+  private inspectStaticHeight = 0
+  private inspectStaticUnitId = ''
   private inspectActionSkill!: Phaser.GameObjects.Container
   private inspectActionRetreat!: Phaser.GameObjects.Container
   private facingCancelBtn!: Phaser.GameObjects.Container
@@ -1156,55 +1169,76 @@ export class GameScene extends Phaser.Scene {
 
   private buildInspectPanel(): void {
     const H = this.scale.height
+    this.inspectStaticUnitId = ''
+    this.inspectStaticHeight = 0
+    this.inspectLayoutSignature = ''
 
     this.inspectPanel = this.add.container(0, 0)
     this.inspectPanel.setDepth(20)
     this.inspectPanel.setX(-PANEL_W)
 
     const bg = this.add.graphics()
-    bg.fillStyle(0x1a1d23, 0.95)
+    bg.fillStyle(0xe8ecf0, 0.98)
     bg.fillRect(0, 0, PANEL_W, H)
-    bg.lineStyle(1, 0x343a46, 0.6)
+    bg.lineStyle(1, 0x0040ff, 0.18)
     bg.strokeRect(0, 0, PANEL_W, H)
+    bg.setInteractive(new Phaser.Geom.Rectangle(0, 0, PANEL_W, H), Phaser.Geom.Rectangle.Contains)
     this.inspectPanel.add(bg)
 
-    const closeBtn = this.add.text(PANEL_W - 10, 6, '\u2715', {
-      fontSize: '14px', color: '#9aa4b8',
-      fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
-    }).setOrigin(1, 0)
-    closeBtn.setInteractive(new Phaser.Geom.Rectangle(-20, -6, 40, 30), Phaser.Geom.Rectangle.Contains)
-    if (closeBtn.input) closeBtn.input.cursor = 'pointer'
-    closeBtn.on('pointerdown', () => this.exitDecisionMode())
+    const closeBtn = makeNodeButton(this, PANEL_W - 78, 12, 'CLOSE', () => this.exitDecisionMode(), {
+      w: 64, h: 26, textSize: '10px',
+    })
     this.inspectPanel.add(closeBtn)
+
+    const headerLine = this.add.graphics()
+    headerLine.fillStyle(0x0040ff, 0.12)
+    headerLine.fillRect(8, 48, PANEL_W - 16, 1)
+    this.inspectPanel.add(headerLine)
 
     const fs = '13px'
     const ff = '"Share Tech Mono", "Roboto Mono", monospace'
     const wrapW = PANEL_W - 16
 
+    this.inspectContent = this.add.container(0, INSPECT_CONTENT_TOP)
+    this.inspectPanel.add(this.inspectContent)
+
+    this.inspectStaticContent = this.add.container(0, 0)
+    this.inspectContent.add(this.inspectStaticContent)
+
+    const maskShape = this.make.graphics()
+    maskShape.fillStyle(0xffffff)
+    maskShape.fillRect(0, INSPECT_CONTENT_TOP, PANEL_W, H - INSPECT_CONTENT_TOP - INSPECT_CONTENT_BOTTOM)
+    maskShape.setVisible(false)
+    this.inspectMask = maskShape.createGeometryMask()
+    this.inspectContent.setMask(this.inspectMask)
+
     const lines: Phaser.GameObjects.Text[] = []
-    const baseY = 66
-    const lineH = 22
     for (let i = 0; i < 10; i++) {
-      const t = this.add.text(8, baseY + i * lineH, '', {
+      const t = this.add.text(8, 0, '', {
         fontSize: fs, fontFamily: ff, color: '#9aa4b8',
         wordWrap: { width: wrapW },
       })
-      this.inspectPanel.add(t)
+      this.inspectContent.add(t)
       lines.push(t)
     }
     this.inspectPanelTexts = lines
+    this.bindInspectScroll()
   }
 
   private showInspectPanel(unit: DeployedUnit): void {
     this.ensurePanelVisible()
+    this.setInspectScroll(0)
+    this.buildInspectStaticContent(unit.config)
     this.populateInspectPanel(unit)
   }
 
   private showCardPanel(unit: UnitConfig, squadIndex: number): void {
     this.ensurePanelVisible()
+    this.setInspectScroll(0)
+    this.buildInspectStaticContent(unit)
     const lines = this.inspectPanelTexts
-    const cWhite = '#f0f2f5'
-    const cDim = '#9aa4b8'
+    const cWhite = COLORS.text.primary
+    const cDim = COLORS.text.secondary
 
     const dmIcon = unit.damageType === 'thermal' ? '~' : unit.damageType === 'true' ? '!!' : '>'
     const typeLabel = unit.type === 'ground' ? 'GND' : 'RNG'
@@ -1243,11 +1277,14 @@ export class GameScene extends Phaser.Scene {
       lines[7].setFontStyle('bold')
       lines[8].setText(skill.description)
       lines[8].setColor(cDim)
+      lines[9].setText('')
     } else {
       lines[6].setText('')
       lines[7].setText('')
       lines[8].setText('')
+      lines[9].setText('')
     }
+    this.layoutInspectPanel()
   }
 
   private ensurePanelVisible(): void {
@@ -1267,7 +1304,7 @@ export class GameScene extends Phaser.Scene {
     this.tweens.killTweensOf(this.inspectPanel)
     this.tweens.add({
       targets: this.inspectPanel,
-      x: -210,
+      x: -PANEL_W,
       duration: 120,
       ease: 'Sine.easeIn',
     })
@@ -1304,9 +1341,9 @@ export class GameScene extends Phaser.Scene {
     const cfg = unit.config
     const effStats = this.getEffectiveStats(unit)
     const lines = this.inspectPanelTexts
-    const cWhite = '#f0f2f5'
-    const cDim = '#9aa4b8'
-    const cHP = Math.round(unit.currentHp / unit.config.hp * 100) > 50 ? '#4caf50' : '#ff9100'
+    const cWhite = COLORS.text.primary
+    const cDim = COLORS.text.secondary
+    const cHP = Math.round(unit.currentHp / unit.config.hp * 100) > 50 ? COLORS.text.success : COLORS.text.warning
 
     const dmIcon = cfg.damageType === 'thermal' ? '~' : cfg.damageType === 'true' ? '!!' : '>'
     const typeLabel = cfg.type === 'ground' ? 'GND' : 'RNG'
@@ -1380,6 +1417,134 @@ export class GameScene extends Phaser.Scene {
       lines[8].setText('')
       lines[9].setText('')
     }
+    this.layoutInspectPanel()
+  }
+
+  private layoutInspectPanel(): void {
+    const signature = `${this.inspectStaticUnitId}:${this.inspectStaticHeight}|${this.inspectPanelTexts.map(line => `${line.text.length}:${line.height}`).join('|')}`
+    if (signature === this.inspectLayoutSignature) return
+    this.inspectLayoutSignature = signature
+
+    let y = 0
+    for (let i = 0; i < this.inspectPanelTexts.length; i++) {
+      const line = this.inspectPanelTexts[i]
+      const hasText = line.text.length > 0
+      line.setVisible(hasText)
+      if (!hasText) continue
+      line.setPosition(8, y)
+      const gap = i === 0 || i === 5 ? 12 : i === 6 ? 4 : 6
+      y += line.height + gap
+    }
+    this.inspectStaticContent.setPosition(0, y)
+    y += this.inspectStaticHeight
+    const viewportH = this.getInspectViewportHeight()
+    this.inspectScrollMax = Math.max(0, y - viewportH)
+    this.setInspectScroll(this.inspectScrollY)
+  }
+
+  private buildInspectStaticContent(unit: UnitConfig): void {
+    if (unit.id === this.inspectStaticUnitId) return
+
+    this.inspectStaticContent.removeAll(true)
+    this.inspectStaticUnitId = unit.id
+    let y = 0
+
+    const rangeHeader = this.add.text(8, y, 'RANGE', {
+      fontSize: '13px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    })
+    this.inspectStaticContent.add(rangeHeader)
+    y += 18
+
+    const rangeW = PANEL_W - 16
+    const rangeH = 112
+    const rangeBg = this.add.graphics()
+    rangeBg.fillStyle(0x4b5563, 1)
+    rangeBg.fillRect(8, y, rangeW, rangeH)
+    this.inspectStaticContent.add(rangeBg)
+
+    const rangeLabel = this.add.text(16, y + 4, 'ATTACK RANGE', {
+      fontSize: '10px', color: '#e8edf2', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    })
+    this.inspectStaticContent.add(rangeLabel)
+
+    const pattern = unit.altRangePattern ?? unit.rangePattern
+    let minRow = 0, maxRow = 0, minCol = 0, maxCol = 0
+    for (const [row, col] of pattern) {
+      minRow = Math.min(minRow, row)
+      maxRow = Math.max(maxRow, row)
+      minCol = Math.min(minCol, col)
+      maxCol = Math.max(maxCol, col)
+    }
+    const cols = maxCol - minCol + 1
+    const rows = maxRow - minRow + 1
+    const cellSize = 12
+    const gridX = 8 + Math.floor((rangeW - cols * cellSize) / 2)
+    const gridY = y + 20 + Math.floor((rangeH - 24 - rows * cellSize) / 2)
+    drawRangeMiniGrid(this, this.inspectStaticContent, pattern, gridX, gridY, {
+      facing: 'right', cellSize, theme: 'dark',
+    })
+    y += rangeH + 10
+
+    const traitsHeader = this.add.text(8, y, 'TRAITS', {
+      fontSize: '13px', color: COLORS.text.secondary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+    })
+    this.inspectStaticContent.add(traitsHeader)
+    y += 18
+
+    if (unit.traits.length === 0) {
+      const empty = this.add.text(12, y, '—', {
+        fontSize: '13px', color: COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+      })
+      this.inspectStaticContent.add(empty)
+      y += empty.height + 6
+    } else {
+      for (const trait of unit.traits) {
+        const description = TRAIT_DESCRIPTIONS[trait.traitId] ?? trait.traitId
+        const extra = trait.value !== undefined ? ` (${trait.value})` : trait.duration !== undefined ? ` (${trait.duration}s)` : ''
+        const text = this.add.text(12, y, `• ${description}${extra}`, {
+          fontSize: '13px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace',
+          wordWrap: { width: PANEL_W - 24 },
+        })
+        this.inspectStaticContent.add(text)
+        y += text.height + 6
+      }
+    }
+
+    this.inspectStaticHeight = y
+    this.inspectLayoutSignature = ''
+  }
+
+  private getInspectViewportHeight(): number {
+    return this.scale.height - INSPECT_CONTENT_TOP - INSPECT_CONTENT_BOTTOM
+  }
+
+  private setInspectScroll(scrollY: number): void {
+    this.inspectScrollY = Phaser.Math.Clamp(scrollY, 0, this.inspectScrollMax)
+    this.inspectContent?.setY(INSPECT_CONTENT_TOP - this.inspectScrollY)
+  }
+
+  private bindInspectScroll(): void {
+    this.input.on('wheel', (pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
+      if (!this.isInspectContentPointer(pointer)) return
+      this.setInspectScroll(this.inspectScrollY + dy * 0.8)
+    })
+
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!this.isInspectContentPointer(pointer)) return
+      this.inspectDragAnchor = this.inspectScrollY
+    })
+
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (!pointer.isDown || pointer.downX >= PANEL_W || this.inspectPanel.x < -PANEL_W / 2) return
+      this.setInspectScroll(this.inspectDragAnchor - (pointer.y - pointer.downY))
+    })
+  }
+
+  private isInspectContentPointer(pointer: Phaser.Input.Pointer): boolean {
+    return this.inspectPanel.x >= -PANEL_W / 2 &&
+      pointer.x < PANEL_W &&
+      pointer.y >= INSPECT_CONTENT_TOP &&
+      pointer.y <= this.scale.height - INSPECT_CONTENT_BOTTOM
   }
 
   private buildInspectActionIcons(): void {

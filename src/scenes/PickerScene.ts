@@ -1,42 +1,17 @@
 import Phaser from 'phaser'
-import { UnitConfig, UnitTrait } from '../types/index'
+import { UnitConfig } from '../types/index'
 import { UNIT_CONFIGS } from '../config/units'
+import { TRAIT_DESCRIPTIONS } from '../config/traits'
 import { COLORS, FONTS, FONT_SIZE, BORDER_STYLE, CORNER_BRACKET_SIZE, TOP_BAR, SIDEBAR_W } from '../ui/Constants'
 import { makeNodeButton, drawGridBg, drawCornerBrackets, drawUnitCard, drawRangeMiniGrid, drawCoreCasterIcon, drawSplashCasterIcon, drawBlastCasterIcon, drawChainCasterIcon, drawMechAccordCasterIcon, drawProtectorIcon, drawGuardianIcon, drawJuggernautIcon, drawFortressIcon, drawArtsProtectorIcon, drawSentryProtectorIcon, drawPioneerIcon, drawChargerIcon, drawCenturionGuardIcon, drawLordGuardIcon, drawArtsFighterIcon, drawInstructorGuardIcon, drawFighterIcon, drawSwordmasterIcon, drawSolobladeIcon, drawReaperIcon, drawEarthshakerIcon, drawCrusherIcon, drawMedicIcon, drawMultiMedicIcon, drawIncantationMedicIcon, drawChainMedicIcon, drawMarksmanIcon, drawArtillerymanIcon, drawDeadeyeIcon, drawHeavyshooterIcon, drawSpreadshooterIcon, drawBesiegerIcon, drawFlingerIcon, drawPusherIcon, drawPullerIcon, drawExecutorIcon, drawAmbusherIcon, UNIT_CARD_W, UNIT_CARD_H } from '../ui/Components'
-
-const TRAIT_DESCRIPTIONS: Partial<Record<UnitTrait, string>> = {
-  [UnitTrait.BlocksTwo]: 'Blocks up to 2 enemies',
-  [UnitTrait.BlocksThree]: 'Blocks up to 3 enemies',
-  [UnitTrait.DPOnKill]: 'Gains DP per kill',
-  [UnitTrait.FullRefundRetreat]: 'Full DP refund on retreat',
-  [UnitTrait.RangedAttack80]: '80% ATK when attacking at range',
-  [UnitTrait.RangedAttack120]: '120% ATK when attacking at range',
-  [UnitTrait.AoESplash]: 'AoE splash damage around target',
-  [UnitTrait.ArtsDamage]: 'Deals thermal damage',
-  [UnitTrait.FastAttack]: 'Fast attack speed',
-  [UnitTrait.DoubleHit]: 'Attacks twice per cycle',
-  [UnitTrait.HealOnAttack]: 'Heals self on attack',
-  [UnitTrait.HealPerHitCapped]: 'Heals on kill',
-  [UnitTrait.CannotBeHealed]: 'Cannot be healed by allies',
-  [UnitTrait.SlowOnHit]: 'Slows enemies on hit',
-  [UnitTrait.ChainJump]: 'Attack chains to nearby enemies',
-  [UnitTrait.DroneRamp]: 'Drone ramps up damage on the same target',
-  [UnitTrait.LinearAoE]: 'Hits all enemies in a line',
-  [UnitTrait.TargetingLowestDef]: 'Prioritizes lowest DEF target',
-  [UnitTrait.RangedWhenNotBlocking]: 'Uses ranged attack when not blocking',
-  [UnitTrait.RangedAoEWhenNotBlocking]: 'Ranged AoE when not blocking',
-  [UnitTrait.SpreadAttack]: 'Attacks all enemies in range',
-  [UnitTrait.AttackHealsAlly]: 'Attack also heals an ally',
-  [UnitTrait.HealAlly]: 'Heals a wounded ally',
-  [UnitTrait.AoEHoT]: 'Area health over time',
-  [UnitTrait.LongRangeAttack]: 'Extended attack range',
-  [UnitTrait.PassiveDPRegen]: 'Passive DP generation',
-}
 
 const FILTER_W = 52
 const CARD_W = UNIT_CARD_W
 const CARD_H = UNIT_CARD_H
 const CARD_GAP = 12
+const DETAIL_TOP = TOP_BAR + 8
+const DETAIL_FOOTER_GAP = 12
+const DETAIL_CONFIRM_H = 42
 const ARCHETYPE_ORDER = ['all', 'vanguard', 'guard', 'defender', 'sniper', 'caster', 'medic', 'supporter', 'specialist']
 const ARCHETYPE_COLORS: Record<string, number> = {
   all: 0x78909c,
@@ -68,6 +43,10 @@ export class PickerScene extends Phaser.Scene {
   private W = 1280
   private H = 720
   private filterBtns: { key: string; bg: Phaser.GameObjects.Graphics; label: Phaser.GameObjects.Text }[] = []
+  private detailMask!: Phaser.Display.Masks.GeometryMask
+  private detailScrollY = 0
+  private detailScrollMax = 0
+  private detailDragAnchor = 0
 
   constructor() {
     super({ key: 'PickerScene' })
@@ -96,7 +75,8 @@ export class PickerScene extends Phaser.Scene {
     sidebarBg.fillStyle(0xe8ecf0, 1)
     sidebarBg.fillRect(0, 0, SIDEBAR_W, this.H)
 
-    this.infoContainer = this.add.container(0, 0)
+    this.infoContainer = this.add.container(0, DETAIL_TOP)
+    this.createDetailMask()
 
     this.confirmBtn = this.add.container(-100, -100)
     this.confirmBtn.setVisible(false)
@@ -113,6 +93,7 @@ export class PickerScene extends Phaser.Scene {
     this.startY = TOP_BAR + 8
     this.buildFilterButtons()
     this.buildCardGrid()
+    this.bindDetailScroll()
 
     if (this.pendingUnit) {
       this.selectCard(this.pendingUnit)
@@ -135,18 +116,18 @@ export class PickerScene extends Phaser.Scene {
       const by = startY + i * (btnSize + gap)
       const color = ARCHETYPE_COLORS[key] ?? 0x78909c
 
-      const bg = this.add.graphics()
+      const bg = this.add.graphics().setPosition(fx, by)
       bg.fillStyle(key === this.activeFilter ? color : 0xffffff, key === this.activeFilter ? 0.9 : 0.5)
-      bg.fillRect(fx, by, btnSize, btnSize)
+      bg.fillRect(0, 0, btnSize, btnSize)
       bg.lineStyle(key === this.activeFilter ? 2 : 1, color, key === this.activeFilter ? 1 : 0.4)
-      bg.strokeRect(fx, by, btnSize, btnSize)
+      bg.strokeRect(0, 0, btnSize, btnSize)
 
       const label = key === 'all' ? 'ALL' : key.substring(0, 2).toUpperCase()
       const txt = this.add.text(fx + btnSize / 2, by + btnSize / 2, label, {
         fontSize: '13px', color: key === this.activeFilter ? '#ffffff' : COLORS.text.dim, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
       }).setOrigin(0.5)
 
-      bg.setInteractive(new Phaser.Geom.Rectangle(fx, by, btnSize, btnSize), Phaser.Geom.Rectangle.Contains)
+      bg.setInteractive(new Phaser.Geom.Rectangle(0, 0, btnSize, btnSize), Phaser.Geom.Rectangle.Contains)
       if (bg.input) bg.input.cursor = 'pointer'
       bg.on('pointerdown', () => {
         const newFilter = key === 'all' ? null : key
@@ -171,9 +152,9 @@ export class PickerScene extends Phaser.Scene {
       const color = ARCHETYPE_COLORS[fb.key] ?? 0x78909c
       fb.bg.clear()
       fb.bg.fillStyle(isActive ? color : 0xffffff, isActive ? 0.9 : 0.5)
-      fb.bg.fillRect(0, 0, 36, 36)
+      fb.bg.fillRect(0, 0, 44, 44)
       fb.bg.lineStyle(isActive ? 2 : 1, color, isActive ? 1 : 0.4)
-      fb.bg.strokeRect(0, 0, 36, 36)
+      fb.bg.strokeRect(0, 0, 44, 44)
       fb.label.setColor(isActive ? '#ffffff' : COLORS.text.dim)
     }
 
@@ -333,7 +314,8 @@ export class PickerScene extends Phaser.Scene {
     let dragStartScrollX = 0
     let dragDist = 0
 
-    this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
+    this.input.on('wheel', (pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
+      if (pointer.x < SIDEBAR_W || pointer.x > filterEnd) return
       this.cardScrollX = Phaser.Math.Clamp(this.cardScrollX - dy * 0.5, -this.cardScrollMax, 0)
       this.cardScrollContainer.x = this.startX + this.cardScrollX
     })
@@ -416,8 +398,9 @@ export class PickerScene extends Phaser.Scene {
 
   private showInfo(unit: UnitConfig): void {
     this.infoContainer.removeAll(true)
+    this.setDetailScroll(0)
     const px = 8
-    let py = TOP_BAR + 8
+    let py = 0
 
     const name = this.add.text(px, py, unit.subtypeLabel, {
       ...FONTS.h3, color: COLORS.text.primary,
@@ -432,7 +415,6 @@ export class PickerScene extends Phaser.Scene {
 
     py += 20
 
-    const dividerX = SIDEBAR_W / 2 + 2
     const panelGap = 6
     const panelW = (SIDEBAR_W - 16 - panelGap) / 2
     const statsX = 8
@@ -534,14 +516,15 @@ export class PickerScene extends Phaser.Scene {
       for (const t of unit.traits) {
         const desc = TRAIT_DESCRIPTIONS[t.traitId] ?? t.traitId
         const extra = t.value !== undefined ? ` (${t.value})` : t.duration !== undefined ? ` (${t.duration}s)` : ''
-        this.infoContainer.add(this.add.text(px + 4, py, `• ${desc}${extra}`, {
+        const traitText = this.add.text(px + 4, py, `• ${desc}${extra}`, {
           fontSize: '13px', color: COLORS.text.primary, fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', wordWrap: { width: SIDEBAR_W - 16 },
-        }))
-        py += 17
+        })
+        this.infoContainer.add(traitText)
+        py += traitText.height + 6
       }
     }
 
-    this.showSkills(unit, py + 8)
+    this.refreshDetailScroll(this.showSkills(unit, py + 8))
   }
 
   private showSkills(unit: UnitConfig, py: number): number {
@@ -639,6 +622,47 @@ export class PickerScene extends Phaser.Scene {
     const label = skillName ? `Deploy with ${skillName}` : `Confirm (${this.pickedUnit?.subtypeLabel ?? ''})`
     this.confirmBtn = makeNodeButton(this, 10, this.H - 48, label, () => this.confirmPick(), {
       w: SIDEBAR_W - 20, h: 34, textSize: FONT_SIZE.xs, role: 'primary',
+    })
+  }
+
+  private createDetailMask(): void {
+    const viewportH = this.getDetailViewportHeight()
+    const maskShape = this.make.graphics()
+    maskShape.fillStyle(0xffffff)
+    maskShape.fillRect(0, DETAIL_TOP, SIDEBAR_W, viewportH)
+    maskShape.setVisible(false)
+    this.detailMask = maskShape.createGeometryMask()
+    this.infoContainer.setMask(this.detailMask)
+  }
+
+  private getDetailViewportHeight(): number {
+    return this.H - DETAIL_TOP - DETAIL_CONFIRM_H - DETAIL_FOOTER_GAP
+  }
+
+  private refreshDetailScroll(contentHeight: number): void {
+    this.detailScrollMax = Math.max(0, contentHeight - this.getDetailViewportHeight())
+    this.setDetailScroll(this.detailScrollY)
+  }
+
+  private setDetailScroll(scrollY: number): void {
+    this.detailScrollY = Phaser.Math.Clamp(scrollY, 0, this.detailScrollMax)
+    this.infoContainer.setY(DETAIL_TOP - this.detailScrollY)
+  }
+
+  private bindDetailScroll(): void {
+    this.input.on('wheel', (pointer: Phaser.Input.Pointer, _gos: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
+      if (pointer.x >= SIDEBAR_W || pointer.y < DETAIL_TOP || pointer.y > DETAIL_TOP + this.getDetailViewportHeight()) return
+      this.setDetailScroll(this.detailScrollY + dy * 0.8)
+    })
+
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (pointer.x >= SIDEBAR_W || pointer.y < DETAIL_TOP || pointer.y > DETAIL_TOP + this.getDetailViewportHeight()) return
+      this.detailDragAnchor = this.detailScrollY
+    })
+
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (!pointer.isDown || pointer.downX >= SIDEBAR_W) return
+      this.setDetailScroll(this.detailDragAnchor - (pointer.y - pointer.downY))
     })
   }
 

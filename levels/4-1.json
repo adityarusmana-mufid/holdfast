@@ -206,41 +206,44 @@
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "soldier",
-          "count": 1,
-          "spawnInterval": 3
-        }
+        { "enemyType": "rusher_elite", "count": 3, "spawnInterval": 2.6 },
+        { "enemyType": "breacher", "count": 2, "spawnInterval": 3 }
       ],
       "preludeDuration": 10
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "soldier",
-          "count": 1,
-          "spawnInterval": 3
-        }
+        { "enemyType": "trooper_elite", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "phantom", "count": 2, "spawnInterval": 3.3 },
+        { "enemyType": "drone_elite", "count": 2, "spawnInterval": 2.6 }
       ],
       "preludeDuration": 9
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "soldier",
-          "count": 2,
-          "spawnInterval": 3
-        }
+        { "enemyType": "shielded", "count": 2, "spawnInterval": 3.6 },
+        { "enemyType": "repair", "count": 2, "spawnInterval": 3.2 },
+        { "enemyType": "marksman_elite", "count": 2, "spawnInterval": 3 }
       ],
       "preludeDuration": 8
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "heavy_elite", "count": 2, "spawnInterval": 3.8 },
+        { "enemyType": "gunship", "count": 1, "spawnInterval": 4 },
+        { "enemyType": "carrier", "count": 1, "spawnInterval": 4 }
+      ],
+      "preludeDuration": 7
     }
   ],
   "tutorial": false,
-  "startingDP": 25,
+  "startingDP": 17,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["Combined-arms assault begins immediately. Identify the unit that enables the rest of its wave—repair support, stealth, or a carrier—and remove that pressure before it multiplies."]
 }

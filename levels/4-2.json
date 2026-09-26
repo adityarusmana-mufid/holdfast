@@ -264,41 +264,46 @@
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 1,
-          "spawnInterval": 3
-        }
+        { "enemyType": "trooper_elite", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "phantom_elite", "count": 2, "spawnInterval": 3.5 }
       ],
       "preludeDuration": 10
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 2,
-          "spawnInterval": 3
-        }
+        { "enemyType": "breacher_elite", "count": 2, "spawnInterval": 3 },
+        { "enemyType": "gunship", "count": 2, "spawnInterval": 3.6 },
+        { "enemyType": "caster_elite", "count": 2, "spawnInterval": 3 }
       ],
       "preludeDuration": 9
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 2,
-          "spawnInterval": 3
-        }
+        { "enemyType": "heavy_elite", "count": 2, "spawnInterval": 3.8 },
+        { "enemyType": "repair_elite", "count": 2, "spawnInterval": 3.3 },
+        { "enemyType": "carrier", "count": 1, "spawnInterval": 4 },
+        { "enemyType": "drone_elite", "count": 3, "spawnInterval": 2.5 }
       ],
       "preludeDuration": 8
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "shielded_elite", "count": 2, "spawnInterval": 3.6 },
+        { "enemyType": "gunship_elite", "count": 1, "spawnInterval": 4 },
+        { "enemyType": "carrier_elite", "count": 1, "spawnInterval": 4 },
+        { "enemyType": "marksman_elite", "count": 3, "spawnInterval": 2.8 }
+      ],
+      "preludeDuration": 7
     }
   ],
   "tutorial": false,
-  "startingDP": 23,
+  "startingDP": 16,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["Elite support units turn ordinary columns into emergencies. Stealth, repair, carrier spawns, and armored aircraft cannot all be ignored; assign targeting priorities before the final wave arrives."]
 }

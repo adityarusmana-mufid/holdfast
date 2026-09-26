@@ -511,7 +511,7 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 3,
           "spawnInterval": 3
         }
@@ -522,12 +522,12 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 4,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
+          "enemyType": "heavy_elite",
           "count": 3,
           "spawnInterval": 2.6
         }
@@ -538,17 +538,17 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 4,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
+          "enemyType": "heavy_elite",
           "count": 3,
           "spawnInterval": 2.6
         },
         {
-          "enemyType": "caster",
+          "enemyType": "caster_elite",
           "count": 2,
           "spawnInterval": 2.2
         }
@@ -559,17 +559,17 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 5,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
+          "enemyType": "heavy_elite",
           "count": 3,
           "spawnInterval": 2.6
         },
         {
-          "enemyType": "caster",
+          "enemyType": "caster_elite",
           "count": 3,
           "spawnInterval": 2.2
         }
@@ -580,17 +580,17 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 5,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
+          "enemyType": "heavy_elite",
           "count": 4,
           "spawnInterval": 2.6
         },
         {
-          "enemyType": "caster",
+          "enemyType": "caster_elite",
           "count": 3,
           "spawnInterval": 2.2
         }
@@ -599,9 +599,10 @@
     }
   ],
   "tutorial": false,
-  "startingDP": 15,
+  "startingDP": 12,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["Elite artillery and armor attack together. A strong formation needs both a thermal answer for Tanks and enough repair coverage to keep its own blockers standing under indirect fire."]
 }

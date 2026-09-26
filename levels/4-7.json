@@ -261,7 +261,7 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 4,
           "spawnInterval": 3
         }
@@ -272,12 +272,12 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 4,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
+          "enemyType": "heavy_elite",
           "count": 3,
           "spawnInterval": 2.6
         }
@@ -288,17 +288,17 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 5,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
+          "enemyType": "heavy_elite",
           "count": 3,
           "spawnInterval": 2.6
         },
         {
-          "enemyType": "drone",
+          "enemyType": "drone_elite",
           "count": 3,
           "spawnInterval": 2.2
         }
@@ -309,22 +309,22 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 5,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
+          "enemyType": "heavy_elite",
           "count": 4,
           "spawnInterval": 2.6
         },
         {
-          "enemyType": "drone",
+          "enemyType": "drone_elite",
           "count": 3,
           "spawnInterval": 2.2
         },
         {
-          "enemyType": "caster",
+          "enemyType": "caster_elite",
           "count": 2,
           "spawnInterval": 1.7999999999999998
         }
@@ -335,22 +335,22 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
-          "count": 6,
+          "enemyType": "trooper_elite",
+          "count": 5,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
+          "enemyType": "heavy_elite",
           "count": 4,
           "spawnInterval": 2.6
         },
         {
-          "enemyType": "drone",
+          "enemyType": "drone_elite",
           "count": 3,
           "spawnInterval": 2.2
         },
         {
-          "enemyType": "caster",
+          "enemyType": "caster_elite",
           "count": 3,
           "spawnInterval": 1.7999999999999998
         }
@@ -361,33 +361,44 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
-          "count": 6,
+          "enemyType": "shielded_elite",
+          "count": 2,
+          "spawnInterval": 3.6
+        },
+        {
+          "enemyType": "repair_elite",
+          "count": 2,
+          "spawnInterval": 3.3
+        },
+        {
+          "enemyType": "carrier_elite",
+          "count": 1,
+          "spawnInterval": 4
+        },
+        {
+          "enemyType": "gunship_elite",
+          "count": 1,
+          "spawnInterval": 4
+        },
+        {
+          "enemyType": "phantom_elite",
+          "count": 2,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
-          "count": 4,
-          "spawnInterval": 2.6
-        },
-        {
-          "enemyType": "drone",
-          "count": 3,
-          "spawnInterval": 2.2
-        },
-        {
-          "enemyType": "caster",
-          "count": 3,
-          "spawnInterval": 1.7999999999999998
+          "enemyType": "breacher_elite",
+          "count": 2,
+          "spawnInterval": 2.8
         }
       ],
       "preludeDuration": 5
     }
   ],
   "tutorial": false,
-  "startingDP": 13,
+  "startingDP": 11,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["This is a full combined-arms assault. Use each wave to prepare for the next: stabilize against elite armor, keep anti-air coverage available, and reserve an answer for the final support-heavy formation."]
 }

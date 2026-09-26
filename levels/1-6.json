@@ -222,67 +222,53 @@
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 2,
-          "spawnInterval": 3
-        }
+        { "enemyType": "trooper", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "rusher", "count": 3, "spawnInterval": 2.7 }
       ],
       "preludeDuration": 10
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 3,
-          "spawnInterval": 3
-        },
-        {
-          "enemyType": "drone",
-          "count": 2,
-          "spawnInterval": 2.6
-        }
+        { "enemyType": "trooper", "count": 4, "spawnInterval": 3 },
+        { "enemyType": "drone", "count": 3, "spawnInterval": 2.6 },
+        { "enemyType": "marksman", "count": 2, "spawnInterval": 3 }
       ],
       "preludeDuration": 9
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 3,
-          "spawnInterval": 3
-        },
-        {
-          "enemyType": "drone",
-          "count": 2,
-          "spawnInterval": 2.6
-        }
+        { "enemyType": "trooper_elite", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "drone_elite", "count": 3, "spawnInterval": 2.5 },
+        { "enemyType": "rusher_elite", "count": 3, "spawnInterval": 2.4 }
       ],
       "preludeDuration": 8
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 4,
-          "spawnInterval": 3
-        },
-        {
-          "enemyType": "drone",
-          "count": 3,
-          "spawnInterval": 2.6
-        }
+        { "enemyType": "trooper_elite", "count": 4, "spawnInterval": 2.8 },
+        { "enemyType": "drone_elite", "count": 4, "spawnInterval": 2.3 },
+        { "enemyType": "marksman_elite", "count": 3, "spawnInterval": 2.6 }
       ],
       "preludeDuration": 7
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "trooper_elite", "count": 5, "spawnInterval": 2.7 },
+        { "enemyType": "drone_elite", "count": 4, "spawnInterval": 2.3 },
+        { "enemyType": "rusher_elite", "count": 4, "spawnInterval": 2.3 }
+      ],
+      "preludeDuration": 6
     }
   ],
   "tutorial": false,
-  "startingDP": 19,
+  "startingDP": 17,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["Airspace and ground pressure now arrive together. This chapter finale checks whether your squad can hold fast targets, remove aerial threats, and protect its ranged line at once."]
 }

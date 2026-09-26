@@ -416,67 +416,53 @@
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 2,
-          "spawnInterval": 3
-        }
+        { "enemyType": "trooper", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "drone", "count": 2, "spawnInterval": 2.8 }
       ],
       "preludeDuration": 10
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 2,
-          "spawnInterval": 3
-        },
-        {
-          "enemyType": "drone",
-          "count": 2,
-          "spawnInterval": 2.6
-        }
+        { "enemyType": "trooper", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "drone", "count": 3, "spawnInterval": 2.6 },
+        { "enemyType": "rusher", "count": 3, "spawnInterval": 2.5 }
       ],
       "preludeDuration": 9
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 3,
-          "spawnInterval": 3
-        },
-        {
-          "enemyType": "drone",
-          "count": 2,
-          "spawnInterval": 2.6
-        }
+        { "enemyType": "trooper", "count": 4, "spawnInterval": 2.9 },
+        { "enemyType": "drone_elite", "count": 2, "spawnInterval": 2.8 },
+        { "enemyType": "marksman", "count": 3, "spawnInterval": 2.8 }
       ],
       "preludeDuration": 8
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 3,
-          "spawnInterval": 3
-        },
-        {
-          "enemyType": "drone",
-          "count": 2,
-          "spawnInterval": 2.6
-        }
+        { "enemyType": "trooper", "count": 4, "spawnInterval": 2.8 },
+        { "enemyType": "drone_elite", "count": 3, "spawnInterval": 2.6 },
+        { "enemyType": "rusher_elite", "count": 3, "spawnInterval": 2.4 }
       ],
       "preludeDuration": 7
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "trooper", "count": 5, "spawnInterval": 2.7 },
+        { "enemyType": "drone_elite", "count": 4, "spawnInterval": 2.4 },
+        { "enemyType": "marksman", "count": 4, "spawnInterval": 2.6 }
+      ],
+      "preludeDuration": 6
     }
   ],
   "tutorial": false,
-  "startingDP": 21,
+  "startingDP": 19,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["Elite Drones survive longer under fire. Build overlapping anti-air coverage while your frontline buys time against the APC column."]
 }

@@ -268,41 +268,44 @@
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 1,
-          "spawnInterval": 3
-        }
+        { "enemyType": "soldier", "count": 3, "spawnInterval": 2.6 },
+        { "enemyType": "marksman", "count": 2, "spawnInterval": 3.2 }
       ],
       "preludeDuration": 10
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 2,
-          "spawnInterval": 3
-        }
+        { "enemyType": "trooper", "count": 3, "spawnInterval": 3.2 },
+        { "enemyType": "marksman", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "drone", "count": 2, "spawnInterval": 2.7 }
       ],
       "preludeDuration": 9
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 2,
-          "spawnInterval": 3
-        }
+        { "enemyType": "trooper", "count": 4, "spawnInterval": 3 },
+        { "enemyType": "marksman", "count": 3, "spawnInterval": 2.8 },
+        { "enemyType": "rusher", "count": 3, "spawnInterval": 2.4 }
       ],
       "preludeDuration": 8
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "trooper", "count": 4, "spawnInterval": 2.8 },
+        { "enemyType": "marksman", "count": 4, "spawnInterval": 2.6 },
+        { "enemyType": "drone", "count": 4, "spawnInterval": 2.4 }
+      ],
+      "preludeDuration": 7
     }
   ],
   "tutorial": false,
-  "startingDP": 23,
+  "startingDP": 21,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["Marksmen threaten ranged units while Drones ignore blockers. Use separate answers for the lane and the airspace; do not let backline damage go unanswered."]
 }

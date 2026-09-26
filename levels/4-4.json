@@ -383,7 +383,8 @@
           "enemyType": "gunship",
           "count": 2,
           "spawnInterval": 2.6
-        }
+        },
+        { "enemyType": "drone_elite", "count": 3, "spawnInterval": 2.5 }
       ],
       "preludeDuration": 9
     },
@@ -399,7 +400,8 @@
           "enemyType": "repair_elite",
           "count": 2,
           "spawnInterval": 2.6
-        }
+        },
+        { "enemyType": "phantom_elite", "count": 3, "spawnInterval": 3 }
       ],
       "preludeDuration": 8
     },
@@ -415,7 +417,9 @@
           "enemyType": "carrier_elite",
           "count": 2,
           "spawnInterval": 2.6
-        }
+        },
+        { "enemyType": "gunship_elite", "count": 2, "spawnInterval": 3.6 },
+        { "enemyType": "rusher_elite", "count": 3, "spawnInterval": 2.4 }
       ],
       "preludeDuration": 7
     }

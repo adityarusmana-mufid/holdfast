@@ -325,7 +325,9 @@
           "spawnInterval": 2.6
         },
         { "enemyType": "carrier_elite", "count": 1, "spawnInterval": 4 },
-        { "enemyType": "gunship_elite", "count": 1, "spawnInterval": 4 }
+        { "enemyType": "gunship_elite", "count": 1, "spawnInterval": 4 },
+        { "enemyType": "phantom_elite", "count": 2, "spawnInterval": 3 },
+        { "enemyType": "breacher_elite", "count": 2, "spawnInterval": 2.8 }
       ],
       "preludeDuration": 7
     }

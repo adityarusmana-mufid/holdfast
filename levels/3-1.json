@@ -1,56 +1,90 @@
 {
   "name": "Hard Point",
   "cols": 10,
-  "rows": 3,
+  "rows": 5,
   "tiles": [
     [
-      { "row": 0, "col": 0, "type": "floor" },
-      { "row": 0, "col": 1, "type": "floor" },
-      { "row": 0, "col": 2, "type": "deploy_ranged" },
-      { "row": 0, "col": 3, "type": "deploy_ranged" },
-      { "row": 0, "col": 4, "type": "deploy_ranged" },
+      { "row": 0, "col": 0, "type": "spawn" },
+      { "row": 0, "col": 1, "type": "route" },
+      { "row": 0, "col": 2, "type": "route" },
+      { "row": 0, "col": 3, "type": "route" },
+      { "row": 0, "col": 4, "type": "route" },
       { "row": 0, "col": 5, "type": "deploy_ranged" },
       { "row": 0, "col": 6, "type": "deploy_ranged" },
-      { "row": 0, "col": 7, "type": "deploy_ranged" },
+      { "row": 0, "col": 7, "type": "floor" },
       { "row": 0, "col": 8, "type": "floor" },
       { "row": 0, "col": 9, "type": "floor" }
     ],
     [
-      { "row": 1, "col": 0, "type": "spawn" },
-      { "row": 1, "col": 1, "type": "route" },
-      { "row": 1, "col": 2, "type": "route" },
-      { "row": 1, "col": 3, "type": "route" },
+      { "row": 1, "col": 0, "type": "deploy_ranged" },
+      { "row": 1, "col": 1, "type": "deploy_ranged" },
+      { "row": 1, "col": 2, "type": "deploy_ranged" },
+      { "row": 1, "col": 3, "type": "floor" },
       { "row": 1, "col": 4, "type": "route" },
-      { "row": 1, "col": 5, "type": "route" },
-      { "row": 1, "col": 6, "type": "route" },
-      { "row": 1, "col": 7, "type": "route" },
-      { "row": 1, "col": 8, "type": "route" },
-      { "row": 1, "col": 9, "type": "goal" }
+      { "row": 1, "col": 5, "type": "deploy_ranged" },
+      { "row": 1, "col": 6, "type": "floor" },
+      { "row": 1, "col": 7, "type": "floor" },
+      { "row": 1, "col": 8, "type": "floor" },
+      { "row": 1, "col": 9, "type": "floor" }
     ],
     [
       { "row": 2, "col": 0, "type": "floor" },
-      { "row": 2, "col": 1, "type": "floor" },
-      { "row": 2, "col": 2, "type": "deploy_ranged" },
-      { "row": 2, "col": 3, "type": "deploy_ranged" },
-      { "row": 2, "col": 4, "type": "deploy_ranged" },
+      { "row": 2, "col": 1, "type": "route" },
+      { "row": 2, "col": 2, "type": "route" },
+      { "row": 2, "col": 3, "type": "route" },
+      { "row": 2, "col": 4, "type": "route" },
       { "row": 2, "col": 5, "type": "deploy_ranged" },
       { "row": 2, "col": 6, "type": "deploy_ranged" },
-      { "row": 2, "col": 7, "type": "deploy_ranged" },
+      { "row": 2, "col": 7, "type": "floor" },
       { "row": 2, "col": 8, "type": "floor" },
       { "row": 2, "col": 9, "type": "floor" }
+    ],
+    [
+      { "row": 3, "col": 0, "type": "deploy_ranged" },
+      { "row": 3, "col": 1, "type": "route" },
+      { "row": 3, "col": 2, "type": "deploy_ranged" },
+      { "row": 3, "col": 3, "type": "deploy_ranged" },
+      { "row": 3, "col": 4, "type": "floor" },
+      { "row": 3, "col": 5, "type": "floor" },
+      { "row": 3, "col": 6, "type": "deploy_ranged" },
+      { "row": 3, "col": 7, "type": "deploy_ranged" },
+      { "row": 3, "col": 8, "type": "deploy_ranged" },
+      { "row": 3, "col": 9, "type": "floor" }
+    ],
+    [
+      { "row": 4, "col": 0, "type": "floor" },
+      { "row": 4, "col": 1, "type": "route" },
+      { "row": 4, "col": 2, "type": "route" },
+      { "row": 4, "col": 3, "type": "route" },
+      { "row": 4, "col": 4, "type": "route" },
+      { "row": 4, "col": 5, "type": "route" },
+      { "row": 4, "col": 6, "type": "route" },
+      { "row": 4, "col": 7, "type": "route" },
+      { "row": 4, "col": 8, "type": "route" },
+      { "row": 4, "col": 9, "type": "goal" }
     ]
   ],
   "waypoints": [
-    { "row": 1, "col": 0 },
-    { "row": 1, "col": 1 },
-    { "row": 1, "col": 2 },
-    { "row": 1, "col": 3 },
+    { "row": 0, "col": 0 },
+    { "row": 0, "col": 1 },
+    { "row": 0, "col": 2 },
+    { "row": 0, "col": 3 },
+    { "row": 0, "col": 4 },
     { "row": 1, "col": 4 },
-    { "row": 1, "col": 5 },
-    { "row": 1, "col": 6 },
-    { "row": 1, "col": 7 },
-    { "row": 1, "col": 8 },
-    { "row": 1, "col": 9 }
+    { "row": 2, "col": 4 },
+    { "row": 2, "col": 3 },
+    { "row": 2, "col": 2 },
+    { "row": 2, "col": 1 },
+    { "row": 3, "col": 1 },
+    { "row": 4, "col": 1 },
+    { "row": 4, "col": 2 },
+    { "row": 4, "col": 3 },
+    { "row": 4, "col": 4 },
+    { "row": 4, "col": 5 },
+    { "row": 4, "col": 6 },
+    { "row": 4, "col": 7 },
+    { "row": 4, "col": 8 },
+    { "row": 4, "col": 9 }
   ],
   "waves": [
     {
@@ -94,5 +128,7 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Breacher vehicles explode when destroyed. Do not stack fragile units around your blocker; remove them early or use spacing so their demolition charge cannot collapse the line."]
+  "guideText": [
+    "Breacher vehicles explode when destroyed. Use the bends to separate a forward blocker from your final line, and do not stack fragile units around either chokepoint."
+  ]
 }

@@ -56,23 +56,34 @@
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 4, "spawnInterval": 2.5 }
+        { "enemyType": "soldier", "count": 3, "spawnInterval": 2.6 },
+        { "enemyType": "soldier_elite", "count": 2, "spawnInterval": 3.2 }
       ],
       "preludeDuration": 8
     },
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "trooper", "count": 2, "spawnInterval": 3.5 },
-        { "enemyType": "drone", "count": 2, "spawnInterval": 3 }
+        { "enemyType": "trooper", "count": 3, "spawnInterval": 3.3 },
+        { "enemyType": "soldier_elite", "count": 3, "spawnInterval": 2.8 },
+        { "enemyType": "drone", "count": 2, "spawnInterval": 2.8 }
       ],
       "preludeDuration": 6
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "trooper", "count": 4, "spawnInterval": 3 },
+        { "enemyType": "soldier_elite", "count": 4, "spawnInterval": 2.6 },
+        { "enemyType": "drone", "count": 3, "spawnInterval": 2.5 }
+      ],
+      "preludeDuration": 7
     }
   ],
-  "startingDP": 22,
+  "startingDP": 21,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Aerial scouts are joining the assault. They bypass ground units entirely. Deploy ranged units on white tiles to engage them."]
+  "guideText": ["Elite Scout Cars take longer to remove than standard scouts. Keep a blocker in place while your ranged line focuses the durable targets before the next wave arrives."]
 }

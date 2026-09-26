@@ -56,33 +56,43 @@
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 4, "spawnInterval": 2 },
-        { "enemyType": "trooper", "count": 2, "spawnInterval": 3 }
+        { "enemyType": "soldier", "count": 3, "spawnInterval": 2.5 },
+        { "enemyType": "shielded", "count": 1, "spawnInterval": 4 }
       ],
       "preludeDuration": 8
     },
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 3, "spawnInterval": 2 },
-        { "enemyType": "trooper", "count": 2, "spawnInterval": 3 },
-        { "enemyType": "drone", "count": 1, "spawnInterval": 3.5 }
+        { "enemyType": "trooper", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "shielded", "count": 2, "spawnInterval": 3.8 },
+        { "enemyType": "drone", "count": 2, "spawnInterval": 2.8 }
       ],
       "preludeDuration": 6
     },
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "trooper", "count": 3, "spawnInterval": 3 },
-        { "enemyType": "soldier", "count": 2, "spawnInterval": 2 }
+        { "enemyType": "trooper_elite", "count": 3, "spawnInterval": 3.2 },
+        { "enemyType": "shielded", "count": 3, "spawnInterval": 3.4 },
+        { "enemyType": "caster", "count": 2, "spawnInterval": 3.3 }
       ],
       "preludeDuration": 6
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "trooper_elite", "count": 4, "spawnInterval": 3 },
+        { "enemyType": "shielded", "count": 3, "spawnInterval": 3.2 },
+        { "enemyType": "caster", "count": 3, "spawnInterval": 3 }
+      ],
+      "preludeDuration": 7
     }
   ],
-  "startingDP": 22,
+  "startingDP": 20,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Hostiles are grouping up in larger numbers. Area-of-effect attacks can damage multiple enemies at once."]
+  "guideText": ["Shielded Transports absorb damage before their hull is exposed. Keep sustained damage on them while handling their escorts; a short burst alone will not break the column."]
 }

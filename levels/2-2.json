@@ -1,98 +1,26 @@
 {
   "name": "Forward Patrol",
-  "cols": 10,
-  "rows": 3,
+  "cols": 8,
+  "rows": 6,
   "tiles": [
-    [
-      { "row": 0, "col": 0, "type": "floor" },
-      { "row": 0, "col": 1, "type": "floor" },
-      { "row": 0, "col": 2, "type": "deploy_ranged" },
-      { "row": 0, "col": 3, "type": "deploy_ranged" },
-      { "row": 0, "col": 4, "type": "deploy_ranged" },
-      { "row": 0, "col": 5, "type": "deploy_ranged" },
-      { "row": 0, "col": 6, "type": "deploy_ranged" },
-      { "row": 0, "col": 7, "type": "deploy_ranged" },
-      { "row": 0, "col": 8, "type": "floor" },
-      { "row": 0, "col": 9, "type": "floor" }
-    ],
-    [
-      { "row": 1, "col": 0, "type": "spawn" },
-      { "row": 1, "col": 1, "type": "route" },
-      { "row": 1, "col": 2, "type": "route" },
-      { "row": 1, "col": 3, "type": "route" },
-      { "row": 1, "col": 4, "type": "route" },
-      { "row": 1, "col": 5, "type": "route" },
-      { "row": 1, "col": 6, "type": "route" },
-      { "row": 1, "col": 7, "type": "route" },
-      { "row": 1, "col": 8, "type": "route" },
-      { "row": 1, "col": 9, "type": "goal" }
-    ],
-    [
-      { "row": 2, "col": 0, "type": "floor" },
-      { "row": 2, "col": 1, "type": "floor" },
-      { "row": 2, "col": 2, "type": "deploy_ranged" },
-      { "row": 2, "col": 3, "type": "deploy_ranged" },
-      { "row": 2, "col": 4, "type": "deploy_ranged" },
-      { "row": 2, "col": 5, "type": "deploy_ranged" },
-      { "row": 2, "col": 6, "type": "deploy_ranged" },
-      { "row": 2, "col": 7, "type": "deploy_ranged" },
-      { "row": 2, "col": 8, "type": "floor" },
-      { "row": 2, "col": 9, "type": "floor" }
-    ]
+    [{ "row": 0, "col": 0, "type": "spawn" }, { "row": 0, "col": 1, "type": "route" }, { "row": 0, "col": 2, "type": "route" }, { "row": 0, "col": 3, "type": "route" }, { "row": 0, "col": 4, "type": "route" }, { "row": 0, "col": 5, "type": "floor" }, { "row": 0, "col": 6, "type": "floor" }, { "row": 0, "col": 7, "type": "floor" }],
+    [{ "row": 1, "col": 0, "type": "deploy_ranged" }, { "row": 1, "col": 1, "type": "deploy_ranged" }, { "row": 1, "col": 2, "type": "deploy_ranged" }, { "row": 1, "col": 3, "type": "deploy_ranged" }, { "row": 1, "col": 4, "type": "route" }, { "row": 1, "col": 5, "type": "deploy_ranged" }, { "row": 1, "col": 6, "type": "floor" }, { "row": 1, "col": 7, "type": "floor" }],
+    [{ "row": 2, "col": 0, "type": "floor" }, { "row": 2, "col": 1, "type": "route" }, { "row": 2, "col": 2, "type": "route" }, { "row": 2, "col": 3, "type": "route" }, { "row": 2, "col": 4, "type": "route" }, { "row": 2, "col": 5, "type": "deploy_ranged" }, { "row": 2, "col": 6, "type": "floor" }, { "row": 2, "col": 7, "type": "floor" }],
+    [{ "row": 3, "col": 0, "type": "floor" }, { "row": 3, "col": 1, "type": "route" }, { "row": 3, "col": 2, "type": "deploy_ranged" }, { "row": 3, "col": 3, "type": "deploy_ranged" }, { "row": 3, "col": 4, "type": "deploy_ranged" }, { "row": 3, "col": 5, "type": "floor" }, { "row": 3, "col": 6, "type": "floor" }, { "row": 3, "col": 7, "type": "floor" }],
+    [{ "row": 4, "col": 0, "type": "floor" }, { "row": 4, "col": 1, "type": "route" }, { "row": 4, "col": 2, "type": "route" }, { "row": 4, "col": 3, "type": "route" }, { "row": 4, "col": 4, "type": "route" }, { "row": 4, "col": 5, "type": "route" }, { "row": 4, "col": 6, "type": "route" }, { "row": 4, "col": 7, "type": "goal" }],
+    [{ "row": 5, "col": 0, "type": "floor" }, { "row": 5, "col": 1, "type": "floor" }, { "row": 5, "col": 2, "type": "deploy_ranged" }, { "row": 5, "col": 3, "type": "deploy_ranged" }, { "row": 5, "col": 4, "type": "deploy_ranged" }, { "row": 5, "col": 5, "type": "deploy_ranged" }, { "row": 5, "col": 6, "type": "deploy_ranged" }, { "row": 5, "col": 7, "type": "floor" }]
   ],
-  "waypoints": [
-    { "row": 1, "col": 0 },
-    { "row": 1, "col": 1 },
-    { "row": 1, "col": 2 },
-    { "row": 1, "col": 3 },
-    { "row": 1, "col": 4 },
-    { "row": 1, "col": 5 },
-    { "row": 1, "col": 6 },
-    { "row": 1, "col": 7 },
-    { "row": 1, "col": 8 },
-    { "row": 1, "col": 9 }
-  ],
+  "waypoints": [{ "row": 0, "col": 0 }, { "row": 0, "col": 1 }, { "row": 0, "col": 2 }, { "row": 0, "col": 3 }, { "row": 0, "col": 4 }, { "row": 1, "col": 4 }, { "row": 2, "col": 4 }, { "row": 2, "col": 3 }, { "row": 2, "col": 2 }, { "row": 2, "col": 1 }, { "row": 3, "col": 1 }, { "row": 4, "col": 1 }, { "row": 4, "col": 2 }, { "row": 4, "col": 3 }, { "row": 4, "col": 4 }, { "row": 4, "col": 5 }, { "row": 4, "col": 6 }, { "row": 4, "col": 7 }],
   "waves": [
-    {
-      "routeIndex": 0,
-      "entries": [
-        { "enemyType": "soldier", "count": 3, "spawnInterval": 2.5 },
-        { "enemyType": "shielded", "count": 1, "spawnInterval": 4 }
-      ],
-      "preludeDuration": 8
-    },
-    {
-      "routeIndex": 0,
-      "entries": [
-        { "enemyType": "trooper", "count": 3, "spawnInterval": 3 },
-        { "enemyType": "shielded", "count": 2, "spawnInterval": 3.8 },
-        { "enemyType": "drone", "count": 2, "spawnInterval": 2.8 }
-      ],
-      "preludeDuration": 6
-    },
-    {
-      "routeIndex": 0,
-      "entries": [
-        { "enemyType": "trooper_elite", "count": 3, "spawnInterval": 3.2 },
-        { "enemyType": "shielded", "count": 3, "spawnInterval": 3.4 },
-        { "enemyType": "caster", "count": 2, "spawnInterval": 3.3 }
-      ],
-      "preludeDuration": 6
-    },
-    {
-      "routeIndex": 0,
-      "entries": [
-        { "enemyType": "trooper_elite", "count": 4, "spawnInterval": 3 },
-        { "enemyType": "shielded", "count": 3, "spawnInterval": 3.2 },
-        { "enemyType": "caster", "count": 3, "spawnInterval": 3 }
-      ],
-      "preludeDuration": 7
-    }
+    { "routeIndex": 0, "entries": [{ "enemyType": "soldier", "count": 3, "spawnInterval": 2.5 }, { "enemyType": "shielded", "count": 1, "spawnInterval": 4 }], "preludeDuration": 8 },
+    { "routeIndex": 0, "entries": [{ "enemyType": "trooper", "count": 3, "spawnInterval": 3 }, { "enemyType": "shielded", "count": 2, "spawnInterval": 3.8 }, { "enemyType": "drone", "count": 2, "spawnInterval": 2.8 }], "preludeDuration": 6 },
+    { "routeIndex": 0, "entries": [{ "enemyType": "trooper_elite", "count": 3, "spawnInterval": 3.2 }, { "enemyType": "shielded", "count": 3, "spawnInterval": 3.4 }, { "enemyType": "caster", "count": 2, "spawnInterval": 3.3 }], "preludeDuration": 6 },
+    { "routeIndex": 0, "entries": [{ "enemyType": "trooper_elite", "count": 4, "spawnInterval": 3 }, { "enemyType": "shielded", "count": 3, "spawnInterval": 3.2 }, { "enemyType": "caster", "count": 3, "spawnInterval": 3 }], "preludeDuration": 7 }
   ],
   "startingDP": 20,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Shielded Transports absorb damage before their hull is exposed. Keep sustained damage on them while handling their escorts; a short burst alone will not break the column."]
+  "guideText": ["Shielded Transports cross two firing pockets before the final lane. Commit sustained damage at the inner bend, then keep a blocker ready for the survivors that reach the exit route."]
 }

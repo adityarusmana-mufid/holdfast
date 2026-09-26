@@ -268,41 +268,44 @@
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 1,
-          "spawnInterval": 3
-        }
+        { "enemyType": "soldier_elite", "count": 3, "spawnInterval": 2.8 },
+        { "enemyType": "repair", "count": 1, "spawnInterval": 4 }
       ],
       "preludeDuration": 10
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 1,
-          "spawnInterval": 3
-        }
+        { "enemyType": "trooper", "count": 3, "spawnInterval": 3.2 },
+        { "enemyType": "repair", "count": 2, "spawnInterval": 3.8 },
+        { "enemyType": "caster", "count": 2, "spawnInterval": 3.3 }
       ],
       "preludeDuration": 9
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 2,
-          "spawnInterval": 3
-        }
+        { "enemyType": "trooper_elite", "count": 3, "spawnInterval": 3.1 },
+        { "enemyType": "repair", "count": 2, "spawnInterval": 3.5 },
+        { "enemyType": "shielded", "count": 2, "spawnInterval": 3.5 }
       ],
       "preludeDuration": 8
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "heavy", "count": 1, "spawnInterval": 4 },
+        { "enemyType": "repair", "count": 2, "spawnInterval": 3.3 },
+        { "enemyType": "caster", "count": 3, "spawnInterval": 3 }
+      ],
+      "preludeDuration": 7
     }
   ],
   "tutorial": false,
-  "startingDP": 25,
+  "startingDP": 20,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["Repair Vehicles restore nearby hostiles. Prioritize them before spending all of your damage on their armored escorts, or the column will outlast your frontline."]
 }

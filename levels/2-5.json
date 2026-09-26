@@ -56,32 +56,54 @@
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 3, "spawnInterval": 2 },
-        { "enemyType": "drone", "count": 1, "spawnInterval": 3 }
+        { "enemyType": "soldier_elite", "count": 3, "spawnInterval": 2.6 },
+        { "enemyType": "drone", "count": 2, "spawnInterval": 2.8 }
       ],
       "preludeDuration": 8
     },
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "trooper", "count": 2, "spawnInterval": 3 },
-        { "enemyType": "caster", "count": 1, "spawnInterval": 4 }
+        { "enemyType": "trooper_elite", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "shielded", "count": 2, "spawnInterval": 3.5 },
+        { "enemyType": "caster", "count": 2, "spawnInterval": 3.2 }
       ],
       "preludeDuration": 6
     },
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "trooper", "count": 2, "spawnInterval": 3 },
-        { "enemyType": "soldier", "count": 3, "spawnInterval": 2 }
+        { "enemyType": "heavy", "count": 2, "spawnInterval": 3.8 },
+        { "enemyType": "repair", "count": 2, "spawnInterval": 3.4 },
+        { "enemyType": "drone_elite", "count": 3, "spawnInterval": 2.6 }
+      ],
+      "preludeDuration": 6
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "heavy", "count": 2, "spawnInterval": 3.6 },
+        { "enemyType": "shielded", "count": 3, "spawnInterval": 3.2 },
+        { "enemyType": "repair", "count": 2, "spawnInterval": 3 },
+        { "enemyType": "caster_elite", "count": 2, "spawnInterval": 2.9 }
+      ],
+      "preludeDuration": 7
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "heavy", "count": 3, "spawnInterval": 3.4 },
+        { "enemyType": "trooper_elite", "count": 4, "spawnInterval": 2.8 },
+        { "enemyType": "drone_elite", "count": 4, "spawnInterval": 2.4 },
+        { "enemyType": "caster_elite", "count": 3, "spawnInterval": 2.8 }
       ],
       "preludeDuration": 6
     }
   ],
-  "startingDP": 25,
+  "startingDP": 17,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Mixed hostiles inbound including drones, casters, and armored units. Every role in your squad matters. Deploy a complete formation."]
+  "guideText": ["The column combines shields, repairs, armor, artillery, and drones. Identify the support threat first, then keep enough anti-air and thermal damage online for the final wave."]
 }

@@ -347,7 +347,8 @@
           "enemyType": "carrier",
           "count": 1,
           "spawnInterval": 2.6
-        }
+        },
+        { "enemyType": "drone", "count": 3, "spawnInterval": 2.6 }
       ],
       "preludeDuration": 9
     },
@@ -363,7 +364,9 @@
           "enemyType": "carrier",
           "count": 2,
           "spawnInterval": 2.6
-        }
+        },
+        { "enemyType": "gunship", "count": 1, "spawnInterval": 4 },
+        { "enemyType": "drone_elite", "count": 3, "spawnInterval": 2.5 }
       ],
       "preludeDuration": 8
     },
@@ -379,7 +382,9 @@
           "enemyType": "carrier",
           "count": 2,
           "spawnInterval": 2.6
-        }
+        },
+        { "enemyType": "heavy_elite", "count": 2, "spawnInterval": 3.8 },
+        { "enemyType": "drone_elite", "count": 3, "spawnInterval": 2.4 }
       ],
       "preludeDuration": 7
     }

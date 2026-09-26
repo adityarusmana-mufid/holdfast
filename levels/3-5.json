@@ -475,6 +475,16 @@
         { "enemyType": "breacher", "count": 3, "spawnInterval": 2.6 }
       ],
       "preludeDuration": 7
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "trooper_elite", "count": 3, "spawnInterval": 2.8 },
+        { "enemyType": "heavy_elite", "count": 2, "spawnInterval": 3.6 },
+        { "enemyType": "gunship", "count": 2, "spawnInterval": 3.5 },
+        { "enemyType": "phantom", "count": 2, "spawnInterval": 3 }
+      ],
+      "preludeDuration": 6
     }
   ],
   "tutorial": false,

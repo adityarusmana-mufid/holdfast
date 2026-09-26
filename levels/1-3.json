@@ -266,8 +266,8 @@
       "entries": [
         {
           "enemyType": "soldier",
-          "count": 1,
-          "spawnInterval": 3
+          "count": 3,
+          "spawnInterval": 2.8
         }
       ],
       "preludeDuration": 10
@@ -276,9 +276,9 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "soldier",
-          "count": 1,
-          "spawnInterval": 3
+          "enemyType": "marksman",
+          "count": 2,
+          "spawnInterval": 3.2
         }
       ],
       "preludeDuration": 9
@@ -288,17 +288,49 @@
       "entries": [
         {
           "enemyType": "soldier",
-          "count": 2,
+          "count": 4,
+          "spawnInterval": 2.5
+        },
+        {
+          "enemyType": "marksman",
+          "count": 3,
           "spawnInterval": 3
+        },
+        {
+          "enemyType": "rusher",
+          "count": 3,
+          "spawnInterval": 2.5
         }
       ],
       "preludeDuration": 8
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        {
+          "enemyType": "trooper",
+          "count": 3,
+          "spawnInterval": 3.2
+        },
+        {
+          "enemyType": "marksman",
+          "count": 4,
+          "spawnInterval": 2.8
+        },
+        {
+          "enemyType": "drone",
+          "count": 3,
+          "spawnInterval": 2.5
+        }
+      ],
+      "preludeDuration": 7
     }
   ],
   "tutorial": false,
-  "startingDP": 25,
+  "startingDP": 22,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["Marksmen can fire past the frontline at ranged units. Use a durable blocker to hold the route, then focus dangerous ranged hostiles before their fire wears down your backline."]
 }

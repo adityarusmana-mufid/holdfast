@@ -56,24 +56,34 @@
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 4, "spawnInterval": 2.5 },
-        { "enemyType": "trooper", "count": 1, "spawnInterval": 4 }
+        { "enemyType": "soldier", "count": 3, "spawnInterval": 2.5 },
+        { "enemyType": "rusher", "count": 3, "spawnInterval": 2.5 }
       ],
       "preludeDuration": 8
     },
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 3, "spawnInterval": 2 },
-        { "enemyType": "trooper", "count": 2, "spawnInterval": 3.5 }
+        { "enemyType": "trooper", "count": 2, "spawnInterval": 3.5 },
+        { "enemyType": "rusher", "count": 4, "spawnInterval": 2.3 },
+        { "enemyType": "drone", "count": 2, "spawnInterval": 2.8 }
       ],
       "preludeDuration": 6
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "soldier", "count": 4, "spawnInterval": 2.2 },
+        { "enemyType": "trooper", "count": 3, "spawnInterval": 3.2 },
+        { "enemyType": "drone", "count": 3, "spawnInterval": 2.4 }
+      ],
+      "preludeDuration": 7
     }
   ],
-  "startingDP": 25,
+  "startingDP": 23,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Armored APCs are deploying with infantry. Standard bullets have trouble piercing their hulls. Use casters for thermal damage."]
+  "guideText": ["Fast Rushers and aerial Drones arrive together. Keep anti-air coverage active while a ground blocker stops the Rushers; save thermal damage for the APCs in the later waves."]
 }

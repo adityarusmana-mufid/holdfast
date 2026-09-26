@@ -56,16 +56,26 @@
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 4, "spawnInterval": 2.5 }
+        { "enemyType": "soldier", "count": 3, "spawnInterval": 2.5 },
+        { "enemyType": "rusher", "count": 2, "spawnInterval": 3 }
       ],
       "preludeDuration": 8
     },
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 5, "spawnInterval": 2 }
+        { "enemyType": "soldier", "count": 4, "spawnInterval": 2.5 },
+        { "enemyType": "rusher", "count": 3, "spawnInterval": 2.5 }
       ],
       "preludeDuration": 6
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "soldier", "count": 4, "spawnInterval": 2.2 },
+        { "enemyType": "rusher", "count": 4, "spawnInterval": 2.4 }
+      ],
+      "preludeDuration": 7
     }
   ],
   "startingDP": 24,
@@ -73,5 +83,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Hostile scouts are flanking from multiple positions. Face your units toward the route to engage them as they pass through."]
+  "guideText": ["Rushers cross the route much faster than Scout Cars. Establish a blocker before the first wave, then use ranged coverage to finish fast targets before they reach the goal."]
 }

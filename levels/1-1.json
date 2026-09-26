@@ -1,87 +1,36 @@
 {
   "name": "Sensor Sweep",
-  "cols": 10,
-  "rows": 3,
+  "cols": 8,
+  "rows": 5,
   "tiles": [
     [
-      { "row": 0, "col": 0, "type": "floor" },
-      { "row": 0, "col": 1, "type": "floor" },
-      { "row": 0, "col": 2, "type": "deploy_ranged" },
-      { "row": 0, "col": 3, "type": "deploy_ranged" },
-      { "row": 0, "col": 4, "type": "deploy_ranged" },
-      { "row": 0, "col": 5, "type": "deploy_ranged" },
-      { "row": 0, "col": 6, "type": "deploy_ranged" },
-      { "row": 0, "col": 7, "type": "deploy_ranged" },
-      { "row": 0, "col": 8, "type": "floor" },
-      { "row": 0, "col": 9, "type": "floor" }
+      { "row": 0, "col": 0, "type": "floor" }, { "row": 0, "col": 1, "type": "deploy_ranged" }, { "row": 0, "col": 2, "type": "deploy_ranged" }, { "row": 0, "col": 3, "type": "deploy_ranged" }, { "row": 0, "col": 4, "type": "floor" }, { "row": 0, "col": 5, "type": "floor" }, { "row": 0, "col": 6, "type": "floor" }, { "row": 0, "col": 7, "type": "floor" }
     ],
     [
-      { "row": 1, "col": 0, "type": "spawn" },
-      { "row": 1, "col": 1, "type": "route" },
-      { "row": 1, "col": 2, "type": "route" },
-      { "row": 1, "col": 3, "type": "route" },
-      { "row": 1, "col": 4, "type": "route" },
-      { "row": 1, "col": 5, "type": "route" },
-      { "row": 1, "col": 6, "type": "route" },
-      { "row": 1, "col": 7, "type": "route" },
-      { "row": 1, "col": 8, "type": "route" },
-      { "row": 1, "col": 9, "type": "goal" }
+      { "row": 1, "col": 0, "type": "spawn" }, { "row": 1, "col": 1, "type": "route" }, { "row": 1, "col": 2, "type": "route" }, { "row": 1, "col": 3, "type": "route" }, { "row": 1, "col": 4, "type": "deploy_ranged" }, { "row": 1, "col": 5, "type": "floor" }, { "row": 1, "col": 6, "type": "floor" }, { "row": 1, "col": 7, "type": "floor" }
     ],
     [
-      { "row": 2, "col": 0, "type": "floor" },
-      { "row": 2, "col": 1, "type": "floor" },
-      { "row": 2, "col": 2, "type": "deploy_ranged" },
-      { "row": 2, "col": 3, "type": "deploy_ranged" },
-      { "row": 2, "col": 4, "type": "deploy_ranged" },
-      { "row": 2, "col": 5, "type": "deploy_ranged" },
-      { "row": 2, "col": 6, "type": "deploy_ranged" },
-      { "row": 2, "col": 7, "type": "deploy_ranged" },
-      { "row": 2, "col": 8, "type": "floor" },
-      { "row": 2, "col": 9, "type": "floor" }
+      { "row": 2, "col": 0, "type": "floor" }, { "row": 2, "col": 1, "type": "floor" }, { "row": 2, "col": 2, "type": "deploy_ranged" }, { "row": 2, "col": 3, "type": "route" }, { "row": 2, "col": 4, "type": "deploy_ranged" }, { "row": 2, "col": 5, "type": "floor" }, { "row": 2, "col": 6, "type": "floor" }, { "row": 2, "col": 7, "type": "floor" }
+    ],
+    [
+      { "row": 3, "col": 0, "type": "floor" }, { "row": 3, "col": 1, "type": "floor" }, { "row": 3, "col": 2, "type": "deploy_ranged" }, { "row": 3, "col": 3, "type": "route" }, { "row": 3, "col": 4, "type": "route" }, { "row": 3, "col": 5, "type": "route" }, { "row": 3, "col": 6, "type": "route" }, { "row": 3, "col": 7, "type": "goal" }
+    ],
+    [
+      { "row": 4, "col": 0, "type": "floor" }, { "row": 4, "col": 1, "type": "floor" }, { "row": 4, "col": 2, "type": "floor" }, { "row": 4, "col": 3, "type": "deploy_ranged" }, { "row": 4, "col": 4, "type": "deploy_ranged" }, { "row": 4, "col": 5, "type": "deploy_ranged" }, { "row": 4, "col": 6, "type": "deploy_ranged" }, { "row": 4, "col": 7, "type": "floor" }
     ]
   ],
   "waypoints": [
-    { "row": 1, "col": 0 },
-    { "row": 1, "col": 1 },
-    { "row": 1, "col": 2 },
-    { "row": 1, "col": 3 },
-    { "row": 1, "col": 4 },
-    { "row": 1, "col": 5 },
-    { "row": 1, "col": 6 },
-    { "row": 1, "col": 7 },
-    { "row": 1, "col": 8 },
-    { "row": 1, "col": 9 }
+    { "row": 1, "col": 0 }, { "row": 1, "col": 1 }, { "row": 1, "col": 2 }, { "row": 1, "col": 3 }, { "row": 2, "col": 3 }, { "row": 3, "col": 3 }, { "row": 3, "col": 4 }, { "row": 3, "col": 5 }, { "row": 3, "col": 6 }, { "row": 3, "col": 7 }
   ],
   "waves": [
-    {
-      "routeIndex": 0,
-      "entries": [
-        { "enemyType": "soldier", "count": 3, "spawnInterval": 2.5 },
-        { "enemyType": "rusher", "count": 2, "spawnInterval": 3 }
-      ],
-      "preludeDuration": 8
-    },
-    {
-      "routeIndex": 0,
-      "entries": [
-        { "enemyType": "soldier", "count": 4, "spawnInterval": 2.5 },
-        { "enemyType": "rusher", "count": 3, "spawnInterval": 2.5 }
-      ],
-      "preludeDuration": 6
-    },
-    {
-      "routeIndex": 0,
-      "entries": [
-        { "enemyType": "soldier", "count": 4, "spawnInterval": 2.2 },
-        { "enemyType": "rusher", "count": 4, "spawnInterval": 2.4 }
-      ],
-      "preludeDuration": 7
-    }
+    { "routeIndex": 0, "entries": [{ "enemyType": "soldier", "count": 3, "spawnInterval": 2.5 }, { "enemyType": "rusher", "count": 2, "spawnInterval": 3 }], "preludeDuration": 8 },
+    { "routeIndex": 0, "entries": [{ "enemyType": "soldier", "count": 4, "spawnInterval": 2.5 }, { "enemyType": "rusher", "count": 3, "spawnInterval": 2.5 }], "preludeDuration": 6 },
+    { "routeIndex": 0, "entries": [{ "enemyType": "soldier", "count": 4, "spawnInterval": 2.2 }, { "enemyType": "rusher", "count": 4, "spawnInterval": 2.4 }], "preludeDuration": 7 }
   ],
   "startingDP": 24,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Rushers cross the route much faster than Scout Cars. Establish a blocker before the first wave, then use ranged coverage to finish fast targets before they reach the goal."]
+  "guideText": ["Rushers cross the route much faster than Scout Cars. Establish a blocker before the first wave, then use the bend to layer ranged fire on fast targets."]
 }

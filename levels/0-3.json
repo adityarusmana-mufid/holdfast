@@ -208,8 +208,8 @@
       "entries": [
         {
           "enemyType": "soldier",
-          "count": 1,
-          "spawnInterval": 3
+          "count": 3,
+          "spawnInterval": 2.8
         }
       ],
       "preludeDuration": 10
@@ -219,8 +219,8 @@
       "entries": [
         {
           "enemyType": "soldier",
-          "count": 1,
-          "spawnInterval": 3
+          "count": 4,
+          "spawnInterval": 2.6
         }
       ],
       "preludeDuration": 9
@@ -230,8 +230,8 @@
       "entries": [
         {
           "enemyType": "soldier",
-          "count": 2,
-          "spawnInterval": 3
+          "count": 5,
+          "spawnInterval": 2.4
         }
       ],
       "preludeDuration": 8
@@ -242,5 +242,6 @@
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["A larger Scout Car column tests basic blocking and firing lanes. Establish one blocker, then place ranged coverage where it can fire along the route."]
 }

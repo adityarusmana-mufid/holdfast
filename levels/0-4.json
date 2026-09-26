@@ -266,8 +266,8 @@
       "entries": [
         {
           "enemyType": "soldier",
-          "count": 1,
-          "spawnInterval": 3
+          "count": 3,
+          "spawnInterval": 2.8
         }
       ],
       "preludeDuration": 10
@@ -277,8 +277,8 @@
       "entries": [
         {
           "enemyType": "soldier",
-          "count": 2,
-          "spawnInterval": 3
+          "count": 4,
+          "spawnInterval": 2.6
         }
       ],
       "preludeDuration": 9
@@ -288,8 +288,8 @@
       "entries": [
         {
           "enemyType": "soldier",
-          "count": 2,
-          "spawnInterval": 3
+          "count": 5,
+          "spawnInterval": 2.4
         }
       ],
       "preludeDuration": 8
@@ -300,5 +300,6 @@
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["The route bends before reaching the goal. Face units into the longer approach, then use the corner to keep enemies in ranged fire for as long as possible."]
 }

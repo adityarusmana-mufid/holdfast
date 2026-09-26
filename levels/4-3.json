@@ -269,10 +269,11 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
-          "count": 2,
+          "enemyType": "trooper_elite",
+          "count": 3,
           "spawnInterval": 3
-        }
+        },
+        { "enemyType": "marksman_elite", "count": 2, "spawnInterval": 3 }
       ],
       "preludeDuration": 10
     },
@@ -280,15 +281,16 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
-          "count": 2,
+          "enemyType": "trooper_elite",
+          "count": 3,
           "spawnInterval": 3
         },
         {
-          "enemyType": "caster",
+          "enemyType": "caster_elite",
           "count": 2,
           "spawnInterval": 2.6
-        }
+        },
+        { "enemyType": "repair_elite", "count": 1, "spawnInterval": 3.6 }
       ],
       "preludeDuration": 9
     },
@@ -296,15 +298,16 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
-          "count": 3,
+          "enemyType": "heavy_elite",
+          "count": 2,
           "spawnInterval": 3
         },
         {
-          "enemyType": "caster",
+          "enemyType": "caster_elite",
           "count": 2,
           "spawnInterval": 2.6
-        }
+        },
+        { "enemyType": "shielded_elite", "count": 2, "spawnInterval": 3.4 }
       ],
       "preludeDuration": 8
     },
@@ -312,23 +315,26 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
-          "count": 3,
+          "enemyType": "heavy_elite",
+          "count": 2,
           "spawnInterval": 3
         },
         {
-          "enemyType": "caster",
+          "enemyType": "caster_elite",
           "count": 2,
           "spawnInterval": 2.6
-        }
+        },
+        { "enemyType": "carrier_elite", "count": 1, "spawnInterval": 4 },
+        { "enemyType": "gunship_elite", "count": 1, "spawnInterval": 4 }
       ],
       "preludeDuration": 7
     }
   ],
   "tutorial": false,
-  "startingDP": 21,
+  "startingDP": 15,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["Armored artillery is protected by shields and repairs. Break the support structure first, then use thermal damage to stop the heavy core before aerial reinforcements arrive."]
 }

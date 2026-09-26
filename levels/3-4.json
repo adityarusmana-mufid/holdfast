@@ -328,27 +328,12 @@
       "entries": [
         {
           "enemyType": "trooper",
-          "count": 2,
-          "spawnInterval": 3
-        }
-      ],
-      "preludeDuration": 10
-    },
-    {
-      "routeIndex": 0,
-      "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 2,
+          "count": 3,
           "spawnInterval": 3
         },
-        {
-          "enemyType": "drone",
-          "count": 2,
-          "spawnInterval": 2.6
-        }
+        { "enemyType": "carrier", "count": 1, "spawnInterval": 4 }
       ],
-      "preludeDuration": 9
+      "preludeDuration": 10
     },
     {
       "routeIndex": 0,
@@ -359,7 +344,23 @@
           "spawnInterval": 3
         },
         {
-          "enemyType": "drone",
+          "enemyType": "carrier",
+          "count": 1,
+          "spawnInterval": 2.6
+        }
+      ],
+      "preludeDuration": 9
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        {
+          "enemyType": "trooper_elite",
+          "count": 3,
+          "spawnInterval": 3
+        },
+        {
+          "enemyType": "carrier",
           "count": 2,
           "spawnInterval": 2.6
         }
@@ -370,12 +371,12 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
-          "count": 3,
+          "enemyType": "trooper_elite",
+          "count": 4,
           "spawnInterval": 3
         },
         {
-          "enemyType": "drone",
+          "enemyType": "carrier",
           "count": 2,
           "spawnInterval": 2.6
         }
@@ -384,9 +385,10 @@
     }
   ],
   "tutorial": false,
-  "startingDP": 21,
+  "startingDP": 16,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["Carrier Drones release Rushers as they advance. Do not ignore a slow carrier: destroy it before it creates more ground pressure than your lane can hold."]
 }

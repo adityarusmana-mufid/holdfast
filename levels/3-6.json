@@ -261,7 +261,7 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 3,
           "spawnInterval": 3
         }
@@ -272,12 +272,12 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 3,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
+          "enemyType": "heavy_elite",
           "count": 2,
           "spawnInterval": 2.6
         }
@@ -288,17 +288,17 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 4,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
+          "enemyType": "heavy_elite",
           "count": 3,
           "spawnInterval": 2.6
         },
         {
-          "enemyType": "caster",
+          "enemyType": "caster_elite",
           "count": 2,
           "spawnInterval": 2.2
         }
@@ -309,17 +309,17 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 4,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
+          "enemyType": "heavy_elite",
           "count": 3,
           "spawnInterval": 2.6
         },
         {
-          "enemyType": "caster",
+          "enemyType": "caster_elite",
           "count": 2,
           "spawnInterval": 2.2
         }
@@ -330,17 +330,17 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 5,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
+          "enemyType": "heavy_elite",
           "count": 3,
           "spawnInterval": 2.6
         },
         {
-          "enemyType": "caster",
+          "enemyType": "caster_elite",
           "count": 3,
           "spawnInterval": 2.2
         }
@@ -349,9 +349,10 @@
     }
   ],
   "tutorial": false,
-  "startingDP": 17,
+  "startingDP": 14,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["Elite armor and artillery leave little room for a weak opening. Establish DP generation early, then divide your damage between the Tank column and the artillery that threatens your defenders."]
 }

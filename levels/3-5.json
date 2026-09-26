@@ -417,10 +417,11 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
-          "count": 2,
+          "enemyType": "trooper_elite",
+          "count": 3,
           "spawnInterval": 3
-        }
+        },
+        { "enemyType": "repair", "count": 1, "spawnInterval": 4 }
       ],
       "preludeDuration": 10
     },
@@ -428,15 +429,16 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 3,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
+          "enemyType": "heavy_elite",
           "count": 2,
           "spawnInterval": 2.6
-        }
+        },
+        { "enemyType": "repair", "count": 2, "spawnInterval": 3.4 }
       ],
       "preludeDuration": 9
     },
@@ -444,15 +446,16 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 3,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
+          "enemyType": "heavy_elite",
           "count": 2,
           "spawnInterval": 2.6
-        }
+        },
+        { "enemyType": "phantom", "count": 2, "spawnInterval": 3 }
       ],
       "preludeDuration": 8
     },
@@ -460,23 +463,25 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper",
+          "enemyType": "trooper_elite",
           "count": 4,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy",
+          "enemyType": "heavy_elite",
           "count": 3,
           "spawnInterval": 2.6
-        }
+        },
+        { "enemyType": "breacher", "count": 3, "spawnInterval": 2.6 }
       ],
       "preludeDuration": 7
     }
   ],
   "tutorial": false,
-  "startingDP": 19,
+  "startingDP": 15,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["Elite armor advances under repair support. Use thermal damage on the tanks, but remove the Repair Vehicles before they can undo your focused fire."]
 }

@@ -206,41 +206,44 @@
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "soldier",
-          "count": 1,
-          "spawnInterval": 3
-        }
+        { "enemyType": "soldier_elite", "count": 3, "spawnInterval": 2.7 },
+        { "enemyType": "phantom", "count": 1, "spawnInterval": 4 }
       ],
       "preludeDuration": 10
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "soldier",
-          "count": 1,
-          "spawnInterval": 3
-        }
+        { "enemyType": "trooper", "count": 3, "spawnInterval": 3.2 },
+        { "enemyType": "phantom", "count": 2, "spawnInterval": 3.5 },
+        { "enemyType": "drone", "count": 2, "spawnInterval": 2.8 }
       ],
       "preludeDuration": 9
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "soldier",
-          "count": 2,
-          "spawnInterval": 3
-        }
+        { "enemyType": "trooper_elite", "count": 3, "spawnInterval": 3.1 },
+        { "enemyType": "phantom", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "marksman", "count": 2, "spawnInterval": 3 }
       ],
       "preludeDuration": 8
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "heavy", "count": 2, "spawnInterval": 3.8 },
+        { "enemyType": "phantom", "count": 3, "spawnInterval": 2.8 },
+        { "enemyType": "breacher", "count": 3, "spawnInterval": 2.7 }
+      ],
+      "preludeDuration": 7
     }
   ],
   "tutorial": false,
-  "startingDP": 25,
+  "startingDP": 18,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["Phantoms remain hidden until a unit detects them. Position detection where the lane is covered for a long time; a stealth threat that reaches the blocker unseen can turn the formation from behind."]
 }

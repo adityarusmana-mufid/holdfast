@@ -56,33 +56,43 @@
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "soldier", "count": 4, "spawnInterval": 2 },
-        { "enemyType": "trooper", "count": 2, "spawnInterval": 3 }
+        { "enemyType": "soldier_elite", "count": 3, "spawnInterval": 2.5 },
+        { "enemyType": "breacher", "count": 2, "spawnInterval": 3 }
       ],
       "preludeDuration": 8
     },
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "trooper", "count": 2, "spawnInterval": 3 },
-        { "enemyType": "drone", "count": 2, "spawnInterval": 2.5 }
+        { "enemyType": "trooper", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "breacher", "count": 3, "spawnInterval": 2.8 },
+        { "enemyType": "drone", "count": 2, "spawnInterval": 2.8 }
       ],
       "preludeDuration": 6
     },
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "heavy", "count": 1, "spawnInterval": 1 },
-        { "enemyType": "soldier", "count": 3, "spawnInterval": 2 },
-        { "enemyType": "caster", "count": 1, "spawnInterval": 4 }
+        { "enemyType": "heavy", "count": 1, "spawnInterval": 4 },
+        { "enemyType": "breacher", "count": 3, "spawnInterval": 2.6 },
+        { "enemyType": "caster", "count": 2, "spawnInterval": 3.4 }
       ],
       "preludeDuration": 8
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "heavy", "count": 2, "spawnInterval": 3.8 },
+        { "enemyType": "breacher", "count": 4, "spawnInterval": 2.4 },
+        { "enemyType": "drone_elite", "count": 3, "spawnInterval": 2.5 }
+      ],
+      "preludeDuration": 7
     }
   ],
-  "startingDP": 30,
+  "startingDP": 20,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Final assault. All enemy types are inbound. Use everything you've learned — blocking, healing, facing, casters, snipers, and AoE."]
+  "guideText": ["Breacher vehicles explode when destroyed. Do not stack fragile units around your blocker; remove them early or use spacing so their demolition charge cannot collapse the line."]
 }

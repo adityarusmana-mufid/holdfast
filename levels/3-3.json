@@ -264,41 +264,44 @@
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 1,
-          "spawnInterval": 3
-        }
+        { "enemyType": "trooper", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "gunship", "count": 1, "spawnInterval": 4 }
       ],
       "preludeDuration": 10
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 2,
-          "spawnInterval": 3
-        }
+        { "enemyType": "trooper", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "gunship", "count": 2, "spawnInterval": 3.8 },
+        { "enemyType": "drone", "count": 2, "spawnInterval": 2.7 }
       ],
       "preludeDuration": 9
     },
     {
       "routeIndex": 0,
       "entries": [
-        {
-          "enemyType": "trooper",
-          "count": 2,
-          "spawnInterval": 3
-        }
+        { "enemyType": "trooper_elite", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "gunship", "count": 2, "spawnInterval": 3.5 },
+        { "enemyType": "marksman", "count": 3, "spawnInterval": 2.9 }
       ],
       "preludeDuration": 8
+    },
+    {
+      "routeIndex": 0,
+      "entries": [
+        { "enemyType": "heavy", "count": 2, "spawnInterval": 3.8 },
+        { "enemyType": "gunship", "count": 3, "spawnInterval": 3.2 },
+        { "enemyType": "drone_elite", "count": 3, "spawnInterval": 2.5 }
+      ],
+      "preludeDuration": 7
     }
   ],
   "tutorial": false,
-  "startingDP": 23,
+  "startingDP": 17,
   "dpRegenRate": 1,
   "dpCap": 99,
   "deploymentLimit": 8,
-  "lives": 10
+  "lives": 10,
+  "guideText": ["Gunships are armored aerial platforms. Anti-air coverage must be sustained, not incidental; let the ground lane hold briefly while your ranged line clears the aircraft."]
 }

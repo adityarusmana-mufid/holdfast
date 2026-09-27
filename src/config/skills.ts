@@ -744,21 +744,21 @@ export const SKILLS: Record<string, SkillConfig[]> = {
   pusher: [
     {
       id: 'pusher_s1', name: 'Barrel Burst',
-      description: 'Next attack pushes target away 1 tile, stuns 1.5s if hits wall. Auto-triggers.',
+      description: 'Force 1: next attack pushes a target away, stunning it if it hits a wall. Auto-triggers.',
       spRecovery: 'auto', activation: 'auto', spCost: 6, spInitial: 0,
       durationType: 'instant',
       effect: { type: 'special', description: 'auto_push_stun_wall' },
     },
     {
       id: 'pusher_s2', name: 'Hydraulics Mode',
-      description: 'Permanent: ATK +50%, range +1, splash radius 1, all attacks push 1 tile.',
+      description: 'Permanent: ATK +50%, range +1, splash radius 1, all attacks push with Force 1.',
       spRecovery: 'auto', activation: 'manual', spCost: 90, spInitial: 45,
       durationType: 'unlimited',
       effect: { type: 'enhanceAttack', atkMultiplier: 1.5, splash: { radius: 1, damageMultiplier: 1 } },
     },
     {
       id: 'pusher_s3', name: 'Liquid Nitrogen Cannon',
-      description: 'Deploys a cannon pushing all enemies in range, deals 280% ATK damage and slows for 4s.',
+      description: 'Force 3: cannon pushes all enemies in range, deals 280% ATK damage, and slows for 4s.',
       spRecovery: 'auto', activation: 'manual', spCost: 70, spInitial: 25,
       durationType: 'instant',
       effect: { type: 'displace', direction: 'away', tiles: 3, radius: 3 },
@@ -767,21 +767,21 @@ export const SKILLS: Record<string, SkillConfig[]> = {
   puller: [
     {
       id: 'puller_s1', name: "Waterless Parting of the Great Ocean",
-      description: 'Auto-trigger. Next attack pulls target toward you, dealing 210% ATK as Physical damage. Stores 3 charges.',
+      description: 'Force 1: next attack pulls a target toward you and deals 210% ATK Physical damage. Stores 3 charges.',
       spRecovery: 'auto', activation: 'auto', spCost: 4, spInitial: 0,
       charges: 3, durationType: 'instant',
       effect: { type: 'special', description: 'auto_pull_arts' },
     },
     {
       id: 'puller_s2', name: "Waterless Grasp of the Raging Seas",
-      description: 'Pulls all enemies in 3-tile frontal line toward you, deals 220% ATK as physical damage.',
+      description: 'Force 1: pulls all enemies in a 3-tile frontal line, dealing 220% ATK Physical damage.',
       spRecovery: 'auto', activation: 'manual', spCost: 15, spInitial: 5,
       durationType: 'instant',
       effect: { type: 'special', description: 'line_pull_damage' },
     },
     {
       id: 'puller_s3', name: 'Dance of the Shattered Maelstrom',
-      description: 'Binds furthest enemy, creates whirlpool pulling enemies every 1.5s for 8s, slows 50%.',
+      description: 'Binds the furthest enemy; a whirlpool pulls nearby enemies with Force 1 every 1.5s for 8s and slows 50%.',
       spRecovery: 'auto', activation: 'manual', spCost: 35, spInitial: 15,
       durationType: 'duration', duration: 8,
       effect: { type: 'special', description: 'maelstrom_pull_slow' },

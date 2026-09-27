@@ -2162,6 +2162,7 @@ export class GameScene extends Phaser.Scene {
     const W = 280
     const pad = 10
     const iconSize = 28
+    const massIntel = config.isAerial ? 'SHIFT IMMUNE' : `MASS ${['I', 'II', 'III', 'IV', 'V'][config.weight]}`
 
     const bg = this.add.graphics()
     bg.fillStyle(0x1a1a2e, 0.85)
@@ -2177,12 +2178,16 @@ export class GameScene extends Phaser.Scene {
       fontSize: FONT_SIZE.sm, color: '#ffffff', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
     })
 
+    const massText = this.add.text(pad + iconSize + pad, pad + 18, massIntel, {
+      fontSize: FONT_SIZE.xs, color: config.isAerial ? '#8cb4ff' : '#ffcc66', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', fontStyle: 'bold',
+    })
+
     const desc = config.description ?? 'No intelligence available.'
-    const descText = this.add.text(pad + iconSize + pad, pad + 20, desc, {
+    const descText = this.add.text(pad + iconSize + pad, pad + 34, desc, {
       fontSize: FONT_SIZE.xs, color: '#b0b8c4', fontFamily: '"Share Tech Mono", "Roboto Mono", monospace', wordWrap: { width: W - pad - iconSize - pad - pad },
     })
 
-    const container = this.add.container(10, 10, [bg, icon, nameText, descText])
+    const container = this.add.container(10, 10, [bg, icon, nameText, massText, descText])
     container.setDepth(45)
 
     this.activeToasts.push(container)

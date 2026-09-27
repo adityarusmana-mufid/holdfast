@@ -232,6 +232,22 @@ describe('DeploymentSystem', () => {
     })
   })
 
+  describe('specialist deployment', () => {
+    const specialist = () => makeUnit({ traits: [{ traitId: UnitTrait.DeployAnywhere }] })
+
+    it('permits specialists on a valid off-route post', () => {
+      const grid = { getTile: () => ({ type: TileType.Floor, row: 0, col: 0 }) } as any
+      const system = new DeploymentSystem(grid, 30, 1, 99, 8)
+      expect(system.canDeploy(specialist(), 0, 0, 0)).toEqual({ ok: true })
+    })
+
+    it('rejects specialists on holes', () => {
+      const grid = { getTile: () => ({ type: TileType.Hole, row: 0, col: 0 }) } as any
+      const system = new DeploymentSystem(grid, 30, 1, 99, 8)
+      expect(system.canDeploy(specialist(), 0, 0, 0)).toEqual({ ok: false, reason: 'Specialists cannot deploy on hazards or walls' })
+    })
+  })
+
   describe('retreatUnit', () => {
     it('refunds half DP cost', () => {
       ds.deployUnit(unit, 0, 0, 'up', 0)

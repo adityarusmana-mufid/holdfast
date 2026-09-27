@@ -52,7 +52,9 @@ export class DeploymentSystem {
 
     const isSpecialist = unit.traits?.some(t => t.traitId === UnitTrait.DeployAnywhere)
     if (isSpecialist) {
-      // can deploy on any walkable/deployable tile
+      if (tile.type === TileType.Hole || tile.type === TileType.Wall) {
+        return { ok: false, reason: 'Specialists cannot deploy on hazards or walls' }
+      }
     } else if (unit.type === 'ground') {
       if (tile.type !== TileType.Ground && tile.type !== TileType.RepairNode && tile.type !== TileType.ArmorGrid) {
         return { ok: false, reason: 'Ground units need ground tiles' }

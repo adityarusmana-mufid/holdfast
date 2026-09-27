@@ -965,7 +965,11 @@ export class GameScene extends Phaser.Scene {
       const deployPos = this.grid.tileToPixel(this.pendingTile.row, this.pendingTile.col)
       spawnExpandRing(this, deployPos.x, deployPos.y, selected.color, 28, 350)
       this.flashMessage(`DEPLOY // ${selected.name}  -${cost} DP`, selected.color)
-      this.recordTutorialAction('deploy', selected.id)
+      this.recordTutorialAction('deploy', selected.id, {
+        row: this.pendingTile.row,
+        col: this.pendingTile.col,
+        facing: this.pendingFacing,
+      })
       this.selectedSquadIndex = null
       this.rebuildCardBar()
 
@@ -2014,8 +2018,8 @@ export class GameScene extends Phaser.Scene {
     this.updateTutorialObjective()
   }
 
-  private recordTutorialAction(action: TutorialAction, unitId?: string): void {
-    if (!this.tutorialSystem?.record(action, unitId)) return
+  private recordTutorialAction(action: TutorialAction, unitId?: string, placement?: { row: number; col: number; facing: Direction }): void {
+    if (!this.tutorialSystem?.record(action, unitId, placement)) return
     this.flashMessage(this.tutorialSystem.complete ? 'OBJECTIVE COMPLETE' : 'OBJECTIVE UPDATED', 0x00c853)
     this.updateTutorialObjective()
   }

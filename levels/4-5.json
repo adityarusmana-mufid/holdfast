@@ -79,12 +79,12 @@
       {
         "row": 1,
         "col": 4,
-        "type": "deploy_ranged"
+        "type": "hole"
       },
       {
         "row": 1,
         "col": 5,
-        "type": "deploy_ranged"
+        "type": "hole"
       },
       {
         "row": 1,
@@ -223,7 +223,7 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper_elite",
+          "enemyType": "rusher_elite",
           "count": 3,
           "spawnInterval": 3
         }
@@ -234,12 +234,12 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper_elite",
+          "enemyType": "rusher_elite",
           "count": 3,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy_elite",
+          "enemyType": "trooper_elite",
           "count": 2,
           "spawnInterval": 2.6
         }
@@ -250,12 +250,12 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper_elite",
-          "count": 4,
+          "enemyType": "rusher_elite",
+          "count": 3,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy_elite",
+          "enemyType": "trooper_elite",
           "count": 3,
           "spawnInterval": 2.6
         },
@@ -277,13 +277,18 @@
         },
         {
           "enemyType": "heavy_elite",
-          "count": 3,
+          "count": 2,
           "spawnInterval": 2.6
         },
         {
           "enemyType": "drone_elite",
           "count": 2,
           "spawnInterval": 2.2
+        },
+        {
+          "enemyType": "rusher_elite",
+          "count": 2,
+          "spawnInterval": 2.5
         }
       ],
       "preludeDuration": 7
@@ -293,7 +298,7 @@
       "entries": [
         {
           "enemyType": "trooper_elite",
-          "count": 5,
+          "count": 4,
           "spawnInterval": 3
         },
         {
@@ -305,6 +310,11 @@
           "enemyType": "drone_elite",
           "count": 3,
           "spawnInterval": 2.2
+        },
+        {
+          "enemyType": "rusher_elite",
+          "count": 2,
+          "spawnInterval": 2.5
         }
       ],
       "preludeDuration": 6
@@ -316,5 +326,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Elite armored ground and air columns arrive in sustained waves. Preserve your deployment slots for roles that answer armor, aircraft, and healing pressure at the same time."]
+  "guideText": ["Hookmasters on the two upper posts can face down and pull light rushers from the lower corridor into the central pits. Elite APCs, tanks, and aircraft resist that shortcut, so preserve slots for conventional armor and anti-air coverage."]
 }

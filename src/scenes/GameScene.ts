@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { DeployedUnit, Direction, LevelData, UnitConfig, Position, UnitTrait, EnemyConfig, Route, TileType } from '../types/index'
 import { positionsInRange, computeFacingTowardGoal } from '../shared/utils/GridMath'
+import { getShiftDistance } from '../shared/utils/Shift'
 import { Grid, TILE_SIZE, GRID_OFFSET_Y } from '../entities/Grid'
 import { UnitSprite } from '../entities/Unit'
 import { EnemySprite } from '../entities/Enemy'
@@ -231,6 +232,7 @@ export class GameScene extends Phaser.Scene {
         if (deployed) this.skillSystem.offensiveSPGain(deployed)
         const isEnhanced = deployed?.skillState?.isActive &&
           deployed.skillState.config.effect.type === 'enhanceAttack'
+        const isHydraulicsMode = deployed?.skillState?.isActive && deployed.skillState.config.id === 'pusher_s2'
         const effType = isEnhanced ? 'true' : damageType
         const speed = this.effectiveSpeed
         const tile = target.getCurrentTile()
@@ -255,21 +257,18 @@ export class GameScene extends Phaser.Scene {
           deployed.nextAttackPushStunWall = false
           const dRow = tile.row - unit.row
           const dCol = tile.col - unit.col
-          let tRow: number, tCol: number
+          let shiftRow: number, shiftCol: number
           if (dRow === 0 && dCol === 0) {
             const pushDir: Record<string, [number, number]> = { up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1] }
             const [dr, dc] = pushDir[unit.facing] ?? [-1, 0]
-            tRow = tile.row + dr
-            tCol = tile.col + dc
+            shiftRow = dr
+            shiftCol = dc
           } else {
-            tRow = tile.row + Math.sign(dRow)
-            tCol = tile.col + Math.sign(dCol)
+            shiftRow = dRow
+            shiftCol = dCol
           }
-          tRow = Math.max(0, Math.min(this.grid.rows - 1, tRow))
-          tCol = Math.max(0, Math.min(this.grid.cols - 1, tCol))
-          target.displaceTo(tRow, tCol)
+          this.shiftEnemy(target, shiftRow, shiftCol, 1)
           target.applyStatusEffect({ type: 'stun', remainingDuration: 2.5, factor: 0 })
-          if (this.enemyManager) this.enemyManager.onEnemyDisplaced(target)
           if (sk && !(sk.config.charges ?? 0)) this.skillSystem.deactivateSkill(deployed!)
         }
         if (deployed?.nextAttackPullArts) {
@@ -278,18 +277,15 @@ export class GameScene extends Phaser.Scene {
           const dCol = unit.col - tile.col
           const distPull = Math.abs(dRow) + Math.abs(dCol)
           if (distPull > 0) {
-            const tRow = Math.max(0, Math.min(this.grid.rows - 1, tile.row + Math.sign(dRow)))
-            const tCol = Math.max(0, Math.min(this.grid.cols - 1, tile.col + Math.sign(dCol)))
-            const tt = this.grid.tiles[tRow][tCol]
-            if (tt.type !== TileType.Ranged && tt.type !== TileType.Wall) {
-              target.displaceTo(tRow, tCol)
-              if (this.enemyManager) this.enemyManager.onEnemyDisplaced(target)
-            }
+            this.shiftEnemy(target, dRow, dCol, 1)
           }
           const artsDmg = Math.max(1, Math.floor(unit.config.atk * 2.1 * 0.05), Math.floor(unit.config.atk * 2.1 - target.config.armor))
           target.takeDamage(artsDmg)
           if (artsDmg > 0) this.showDamageNumber(artsDmg, target, 'kinetic')
           if (sk && !(sk.config.charges ?? 0)) this.skillSystem.deactivateSkill(deployed!)
+        }
+        if (isHydraulicsMode) {
+          this.shiftEnemy(target, tile.row - unit.row, tile.col - unit.col, 1)
         }
       },
       onEnemyWindUp: (enemy: EnemySprite, target: UnitSprite, attackId: number) => {
@@ -428,13 +424,7 @@ export class GameScene extends Phaser.Scene {
             if (!eTile || !tileSet.has(`${eTile.row},${eTile.col}`)) continue
             const dRow = unit.row - eTile.row
             const dCol = unit.col - eTile.col
-            const tRow = Math.max(0, Math.min(this.grid.rows - 1, eTile.row + Math.sign(dRow)))
-            const tCol = Math.max(0, Math.min(this.grid.cols - 1, eTile.col + Math.sign(dCol)))
-            const tt = this.grid.tiles[tRow][tCol]
-            if (tt.type !== TileType.Ranged && tt.type !== TileType.Wall) {
-              enemy.displaceTo(tRow, tCol)
-              if (this.enemyManager) this.enemyManager.onEnemyDisplaced(enemy)
-            }
+            this.shiftEnemy(enemy, dRow, dCol, 1)
             const dmg = Math.max(1, Math.floor(unit.config.atk * 2.2 * 0.05), Math.floor(unit.config.atk * 2.2 - enemy.config.armor))
             enemy.takeDamage(dmg)
             if (dmg > 0) this.showDamageNumber(dmg, enemy, 'kinetic')
@@ -462,17 +452,9 @@ export class GameScene extends Phaser.Scene {
               if (!eTile) continue
               const dRow = eTile.row - unit.row
               const dCol = eTile.col - unit.col
-              const dist = Math.sqrt(dRow * dRow + dCol * dCol)
-              if (dist === 0) continue
+              if (dRow === 0 && dCol === 0) continue
               const sign = eff.direction === 'away' ? 1 : -1
-              const tRow = Math.round(eTile.row + (dRow / dist) * sign * eff.tiles)
-              const tCol = Math.round(eTile.col + (dCol / dist) * sign * eff.tiles)
-              const clampedRow = Math.max(0, Math.min(this.grid.rows - 1, tRow))
-              const clampedCol = Math.max(0, Math.min(this.grid.cols - 1, tCol))
-              enemy.displaceTo(clampedRow, clampedCol)
-              if (this.enemyManager) {
-                this.enemyManager.onEnemyDisplaced(enemy)
-              }
+              this.shiftEnemy(enemy, dRow * sign, dCol * sign, 3)
             }
           }
           spawnExpandRing(this, pos.x, pos.y, 0x00bcd4, dispRadius * 2, 400)
@@ -1094,6 +1076,37 @@ export class GameScene extends Phaser.Scene {
     return this.speedMultiplier * (this.decisionMode ? 0.5 : 1)
   }
 
+  private shiftEnemy(enemy: EnemySprite, rowDelta: number, colDelta: number, force: number): boolean {
+    if (!enemy.alive || enemy.config.isAerial) return false
+    const start = enemy.getCurrentTile()
+    if (!start) return false
+
+    const distance = getShiftDistance(force, enemy.config.weight)
+    if (distance === 0) return false
+
+    let rowStep = Math.sign(rowDelta)
+    let colStep = Math.sign(colDelta)
+    if (rowStep !== 0 && colStep !== 0) {
+      if (Math.abs(rowDelta) >= Math.abs(colDelta)) colStep = 0
+      else rowStep = 0
+    }
+
+    let moved = false
+    for (let step = 1; step <= distance; step++) {
+      const row = start.row + rowStep * step
+      const col = start.col + colStep * step
+      if (row < 0 || row >= this.grid.rows || col < 0 || col >= this.grid.cols) break
+      const tile = this.grid.tiles[row][col]
+      if (tile.type === TileType.Ranged || tile.type === TileType.Wall) break
+      enemy.displaceTo(row, col)
+      moved = true
+      if (tile.type === TileType.Hole) break
+    }
+
+    if (moved) this.enemyManager.onEnemyDisplaced(enemy)
+    return moved
+  }
+
   update(_time: number, delta: number): void {
     const dt = delta / 1000
     const speed = this.effectiveSpeed
@@ -1142,13 +1155,8 @@ export class GameScene extends Phaser.Scene {
           if (dist > 2) continue
           const dRow = du.row - eTile.row
           const dCol = du.col - eTile.col
-          const tRow = Math.max(0, Math.min(this.grid.rows - 1, eTile.row + Math.sign(dRow)))
-          const tCol = Math.max(0, Math.min(this.grid.cols - 1, eTile.col + Math.sign(dCol)))
-          const tt = this.grid.tiles[tRow][tCol]
-          if (tt.type !== TileType.Ranged && tt.type !== TileType.Wall) {
-            enemy.displaceTo(tRow, tCol)
+          if (this.shiftEnemy(enemy, dRow, dCol, 1)) {
             enemy.applyStatusEffect({ type: 'slow', remainingDuration: 1.5, factor: 0.5 })
-            if (this.enemyManager) this.enemyManager.onEnemyDisplaced(enemy)
           }
         }
       }

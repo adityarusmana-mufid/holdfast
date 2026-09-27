@@ -210,7 +210,7 @@ export class EnemyManager {
     for (const enemy of this.enemies) {
       if (!enemy.alive) continue
       const tile = enemy.getCurrentTile()
-      if (tile && this.grid.getTile(tile.row, tile.col)?.type === TileType.Hole) {
+      if (tile && !enemy.config.isAerial && this.grid.getTile(tile.row, tile.col)?.type === TileType.Hole) {
         enemy.alive = false
         this.enemiesDealtWith++
         this.scene.events.emit('enemy-killed', { enemy })
@@ -448,5 +448,4 @@ export class EnemyManager {
     this.summonerTimers.clear()
   }
 }
-
 

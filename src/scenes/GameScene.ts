@@ -1139,8 +1139,19 @@ export class GameScene extends Phaser.Scene {
       }
       const now = this.time.now
       for (const du of allUnits) {
-        if (!du.maelstromActive || !du.maelstromEndTime || now >= du.maelstromEndTime) {
-          if (du.maelstromActive) du.maelstromActive = false
+        if (!du.maelstromActive || !du.maelstromEndTime) {
+          continue
+        }
+        if (now >= du.maelstromEndTime) {
+          for (const enemy of enemies) {
+            if (!enemy.alive || enemy.config.isAerial) continue
+            const eTile = enemy.getCurrentTile()
+            if (!eTile) continue
+            const dist = Math.abs(eTile.row - du.row) + Math.abs(eTile.col - du.col)
+            if (dist > 2) continue
+            this.shiftEnemy(enemy, du.row - eTile.row, du.col - eTile.col, 2)
+          }
+          du.maelstromActive = false
           continue
         }
         const key = `${du.row},${du.col}`

@@ -781,7 +781,7 @@ export const SKILLS: Record<string, SkillConfig[]> = {
     },
     {
       id: 'puller_s3', name: 'Dance of the Shattered Maelstrom',
-      description: 'Binds the furthest enemy; a whirlpool pulls nearby enemies with Force 1 every 1.5s for 8s and slows 50%.',
+      description: 'Binds the furthest enemy; a whirlpool pulls nearby enemies with Force 1 every 1.5s for 8s, then pulls with Force 2.',
       spRecovery: 'auto', activation: 'manual', spCost: 35, spInitial: 15,
       durationType: 'duration', duration: 8,
       effect: { type: 'special', description: 'maelstrom_pull_slow' },

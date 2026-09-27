@@ -768,7 +768,7 @@ export const SKILLS: Record<string, SkillConfig[]> = {
     {
       id: 'puller_s1', name: "Waterless Parting of the Great Ocean",
       description: 'Force 1: next attack pulls a target toward you and deals 210% ATK Physical damage. Stores 3 charges.',
-      spRecovery: 'auto', activation: 'auto', spCost: 4, spInitial: 0,
+      spRecovery: 'auto', activation: 'auto', spCost: 4, spInitial: 4,
       charges: 3, durationType: 'instant',
       effect: { type: 'special', description: 'auto_pull_arts' },
     },

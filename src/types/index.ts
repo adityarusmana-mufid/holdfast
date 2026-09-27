@@ -167,6 +167,8 @@ export type EnemyBehavior =
 export interface EnemyConfig {
   id: string
   name: string
+  /** Resistance to forced movement: 0 is lightest, 4 resists standard specialist skills. */
+  weight: number
   hp: number
   atk: number
   armor: number

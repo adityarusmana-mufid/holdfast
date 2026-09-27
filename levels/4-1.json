@@ -207,15 +207,15 @@
       "routeIndex": 0,
       "entries": [
         { "enemyType": "rusher_elite", "count": 3, "spawnInterval": 2.6 },
-        { "enemyType": "breacher", "count": 2, "spawnInterval": 3 }
+        { "enemyType": "rusher_elite", "count": 2, "spawnInterval": 3 }
       ],
       "preludeDuration": 10
     },
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "trooper_elite", "count": 3, "spawnInterval": 3 },
-        { "enemyType": "phantom", "count": 2, "spawnInterval": 3.3 },
+        { "enemyType": "phantom", "count": 3, "spawnInterval": 3 },
+        { "enemyType": "marksman_elite", "count": 2, "spawnInterval": 3.3 },
         { "enemyType": "drone_elite", "count": 2, "spawnInterval": 2.6 }
       ],
       "preludeDuration": 9
@@ -223,8 +223,8 @@
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "shielded", "count": 2, "spawnInterval": 3.6 },
-        { "enemyType": "repair", "count": 2, "spawnInterval": 3.2 },
+        { "enemyType": "phantom_elite", "count": 2, "spawnInterval": 3.6 },
+        { "enemyType": "phantom", "count": 2, "spawnInterval": 3.2 },
         { "enemyType": "marksman_elite", "count": 2, "spawnInterval": 3 }
       ],
       "preludeDuration": 8
@@ -232,9 +232,9 @@
     {
       "routeIndex": 0,
       "entries": [
-        { "enemyType": "heavy_elite", "count": 2, "spawnInterval": 3.8 },
+        { "enemyType": "phantom_elite", "count": 2, "spawnInterval": 3.8 },
         { "enemyType": "gunship", "count": 1, "spawnInterval": 4 },
-        { "enemyType": "carrier", "count": 1, "spawnInterval": 4 }
+        { "enemyType": "drone_elite", "count": 1, "spawnInterval": 4 }
       ],
       "preludeDuration": 7
     }
@@ -245,5 +245,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Combined-arms assault begins immediately. Identify the unit that enables the rest of its wave—repair support, stealth, or a carrier—and remove that pressure before it multiplies."]
+  "guideText": ["The opening assault is about target visibility and speed. Keep detection near your interception line so Phantoms cannot slip past while Rushers and aircraft pressure the same defense."]
 }

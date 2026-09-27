@@ -13,6 +13,9 @@ export const TUTORIAL_OBJECTIVES: Record<string, TutorialStep[]> = {
   'TR-11': [{ action: 'deploy', unitId: 'core_caster', text: 'Deploy the Caster against armored targets.' }],
   'TR-12': [{ action: 'deploy', unitId: 'medic_st', text: 'Deploy the Medic to support the frontline.' }],
   'TR-13': [{ action: 'deploy', unitId: 'protector', text: 'Deploy the Protector to establish the frontline.' }, { action: 'deploy', unitId: 'fighter', text: 'Deploy the Fighter behind the frontline.' }],
-  'TR-14': [{ action: 'deploy', unitId: 'pusher', text: 'Deploy the Push Stroker beside the route.' }],
+  'TR-14': [
+    { action: 'deploy', unitId: 'pusher', text: 'Deploy the Push Stroker on a lower post and face it upward.' },
+    { action: 'deploy', unitId: 'puller', text: 'Deploy the Hookmaster on an upper perch and face it downward.' },
+  ],
   'TR-15': [{ action: 'deploy', unitId: 'charger', text: 'Deploy the Charger early.' }, { action: 'retreat', unitId: 'charger', text: 'Retreat the Charger to reclaim its DP.' }],
 }

@@ -1,54 +1,31 @@
 {
   "name": "Terrain Attack",
   "cols": 10,
-  "rows": 3,
+  "rows": 5,
   "tiles": [
     [
-      {"row":0,"col":0,"type":"floor"},
-      {"row":0,"col":1,"type":"deploy_ranged"},
-      {"row":0,"col":2,"type":"hole"},
-      {"row":0,"col":3,"type":"hole"},
-      {"row":0,"col":4,"type":"deploy_ranged"},
-      {"row":0,"col":5,"type":"deploy_ranged"},
-      {"row":0,"col":6,"type":"hole"},
-      {"row":0,"col":7,"type":"hole"},
-      {"row":0,"col":8,"type":"deploy_ranged"},
-      {"row":0,"col":9,"type":"floor"}
+      { "row": 0, "col": 0, "type": "floor" }, { "row": 0, "col": 1, "type": "floor" }, { "row": 0, "col": 2, "type": "deploy_ranged" }, { "row": 0, "col": 3, "type": "floor" }, { "row": 0, "col": 4, "type": "floor" }, { "row": 0, "col": 5, "type": "floor" }, { "row": 0, "col": 6, "type": "deploy_ranged" }, { "row": 0, "col": 7, "type": "floor" }, { "row": 0, "col": 8, "type": "floor" }, { "row": 0, "col": 9, "type": "floor" }
     ],
     [
-      {"row":1,"col":0,"type":"spawn"},
-      {"row":1,"col":1,"type":"route"},
-      {"row":1,"col":2,"type":"route"},
-      {"row":1,"col":3,"type":"route"},
-      {"row":1,"col":4,"type":"route"},
-      {"row":1,"col":5,"type":"route"},
-      {"row":1,"col":6,"type":"route"},
-      {"row":1,"col":7,"type":"route"},
-      {"row":1,"col":8,"type":"route"},
-      {"row":1,"col":9,"type":"goal"}
+      { "row": 1, "col": 0, "type": "floor" }, { "row": 1, "col": 1, "type": "floor" }, { "row": 1, "col": 2, "type": "hole" }, { "row": 1, "col": 3, "type": "floor" }, { "row": 1, "col": 4, "type": "floor" }, { "row": 1, "col": 5, "type": "floor" }, { "row": 1, "col": 6, "type": "hole" }, { "row": 1, "col": 7, "type": "floor" }, { "row": 1, "col": 8, "type": "floor" }, { "row": 1, "col": 9, "type": "floor" }
     ],
     [
-      {"row":2,"col":0,"type":"floor"},
-      {"row":2,"col":1,"type":"deploy_ranged"},
-      {"row":2,"col":2,"type":"hole"},
-      {"row":2,"col":3,"type":"hole"},
-      {"row":2,"col":4,"type":"deploy_ranged"},
-      {"row":2,"col":5,"type":"deploy_ranged"},
-      {"row":2,"col":6,"type":"hole"},
-      {"row":2,"col":7,"type":"hole"},
-      {"row":2,"col":8,"type":"deploy_ranged"},
-      {"row":2,"col":9,"type":"floor"}
+      { "row": 2, "col": 0, "type": "spawn" }, { "row": 2, "col": 1, "type": "route" }, { "row": 2, "col": 2, "type": "route" }, { "row": 2, "col": 3, "type": "route" }, { "row": 2, "col": 4, "type": "route" }, { "row": 2, "col": 5, "type": "route" }, { "row": 2, "col": 6, "type": "route" }, { "row": 2, "col": 7, "type": "route" }, { "row": 2, "col": 8, "type": "route" }, { "row": 2, "col": 9, "type": "goal" }
+    ],
+    [
+      { "row": 3, "col": 0, "type": "floor" }, { "row": 3, "col": 1, "type": "floor" }, { "row": 3, "col": 2, "type": "deploy_ground" }, { "row": 3, "col": 3, "type": "floor" }, { "row": 3, "col": 4, "type": "floor" }, { "row": 3, "col": 5, "type": "floor" }, { "row": 3, "col": 6, "type": "deploy_ground" }, { "row": 3, "col": 7, "type": "floor" }, { "row": 3, "col": 8, "type": "floor" }, { "row": 3, "col": 9, "type": "floor" }
+    ],
+    [
+      { "row": 4, "col": 0, "type": "floor" }, { "row": 4, "col": 1, "type": "floor" }, { "row": 4, "col": 2, "type": "floor" }, { "row": 4, "col": 3, "type": "floor" }, { "row": 4, "col": 4, "type": "floor" }, { "row": 4, "col": 5, "type": "floor" }, { "row": 4, "col": 6, "type": "floor" }, { "row": 4, "col": 7, "type": "floor" }, { "row": 4, "col": 8, "type": "floor" }, { "row": 4, "col": 9, "type": "floor" }
     ]
   ],
   "waypoints": [
-    {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-    {"row":1,"col":4},{"row":1,"col":5},{"row":1,"col":6},{"row":1,"col":7},
-    {"row":1,"col":8},{"row":1,"col":9}
+    { "row": 2, "col": 0 }, { "row": 2, "col": 1 }, { "row": 2, "col": 2 }, { "row": 2, "col": 3 }, { "row": 2, "col": 4 }, { "row": 2, "col": 5 }, { "row": 2, "col": 6 }, { "row": 2, "col": 7 }, { "row": 2, "col": 8 }, { "row": 2, "col": 9 }
   ],
   "waves": [
-    {"routeIndex":0,"entries":[{"enemyType":"soldier","count":3,"spawnInterval":3}],"preludeDuration":10},
-    {"routeIndex":0,"entries":[{"enemyType":"trooper","count":2,"spawnInterval":3}],"preludeDuration":8},
-    {"routeIndex":0,"entries":[{"enemyType":"trooper","count":2,"spawnInterval":2.5},{"enemyType":"soldier","count":3,"spawnInterval":2}],"preludeDuration":8}
+    { "routeIndex": 0, "entries": [{ "enemyType": "soldier", "count": 3, "spawnInterval": 3 }], "preludeDuration": 10 },
+    { "routeIndex": 0, "entries": [{ "enemyType": "trooper", "count": 2, "spawnInterval": 3 }], "preludeDuration": 8 },
+    { "routeIndex": 0, "entries": [{ "enemyType": "trooper", "count": 2, "spawnInterval": 2.5 }, { "enemyType": "soldier", "count": 3, "spawnInterval": 2 }], "preludeDuration": 8 }
   ],
   "tutorial": true,
   "startingDP": 25,
@@ -57,7 +34,9 @@
   "deploymentLimit": 8,
   "lives": 15,
   "guideText": [
-    "Deep holes instantly destroy enemies that enter them. Push Stroker and Hookmaster specialists can deploy on any valid tile, including the route.",
-    "Deploy a Push Stroker beside the route. Its Barrel Burst automatically pushes targets; use its facing to send enemies into a hole. Hookmaster pulls targets toward itself."
+    "Deep holes instantly destroy ground enemies that enter them. Aircraft cross them safely, and no unit can deploy on a hole.",
+    "A Push Stroker post sits below each hole. Face it upward: it hits an enemy on the route and pushes it into the hole.",
+    "A Hookmaster perch sits above each hole. Face it downward: its line reaches the route and pulls targets through the hole.",
+    "Scout Cars are MASS I and APCs are MASS II. Force 1 shifts either into an adjacent hole; heavier targets need stronger force or conventional fire."
   ]
 }

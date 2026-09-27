@@ -183,12 +183,12 @@
       {
         "row": 3,
         "col": 4,
-        "type": "deploy_ranged"
+        "type": "hole"
       },
       {
         "row": 3,
         "col": 5,
-        "type": "deploy_ranged"
+        "type": "hole"
       },
       {
         "row": 3,
@@ -511,9 +511,14 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper_elite",
+          "enemyType": "soldier_elite",
           "count": 3,
           "spawnInterval": 3
+        },
+        {
+          "enemyType": "rusher_elite",
+          "count": 2,
+          "spawnInterval": 2.6
         }
       ],
       "preludeDuration": 10
@@ -522,12 +527,12 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper_elite",
+          "enemyType": "soldier_elite",
           "count": 4,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy_elite",
+          "enemyType": "rusher_elite",
           "count": 3,
           "spawnInterval": 2.6
         }
@@ -543,7 +548,7 @@
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy_elite",
+          "enemyType": "rusher_elite",
           "count": 3,
           "spawnInterval": 2.6
         },
@@ -560,7 +565,7 @@
       "entries": [
         {
           "enemyType": "trooper_elite",
-          "count": 5,
+          "count": 4,
           "spawnInterval": 3
         },
         {
@@ -580,19 +585,24 @@
       "routeIndex": 0,
       "entries": [
         {
-          "enemyType": "trooper_elite",
-          "count": 5,
+          "enemyType": "heavy_elite",
+          "count": 3,
           "spawnInterval": 3
         },
         {
-          "enemyType": "heavy_elite",
-          "count": 4,
+          "enemyType": "shielded_elite",
+          "count": 2,
           "spawnInterval": 2.6
         },
         {
-          "enemyType": "drone_elite",
-          "count": 3,
+          "enemyType": "gunship_elite",
+          "count": 2,
           "spawnInterval": 2.2
+        },
+        {
+          "enemyType": "rusher_elite",
+          "count": 3,
+          "spawnInterval": 2.1
         }
       ],
       "preludeDuration": 6
@@ -604,5 +614,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Every standard threat now appears in elite form. Build a balanced formation before the middle waves: thermal damage for armor, anti-air for aircraft, and enough healing to survive sustained artillery pressure."]
+  "guideText": ["Two holes divide the central firing line. A Push Stroker below them can send light ground targets from the lower route into the holes; elite armor and aircraft cannot be shifted by Force 1.", "Use the holes to remove rushers, then hold the heavy final wave conventionally. Saving the specialist posts for every target leaves the armored column and gunships unanswered."]
 }

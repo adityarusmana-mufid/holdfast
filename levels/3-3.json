@@ -1,264 +1,89 @@
 {
   "name": "Operation 3-3",
   "cols": 8,
-  "rows": 5,
+  "rows": 6,
   "tiles": [
     [
-      {
-        "row": 0,
-        "col": 0,
-        "type": "spawn"
-      },
-      {
-        "row": 0,
-        "col": 1,
-        "type": "route"
-      },
-      {
-        "row": 0,
-        "col": 2,
-        "type": "route"
-      },
-      {
-        "row": 0,
-        "col": 3,
-        "type": "route"
-      },
-      {
-        "row": 0,
-        "col": 4,
-        "type": "deploy_ranged"
-      },
-      {
-        "row": 0,
-        "col": 5,
-        "type": "floor"
-      },
-      {
-        "row": 0,
-        "col": 6,
-        "type": "floor"
-      },
-      {
-        "row": 0,
-        "col": 7,
-        "type": "floor"
-      }
+      { "row": 0, "col": 0, "type": "spawn" },
+      { "row": 0, "col": 1, "type": "route" },
+      { "row": 0, "col": 2, "type": "route" },
+      { "row": 0, "col": 3, "type": "route" },
+      { "row": 0, "col": 4, "type": "route" },
+      { "row": 0, "col": 5, "type": "route" },
+      { "row": 0, "col": 6, "type": "deploy_ranged" },
+      { "row": 0, "col": 7, "type": "floor" }
     ],
     [
-      {
-        "row": 1,
-        "col": 0,
-        "type": "deploy_ranged"
-      },
-      {
-        "row": 1,
-        "col": 1,
-        "type": "deploy_ranged"
-      },
-      {
-        "row": 1,
-        "col": 2,
-        "type": "deploy_ranged"
-      },
-      {
-        "row": 1,
-        "col": 3,
-        "type": "route"
-      },
-      {
-        "row": 1,
-        "col": 4,
-        "type": "deploy_ranged"
-      },
-      {
-        "row": 1,
-        "col": 5,
-        "type": "floor"
-      },
-      {
-        "row": 1,
-        "col": 6,
-        "type": "floor"
-      },
-      {
-        "row": 1,
-        "col": 7,
-        "type": "floor"
-      }
+      { "row": 1, "col": 0, "type": "deploy_ranged" },
+      { "row": 1, "col": 1, "type": "deploy_ranged" },
+      { "row": 1, "col": 2, "type": "deploy_ranged" },
+      { "row": 1, "col": 3, "type": "floor" },
+      { "row": 1, "col": 4, "type": "deploy_ranged" },
+      { "row": 1, "col": 5, "type": "route" },
+      { "row": 1, "col": 6, "type": "deploy_ranged" },
+      { "row": 1, "col": 7, "type": "floor" }
     ],
     [
-      {
-        "row": 2,
-        "col": 0,
-        "type": "floor"
-      },
-      {
-        "row": 2,
-        "col": 1,
-        "type": "floor"
-      },
-      {
-        "row": 2,
-        "col": 2,
-        "type": "deploy_ranged"
-      },
-      {
-        "row": 2,
-        "col": 3,
-        "type": "route"
-      },
-      {
-        "row": 2,
-        "col": 4,
-        "type": "deploy_ranged"
-      },
-      {
-        "row": 2,
-        "col": 5,
-        "type": "deploy_ranged"
-      },
-      {
-        "row": 2,
-        "col": 6,
-        "type": "deploy_ranged"
-      },
-      {
-        "row": 2,
-        "col": 7,
-        "type": "deploy_ranged"
-      }
+      { "row": 2, "col": 0, "type": "floor" },
+      { "row": 2, "col": 1, "type": "floor" },
+      { "row": 2, "col": 2, "type": "route" },
+      { "row": 2, "col": 3, "type": "route" },
+      { "row": 2, "col": 4, "type": "route" },
+      { "row": 2, "col": 5, "type": "route" },
+      { "row": 2, "col": 6, "type": "deploy_ranged" },
+      { "row": 2, "col": 7, "type": "deploy_ranged" }
     ],
     [
-      {
-        "row": 3,
-        "col": 0,
-        "type": "floor"
-      },
-      {
-        "row": 3,
-        "col": 1,
-        "type": "floor"
-      },
-      {
-        "row": 3,
-        "col": 2,
-        "type": "deploy_ranged"
-      },
-      {
-        "row": 3,
-        "col": 3,
-        "type": "route"
-      },
-      {
-        "row": 3,
-        "col": 4,
-        "type": "route"
-      },
-      {
-        "row": 3,
-        "col": 5,
-        "type": "route"
-      },
-      {
-        "row": 3,
-        "col": 6,
-        "type": "route"
-      },
-      {
-        "row": 3,
-        "col": 7,
-        "type": "goal"
-      }
+      { "row": 3, "col": 0, "type": "floor" },
+      { "row": 3, "col": 1, "type": "deploy_ranged" },
+      { "row": 3, "col": 2, "type": "route" },
+      { "row": 3, "col": 3, "type": "deploy_ranged" },
+      { "row": 3, "col": 4, "type": "deploy_ranged" },
+      { "row": 3, "col": 5, "type": "floor" },
+      { "row": 3, "col": 6, "type": "floor" },
+      { "row": 3, "col": 7, "type": "floor" }
     ],
     [
-      {
-        "row": 4,
-        "col": 0,
-        "type": "floor"
-      },
-      {
-        "row": 4,
-        "col": 1,
-        "type": "floor"
-      },
-      {
-        "row": 4,
-        "col": 2,
-        "type": "deploy_ranged"
-      },
-      {
-        "row": 4,
-        "col": 3,
-        "type": "deploy_ranged"
-      },
-      {
-        "row": 4,
-        "col": 4,
-        "type": "deploy_ranged"
-      },
-      {
-        "row": 4,
-        "col": 5,
-        "type": "deploy_ranged"
-      },
-      {
-        "row": 4,
-        "col": 6,
-        "type": "deploy_ranged"
-      },
-      {
-        "row": 4,
-        "col": 7,
-        "type": "deploy_ranged"
-      }
+      { "row": 4, "col": 0, "type": "floor" },
+      { "row": 4, "col": 1, "type": "deploy_ranged" },
+      { "row": 4, "col": 2, "type": "route" },
+      { "row": 4, "col": 3, "type": "deploy_ranged" },
+      { "row": 4, "col": 4, "type": "floor" },
+      { "row": 4, "col": 5, "type": "floor" },
+      { "row": 4, "col": 6, "type": "floor" },
+      { "row": 4, "col": 7, "type": "floor" }
+    ],
+    [
+      { "row": 5, "col": 0, "type": "floor" },
+      { "row": 5, "col": 1, "type": "deploy_ranged" },
+      { "row": 5, "col": 2, "type": "route" },
+      { "row": 5, "col": 3, "type": "route" },
+      { "row": 5, "col": 4, "type": "route" },
+      { "row": 5, "col": 5, "type": "route" },
+      { "row": 5, "col": 6, "type": "route" },
+      { "row": 5, "col": 7, "type": "goal" }
     ]
   ],
   "waypoints": [
-    {
-      "row": 0,
-      "col": 0
-    },
-    {
-      "row": 0,
-      "col": 1
-    },
-    {
-      "row": 0,
-      "col": 2
-    },
-    {
-      "row": 0,
-      "col": 3
-    },
-    {
-      "row": 1,
-      "col": 3
-    },
-    {
-      "row": 2,
-      "col": 3
-    },
-    {
-      "row": 3,
-      "col": 3
-    },
-    {
-      "row": 3,
-      "col": 4
-    },
-    {
-      "row": 3,
-      "col": 5
-    },
-    {
-      "row": 3,
-      "col": 6
-    },
-    {
-      "row": 3,
-      "col": 7
-    }
+    { "row": 0, "col": 0 },
+    { "row": 0, "col": 1 },
+    { "row": 0, "col": 2 },
+    { "row": 0, "col": 3 },
+    { "row": 0, "col": 4 },
+    { "row": 0, "col": 5 },
+    { "row": 1, "col": 5 },
+    { "row": 2, "col": 5 },
+    { "row": 2, "col": 4 },
+    { "row": 2, "col": 3 },
+    { "row": 2, "col": 2 },
+    { "row": 3, "col": 2 },
+    { "row": 4, "col": 2 },
+    { "row": 5, "col": 2 },
+    { "row": 5, "col": 3 },
+    { "row": 5, "col": 4 },
+    { "row": 5, "col": 5 },
+    { "row": 5, "col": 6 },
+    { "row": 5, "col": 7 }
   ],
   "waves": [
     {
@@ -303,5 +128,7 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Gunships are armored aerial platforms. Anti-air coverage must be sustained, not incidental; let the ground lane hold briefly while your ranged line clears the aircraft."]
+  "guideText": [
+    "Gunships are armored aerial platforms. Hold anti-air units on the upper corner and the final turn so they sustain fire while your ground line delays the lane."
+  ]
 }

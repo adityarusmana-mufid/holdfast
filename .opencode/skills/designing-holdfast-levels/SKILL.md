@@ -110,6 +110,36 @@ Wave 6: Boss wave (2 Tanks + all types) — optional climax
 10. Validate with validateLevelData()
 ```
 
+## Strategic Topology Audit
+
+Before proposing or changing a level, treat the map as a network of tactical relationships, not a collection of adjacent tiles. This is a qualitative design review alongside schema validation; it does **not** require every tile or hazard to enable a strategy. Decoration is valid when it does not falsely imply a required mechanic.
+
+### Evidence First
+- Read the current implementation for deployment, rotated ranges, targeting, movement, shift force/weight, enemy abilities, skills, and economy. Do not assume Arknights behavior is implemented here.
+- Separate findings into **implementation-verified**, **inferred**, and **play-tested**. Record unknowns rather than guessing.
+
+### Whole-Map Review
+1. Label every coordinate and route segment in travel order. Nearby tiles can be far apart in enemy travel time.
+2. For each deployable position and relevant facing, identify route intervals it covers, hostile exposure, ally support, fallback coverage, and landing destinations.
+3. Connect positions into formations: blockers with support, crossfire across bends, detection before damage, healing coverage, anti-air, splash spacing, and recovery after a breach.
+4. Check timing and constraints: starting DP, deployment cap, first contact, charges/cooldowns, concurrent waves, aerial immunity, and shift force versus enemy weight.
+5. Identify at least the intended approach, a credible alternative where appropriate, tempting ineffective positions, and any dominant placement that removes choices.
+
+### Relationship Vocabulary
+
+| Relationship | Meaning |
+|---|---|
+| `covers(position, facing, segment)` | Can affect enemies along that route interval. |
+| `supports(position, ally)` | Provides healing, detection, buffs, or complementary fire. |
+| `exposedTo(position, threat)` | Can be punished by an enemy or map threat. |
+| `shiftsInto(position, target, destination)` | Range, facing, force, weight, and every crossed tile permit the displacement. |
+| `competesWith(position, position)` | Conflicts through tile use, deployment cap, cost, or role. |
+| `backsUp(position, segment)` | Can recover leaks past the initial defense. |
+| `decorative(region)` | Deliberately offers no tactical opportunity. |
+
+### Required Audit Output
+Document the intended decision, whole-map tactical reading, relationship findings, candidate strategies with their costs/failure points, terrain intent, and confidence. Flag terrain only when it contradicts tutorial messaging, creates a misleading cue, or undermines the intended decision—not merely because it is unused.
+
 ## Quick Reference: DP/Spawn Params
 
 | Parameter | Chapter 1 range | Notes |

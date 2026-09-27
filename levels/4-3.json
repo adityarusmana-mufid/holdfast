@@ -290,7 +290,7 @@
           "count": 2,
           "spawnInterval": 2.6
         },
-        { "enemyType": "repair_elite", "count": 1, "spawnInterval": 3.6 }
+        { "enemyType": "drone_elite", "count": 1, "spawnInterval": 3.6 }
       ],
       "preludeDuration": 9
     },
@@ -324,10 +324,10 @@
           "count": 2,
           "spawnInterval": 2.6
         },
-        { "enemyType": "carrier_elite", "count": 1, "spawnInterval": 4 },
-        { "enemyType": "gunship_elite", "count": 1, "spawnInterval": 4 },
-        { "enemyType": "phantom_elite", "count": 2, "spawnInterval": 3 },
-        { "enemyType": "breacher_elite", "count": 2, "spawnInterval": 2.8 }
+        { "enemyType": "drone_elite", "count": 2, "spawnInterval": 4 },
+        { "enemyType": "marksman_elite", "count": 2, "spawnInterval": 4 },
+        { "enemyType": "trooper_elite", "count": 2, "spawnInterval": 3 },
+        { "enemyType": "shielded_elite", "count": 2, "spawnInterval": 2.8 }
       ],
       "preludeDuration": 7
     }
@@ -338,5 +338,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Armored artillery is protected by shields and repairs. Break the support structure first, then use thermal damage to stop the heavy core before aerial reinforcements arrive."]
+  "guideText": ["The zigzag rewards positions that cover two route segments, but artillery and marksmen punish a single crowded line. Crossfire the turns, keep thermal damage for the heavy core, and retain anti-air coverage for the final wave."]
 }

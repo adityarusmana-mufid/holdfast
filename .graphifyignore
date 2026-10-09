@@ -1,0 +1,10 @@
+# Generated and dependency content does not contribute to the project map.
+.git/
+node_modules/
+.opencode/node_modules/
+dist/
+coverage/
+graphify-out/
+
+# Keep only current source and maintained documentation in the graph.
+*.save

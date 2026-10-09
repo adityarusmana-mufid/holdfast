@@ -39,6 +39,7 @@ coverage/
 .opencode/node_modules/
 .opencode/package.json
 .opencode/package-lock.json
+graphify-out/
 
 # Claude
 .claude/settings.local.json

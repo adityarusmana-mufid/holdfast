@@ -59,7 +59,7 @@
       {
         "row": 1,
         "col": 0,
-        "type": "deploy_ranged"
+        "type": "floor"
       },
       {
         "row": 1,
@@ -69,7 +69,7 @@
       {
         "row": 1,
         "col": 2,
-        "type": "deploy_ranged"
+        "type": "floor"
       },
       {
         "row": 1,
@@ -84,7 +84,7 @@
       {
         "row": 1,
         "col": 5,
-        "type": "deploy_ranged"
+        "type": "floor"
       },
       {
         "row": 1,
@@ -99,7 +99,7 @@
       {
         "row": 1,
         "col": 8,
-        "type": "deploy_ranged"
+        "type": "floor"
       },
       {
         "row": 1,
@@ -168,7 +168,7 @@
       {
         "row": 3,
         "col": 1,
-        "type": "deploy_ranged"
+        "type": "floor"
       },
       {
         "row": 3,
@@ -183,12 +183,12 @@
       {
         "row": 3,
         "col": 4,
-        "type": "deploy_ranged"
+        "type": "repair_node"
       },
       {
         "row": 3,
         "col": 5,
-        "type": "deploy_ranged"
+        "type": "armor_grid"
       },
       {
         "row": 3,
@@ -203,12 +203,12 @@
       {
         "row": 3,
         "col": 8,
-        "type": "deploy_ranged"
+        "type": "floor"
       },
       {
         "row": 3,
         "col": 9,
-        "type": "deploy_ranged"
+        "type": "floor"
       }
     ],
     [
@@ -267,7 +267,7 @@
       {
         "row": 5,
         "col": 0,
-        "type": "deploy_ranged"
+        "type": "floor"
       },
       {
         "row": 5,
@@ -282,7 +282,7 @@
       {
         "row": 5,
         "col": 3,
-        "type": "deploy_ranged"
+        "type": "floor"
       },
       {
         "row": 5,
@@ -297,7 +297,7 @@
       {
         "row": 5,
         "col": 6,
-        "type": "deploy_ranged"
+        "type": "floor"
       },
       {
         "row": 5,
@@ -604,5 +604,5 @@
   "dpCap": 99,
   "deploymentLimit": 8,
   "lives": 10,
-  "guideText": ["Elite artillery and armor attack together. A strong formation needs both a thermal answer for Tanks and enough repair coverage to keep its own blockers standing under indirect fire."]
+  "guideText": ["Staggered firing galleries force each ranged unit to commit to a section of the route. The central repair node and armor grid give ground units a durable fallback against elite armor while artillery tests their healer support."]
 }
